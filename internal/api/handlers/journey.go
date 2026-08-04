@@ -34,6 +34,9 @@ func getDraftIDFromRequest(r *http.Request) string {
 }
 
 func computeDraftETag(dbDraft *postgres.JourneyDraft) string {
+	if dbDraft.ContentHash != "" {
+		return middleware.GenerateETag([]byte(dbDraft.ContentHash))
+	}
 	raw := fmt.Sprintf("%s:%s:%d:%s:%s", dbDraft.DraftID, dbDraft.Name, dbDraft.Version, string(dbDraft.Nodes), string(dbDraft.Edges))
 	return middleware.GenerateETag([]byte(raw))
 }

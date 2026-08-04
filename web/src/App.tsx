@@ -699,10 +699,11 @@ export function DashboardContent() {
               onSelectJourney={async (draftId) => {
                 try {
                   const client = new JourneyApiClient();
-                  const { draft: fetched } = await client.getJourneyDraft(draftId, {
+                  const { draft: fetched, etag } = await client.getJourneyDraft(draftId, {
                     'X-Tenant-ID': 'default',
                   });
-                  setDraft(fetched);
+                  const updatedHash = etag ? etag.replace(/^W\//i, '').replace(/"/g, '') : fetched.content_hash;
+                  setDraft({ ...fetched, content_hash: updatedHash || fetched.content_hash });
                   setActiveRoute('canvas');
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : 'API connection error';
