@@ -55,7 +55,7 @@ export const VersionHistoryPage: React.FC = () => {
       </div>
 
       {/* Filter & Draft Selection Bar */}
-      <div className="w-full p-4 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-center justify-between gap-4 shrink-0">
+      <div className="w-full p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-3">
           <label className="text-xs font-semibold text-[#908fa0] uppercase tracking-wider font-mono">
             Draft ID:
@@ -64,17 +64,17 @@ export const VersionHistoryPage: React.FC = () => {
             type="text"
             value={draftId}
             onChange={(e) => setParams({ draftId: e.target.value })}
-            className="px-4 py-2 rounded-xl bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-mono w-48"
+            className="px-4 py-2 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-mono w-48"
           />
         </div>
 
         <div className="flex items-center gap-2 text-xs text-[#908fa0]">
           <span>Comparing:</span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#171b26] border border-[#464554] text-[#ddb7ff] font-mono font-semibold">
+          <span className="px-2.5 py-1 rounded-none bg-[#171b26] border border-[#464554] text-[#ddb7ff] font-mono font-semibold">
             v{selectedV1?.version || 1}
           </span>
           <span>➔</span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#171b26] border border-[#464554] text-[#6ee7b7] font-mono font-semibold">
+          <span className="px-2.5 py-1 rounded-none bg-[#171b26] border border-[#464554] text-[#6ee7b7] font-mono font-semibold">
             v{selectedV2?.version || 2}
           </span>
         </div>
@@ -93,7 +93,7 @@ export const VersionHistoryPage: React.FC = () => {
 
       {/* Main Content Layout */}
       {isLoading ? (
-        <div className="p-6 rounded-2xl bg-[#0F131D]/90 border border-[#464554] shadow-xl">
+        <div className="p-6 rounded-none bg-[#0F131D]/90 border border-[#464554] shadow-xl">
           <Skeleton count={4} height="3rem" />
         </div>
       ) : versions.length === 0 ? (
@@ -105,13 +105,13 @@ export const VersionHistoryPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full items-start">
           {/* Left Column: Revision Timeline */}
-          <div className="lg:col-span-1 p-5 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
+          <div className="lg:col-span-1 p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#464554] pb-3">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#c0c1ff] text-lg">view_timeline</span>
                 Immutable Revisions
               </h2>
-              <span className="px-2 py-0.5 rounded bg-[#171b26] border border-[#464554] text-[#908fa0] text-xs font-mono">
+              <span className="px-2 py-0.5 rounded-none bg-[#171b26] border border-[#464554] text-[#908fa0] text-xs font-mono">
                 {versions.length} total
               </span>
             </div>
@@ -125,7 +125,7 @@ export const VersionHistoryPage: React.FC = () => {
                 return (
                   <div
                     key={ver.version}
-                    className={`p-4 rounded-xl border transition-all space-y-3 ${
+                    className={`p-4 rounded-none border transition-all space-y-3 ${
                       isActive
                         ? 'border-[#ddb7ff] bg-[#1c1f2a] ring-1 ring-[#ddb7ff]/30 shadow-lg'
                         : 'border-[#464554] bg-[#171b26] hover:border-[#c0c1ff] hover:bg-[#1f2434]'
@@ -137,12 +137,12 @@ export const VersionHistoryPage: React.FC = () => {
                           Revision v{ver.version}
                         </span>
                         {isSelectedV1 && (
-                          <span className="px-2 py-0.5 rounded bg-[#b76dff]/20 text-[#ddb7ff] border border-[#ddb7ff]/30 text-[10px] font-mono font-bold">
+                          <span className="px-2 py-0.5 rounded-none bg-[#b76dff]/20 text-[#ddb7ff] border border-[#ddb7ff]/30 text-[10px] font-mono font-bold">
                             Base
                           </span>
                         )}
                         {isSelectedV2 && (
-                          <span className="px-2 py-0.5 rounded bg-[#10b981]/20 text-[#6ee7b7] border border-[#10b981]/30 text-[10px] font-mono font-bold">
+                          <span className="px-2 py-0.5 rounded-none bg-[#10b981]/20 text-[#6ee7b7] border border-[#10b981]/30 text-[10px] font-mono font-bold">
                             Target
                           </span>
                         )}
@@ -154,7 +154,7 @@ export const VersionHistoryPage: React.FC = () => {
 
                     <div className="flex items-center gap-2 text-xs text-[#908fa0]">
                       <span className="font-semibold text-[#dfe2f1]">IR Hash:</span>
-                      <code className="px-2 py-0.5 rounded bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] font-mono text-[11px] truncate">
+                      <code className="px-2 py-0.5 rounded-none bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] font-mono text-[11px] truncate">
                         {ver.content_hash}
                       </code>
                     </div>
@@ -164,7 +164,7 @@ export const VersionHistoryPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setParams({ v1: String(ver.version) })}
-                        className={`flex-1 px-3 py-2 rounded-xl text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        className={`flex-1 px-3 py-2 rounded-none text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           isSelectedV1
                             ? 'bg-[#b76dff]/20 text-[#ddb7ff] border border-[#ddb7ff]/60 shadow-md font-bold hover:brightness-125'
                             : 'bg-[#171b26] text-[#908fa0] border border-[#464554] hover:text-[#dfe2f1] hover:border-[#c0c1ff] hover:bg-[#262a35] hover:brightness-125'
@@ -176,7 +176,7 @@ export const VersionHistoryPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setParams({ v2: String(ver.version) })}
-                        className={`flex-1 px-3 py-2 rounded-xl text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        className={`flex-1 px-3 py-2 rounded-none text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           isSelectedV2
                             ? 'bg-[#10b981]/20 text-[#6ee7b7] border border-[#10b981]/60 shadow-md font-bold hover:brightness-125'
                             : 'bg-[#171b26] text-[#908fa0] border border-[#464554] hover:text-[#dfe2f1] hover:border-[#6ee7b7] hover:bg-[#262a35] hover:brightness-125'
@@ -193,7 +193,7 @@ export const VersionHistoryPage: React.FC = () => {
           </div>
 
           {/* Right Column: Revision Diff & Hash Verification */}
-          <div className="lg:col-span-2 p-5 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-5">
+          <div className="lg:col-span-2 p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-[#464554] pb-3">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#ddb7ff] text-lg">difference</span>
@@ -202,25 +202,25 @@ export const VersionHistoryPage: React.FC = () => {
             </div>
 
             {/* Hash Checksum Card */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#171b26] p-4 rounded-xl border border-[#464554]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#171b26] p-4 rounded-none border border-[#464554]">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-[#ddb7ff] flex items-center gap-1.5 font-mono">
-                  <span className="w-2 h-2 rounded-full bg-[#ddb7ff]"></span>
+                  <span className="w-2 h-2 rounded-none bg-[#ddb7ff]"></span>
                   Base Revision (v{selectedV1?.version})
                 </span>
                 <div className="text-[11px] text-[#908fa0]">Content Hash Checksum:</div>
-                <code className="block p-2 rounded bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] font-mono text-xs break-all">
+                <code className="block p-2 rounded-none bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] font-mono text-xs break-all">
                   {selectedV1?.content_hash || 'hash-v1'}
                 </code>
               </div>
 
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-[#6ee7b7] flex items-center gap-1.5 font-mono">
-                  <span className="w-2 h-2 rounded-full bg-[#6ee7b7]"></span>
+                  <span className="w-2 h-2 rounded-none bg-[#6ee7b7]"></span>
                   Target Revision (v{selectedV2?.version})
                 </span>
                 <div className="text-[11px] text-[#908fa0]">Content Hash Checksum:</div>
-                <code className="block p-2 rounded bg-[#0B0F19] border border-[#464554] text-[#6ee7b7] font-mono text-xs break-all">
+                <code className="block p-2 rounded-none bg-[#0B0F19] border border-[#464554] text-[#6ee7b7] font-mono text-xs break-all">
                   {selectedV2?.content_hash || 'hash-v2'}
                 </code>
               </div>
@@ -232,7 +232,7 @@ export const VersionHistoryPage: React.FC = () => {
                 Revision Details & Verification
               </h3>
 
-              <div className="border border-[#464554] rounded-xl overflow-hidden bg-[#171b26] p-4 space-y-3 text-xs">
+              <div className="border border-[#464554] rounded-none overflow-hidden bg-[#171b26] p-4 space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[#908fa0] font-mono">Selected Base Revision:</span>
                   <span className="font-mono text-[#ddb7ff] font-bold">v{selectedV1?.version ?? 'N/A'}</span>

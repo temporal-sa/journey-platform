@@ -51,7 +51,7 @@ export function LabeledEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               pointerEvents: 'all',
             }}
-            className={`nodrag nopan px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all backdrop-blur-md border ${
+            className={`nodrag nopan px-2.5 py-1 rounded-none text-[10px] font-mono font-semibold transition-all backdrop-blur-md border ${
               selected
                 ? 'bg-[#b76dff]/30 text-[#ddb7ff] border-[#ddb7ff] shadow-[0_0_12px_rgba(221,183,255,0.4)]'
                 : 'bg-[#171b26]/90 text-[#c7c4d7] border-[#464554] shadow-md'

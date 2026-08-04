@@ -134,12 +134,12 @@ export function DegradedStateView({
       aria-labelledby={titleId}
       aria-describedby={descId}
       data-testid={`degraded-state-${type}`}
-      className={`w-full backdrop-blur-xl border rounded-2xl p-6 flex ${
+      className={`w-full backdrop-blur-xl border rounded-none p-6 flex ${
         compact ? 'flex-row items-center justify-between gap-4 p-4' : 'flex-col sm:flex-row items-start justify-between gap-4'
       } shadow-xl font-['Outfit',sans-serif] ${containerStyles}`}
     >
       <div className="flex items-start gap-4 min-w-0 flex-1">
-        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${iconColor}`}>
+        <div className={`w-10 h-10 rounded-none border flex items-center justify-center shrink-0 ${iconColor}`}>
           <span className="material-symbols-outlined text-xl">{config.icon}</span>
         </div>
 
@@ -152,7 +152,7 @@ export function DegradedStateView({
           </p>
 
           {details && (
-            <div className="mt-3 p-3 rounded-xl bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] font-mono text-xs overflow-x-auto">
+            <div className="mt-3 p-3 rounded-none bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] font-mono text-xs overflow-x-auto">
               {typeof details === 'string' ? details : JSON.stringify(details, null, 2)}
             </div>
           )}
@@ -164,7 +164,7 @@ export function DegradedStateView({
           type="button"
           onClick={handleAction}
           aria-label={`${displayActionLabel} for ${displayTitle}`}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold font-['Outfit'] transition-all cursor-pointer hover:brightness-125 border shrink-0 ${btnStyles}`}
+          className={`px-4 py-2 rounded-none text-xs font-semibold font-['Outfit'] transition-all cursor-pointer hover:brightness-125 border shrink-0 ${btnStyles}`}
         >
           {displayActionLabel}
         </button>

@@ -174,7 +174,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="w-full p-4 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-end gap-4 shrink-0">
+      <div className="w-full p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-end gap-4 shrink-0">
         <div className="flex-1 min-w-[240px]">
           <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
             Search Journeys
@@ -185,7 +185,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
               placeholder="Search by name, ID, or description..."
               value={params.search}
               onChange={(e) => setParams({ search: e.target.value, page: '1' })}
-              className="w-full h-[34px] px-4 rounded-xl bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
+              className="w-full h-[34px] px-4 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
             />
           </div>
         </div>
@@ -195,7 +195,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
           <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
             Status Filter
           </label>
-          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-xl border border-[#464554]" role="group" aria-label="Status Filter">
+          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Status Filter">
             {[
               { status: 'all', label: 'All Statuses' },
               { status: 'active', label: 'Active' },
@@ -209,7 +209,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                   key={item.status}
                   type="button"
                   onClick={() => setParams({ status: item.status, page: '1' })}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getStatusStyles(item.status)} ${
+                  className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getStatusStyles(item.status)} ${
                     isActive
                       ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
                       : 'opacity-70 hover:opacity-100 hover:brightness-125'
@@ -230,7 +230,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
             aria-label="Per Page"
             value={params.pageSize}
             onChange={(e) => setParams({ pageSize: e.target.value, page: '1' })}
-            className="h-[34px] px-3 rounded-xl bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
+            className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
           >
             <option value="5">5</option>
             <option value="10">10</option>
@@ -244,7 +244,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
             type="button"
             onClick={() => setParams({ search: '', status: 'all', page: '1' })}
             aria-label="Clear Filters"
-            className="h-[34px] px-3 rounded-xl bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm hover:brightness-125 shrink-0"
+            className="h-[34px] px-3 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm hover:brightness-125 shrink-0"
           >
             <span className="material-symbols-outlined text-sm">filter_alt_off</span>
             <span>Clear Filters</span>
@@ -254,7 +254,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
 
       {/* Main Table / Content Section */}
       {isLoading ? (
-        <div className="w-full p-6 rounded-2xl bg-[#0F131D]/90 border border-[#464554] shadow-xl">
+        <div className="w-full p-6 rounded-none bg-[#0F131D]/90 border border-[#464554] shadow-xl">
           <Skeleton count={5} height="2.5rem" />
         </div>
       ) : isError ? (
@@ -279,7 +279,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
         />
       ) : (
         /* Journey List Table */
-        <div className="w-full bg-[#0F131D]/90 backdrop-blur-xl rounded-2xl border border-[#464554] shadow-xl overflow-hidden flex-1 flex flex-col justify-between">
+        <div className="w-full bg-[#0F131D]/90 backdrop-blur-xl rounded-none border border-[#464554] shadow-xl overflow-hidden flex-1 flex flex-col justify-between">
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left text-xs font-['Outfit',sans-serif]">
               <thead>
@@ -304,7 +304,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     <td className="p-4 font-mono text-[#dfe2f1]">{j.tenant_id}</td>
                     <td className="p-4">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase border tracking-wider ${
+                        className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
                           j.status === 'active'
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : j.status === 'draft'
@@ -325,7 +325,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     <td className="p-4 text-left" style={{ textAlign: 'left' }}>
                       <button
                         onClick={() => onSelectJourney?.(j.draft_id)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#b76dff]/20 hover:bg-[#b76dff]/40 hover:brightness-125 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] font-semibold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        className="px-3.5 py-1.5 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/40 hover:brightness-125 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] font-semibold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                       >
                         <span>Open Canvas</span>
                         <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -348,7 +348,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                 disabled={currentPage <= 1 || totalPages <= 1}
                 onClick={() => setParams({ page: String(currentPage - 1) })}
                 style={{ cursor: (currentPage <= 1 || totalPages <= 1) ? 'not-allowed' : 'pointer' }}
-                className="px-3 py-1.5 rounded-lg bg-[#11141d] border border-[#464554] text-[#dfe2f1] disabled:opacity-40 disabled:cursor-not-allowed disabled:text-[#908fa0] disabled:bg-[#171b26]/40 disabled:border-[#464554]/30 enabled:hover:bg-[#262a35] enabled:hover:text-white enabled:cursor-pointer transition-all text-xs font-mono"
+                className="px-3 py-1.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] disabled:opacity-40 disabled:cursor-not-allowed disabled:text-[#908fa0] disabled:bg-[#171b26]/40 disabled:border-[#464554]/30 enabled:hover:bg-[#262a35] enabled:hover:text-white enabled:cursor-pointer transition-all text-xs font-mono"
               >
                 Previous
               </button>
@@ -359,7 +359,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                 disabled={currentPage >= totalPages || totalPages <= 1}
                 onClick={() => setParams({ page: String(currentPage + 1) })}
                 style={{ cursor: (currentPage >= totalPages || totalPages <= 1) ? 'not-allowed' : 'pointer' }}
-                className="px-3 py-1.5 rounded-lg bg-[#11141d] border border-[#464554] text-[#dfe2f1] disabled:opacity-40 disabled:cursor-not-allowed disabled:text-[#908fa0] disabled:bg-[#171b26]/40 disabled:border-[#464554]/30 enabled:hover:bg-[#262a35] enabled:hover:text-white enabled:cursor-pointer transition-all text-xs font-mono"
+                className="px-3 py-1.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] disabled:opacity-40 disabled:cursor-not-allowed disabled:text-[#908fa0] disabled:bg-[#171b26]/40 disabled:border-[#464554]/30 enabled:hover:bg-[#262a35] enabled:hover:text-white enabled:cursor-pointer transition-all text-xs font-mono"
               >
                 Next
               </button>
@@ -387,7 +387,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
             style={{
               backgroundColor: '#ffffff',
               padding: '1.5rem',
-              borderRadius: '0.5rem',
+              borderRadius: '0px',
               width: '100%',
               maxWidth: '440px',
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
@@ -415,7 +415,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     width: '100%',
                     padding: '0.4rem 0.75rem',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '0.375rem',
+                    borderRadius: '0px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box',
                   }}
@@ -435,7 +435,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     width: '100%',
                     padding: '0.4rem 0.75rem',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '0.375rem',
+                    borderRadius: '0px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box',
                   }}
@@ -454,7 +454,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     width: '100%',
                     padding: '0.4rem 0.75rem',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '0.375rem',
+                    borderRadius: '0px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box',
                   }}
@@ -470,7 +470,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     backgroundColor: '#f1f5f9',
                     color: '#475569',
                     border: 'none',
-                    borderRadius: '0.375rem',
+                    borderRadius: '0px',
                     cursor: 'pointer',
                   }}
                 >
@@ -484,7 +484,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
                     backgroundColor: '#2563eb',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '0.375rem',
+                    borderRadius: '0px',
                     cursor: 'pointer',
                     fontWeight: 600,
                   }}

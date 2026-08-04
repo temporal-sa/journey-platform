@@ -88,18 +88,18 @@ export function TestRunModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-2xl w-full max-w-2xl max-h-[580px] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal shrink-0">
+      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-none w-full max-w-2xl max-h-[580px] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal shrink-0">
         {/* Modal Header with Test Mode Badging */}
         <div className="bg-[#171b26] p-5 border-b border-[#464554] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
+            <div className="w-10 h-10 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
               <span className="material-symbols-outlined text-xl">play_circle</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span
                   data-testid="test-mode-badge"
-                  className="px-2 py-0.5 rounded bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
+                  className="px-2 py-0.5 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
                 >
                   TEST MODE
                 </span>
@@ -118,7 +118,7 @@ export function TestRunModal({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 rounded-xl bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -126,7 +126,7 @@ export function TestRunModal({
         {/* Modal Content */}
         <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs font-['Outfit',sans-serif]">
           {/* Target Journey Draft Header Info */}
-          <div className="p-3.5 rounded-xl bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6] text-xs font-mono flex items-center gap-2">
+          <div className="p-3.5 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6] text-xs font-mono flex items-center gap-2">
             <span className="material-symbols-outlined text-base">info</span>
             <span>Target Journey Draft: <strong className="text-white">{draftId}</strong> (Isolated Sandbox Mode)</span>
           </div>
@@ -138,7 +138,7 @@ export function TestRunModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 onClick={() => setExecutionMode('realistic')}
-                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`p-4 rounded-none border transition-all cursor-pointer ${
                   executionMode === 'realistic'
                     ? 'border-[#4cd7f6] bg-[#4cd7f6]/10 shadow-[0_0_20px_rgba(76,215,246,0.2)]'
                     : 'border-[#464554] bg-[#171b26] hover:border-[#908fa0]'
@@ -151,7 +151,7 @@ export function TestRunModal({
               </div>
               <div
                 onClick={() => setExecutionMode('forced_variant_coverage')}
-                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`p-4 rounded-none border transition-all cursor-pointer ${
                   executionMode === 'forced_variant_coverage'
                     ? 'border-[#4cd7f6] bg-[#4cd7f6]/10 shadow-[0_0_20px_rgba(76,215,246,0.2)]'
                     : 'border-[#464554] bg-[#171b26] hover:border-[#908fa0]'
@@ -174,7 +174,7 @@ export function TestRunModal({
               id="fixture-pack-select"
               value={fixturePack}
               onChange={(e) => setFixturePack(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
             >
               <option value="Standard Fixture Pack (50 contacts)">Standard Fixture Pack (50 contacts)</option>
               <option value="Edge Cases & Invalid Emails (10 contacts)">Edge Cases & Invalid Emails (10 contacts)</option>
@@ -194,12 +194,12 @@ export function TestRunModal({
                 { id: 'mock-webhook', label: 'Mock Webhook' },
                 { id: 'mock-push', label: 'Mock Push Service' },
               ].map((provider) => (
-                <label key={provider.id} className="inline-flex items-center gap-2 text-[#dfe2f1] cursor-pointer bg-[#171b26] px-3.5 py-2 rounded-xl border border-[#464554] hover:border-[#4cd7f6]/60 transition-all">
+                <label key={provider.id} className="inline-flex items-center gap-2 text-[#dfe2f1] cursor-pointer bg-[#171b26] px-3.5 py-2 rounded-none border border-[#464554] hover:border-[#4cd7f6]/60 transition-all">
                   <input
                     type="checkbox"
                     checked={fakeProviders.includes(provider.id)}
                     onChange={() => toggleProvider(provider.id)}
-                    className="accent-[#4cd7f6] rounded cursor-pointer"
+                    className="accent-[#4cd7f6] rounded-none cursor-pointer"
                   />
                   <span>{provider.label}</span>
                 </label>
@@ -216,7 +216,7 @@ export function TestRunModal({
               id="test-run-expiry-select"
               value={expiryHours}
               onChange={(e) => setExpiryHours(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
             >
               <option value="1">1 Hour</option>
               <option value="24">24 Hours (Default)</option>
@@ -225,16 +225,16 @@ export function TestRunModal({
           </div>
 
           {/* Target Count & Execution Configuration Preview */}
-          <div className="p-4 rounded-2xl bg-[#171b26] border border-[#464554] space-y-3 font-mono">
+          <div className="p-4 rounded-none bg-[#171b26] border border-[#464554] space-y-3 font-mono">
             <h3 className="font-['Outfit'] font-bold text-xs text-white uppercase tracking-wider">
               Target Count & Execution Configuration
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6]">
+              <div className="p-3 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6]">
                 <div className="text-[10px] text-[#908fa0] uppercase">Target Member Count</div>
                 <div className="text-lg font-bold text-white mt-0.5">{targetCount} members</div>
               </div>
-              <div className="p-3 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1]">
+              <div className="p-3 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1]">
                 <div className="text-[10px] text-[#908fa0] uppercase">Expiry Window</div>
                 <div className="text-lg font-bold text-white mt-0.5">{expiryHours} Hours</div>
               </div>
@@ -249,7 +249,7 @@ export function TestRunModal({
         <div className="p-5 border-t border-[#464554] bg-[#171b26] flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
           >
             Cancel
           </button>
@@ -257,7 +257,7 @@ export function TestRunModal({
             onClick={handleRunSubmit}
             data-testid="start-test-run-btn"
             disabled={isSubmitting}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
               isSubmitting
                 ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
                 : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'

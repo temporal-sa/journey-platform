@@ -62,7 +62,7 @@ export function KeyboardShortcutsModal({
         tabIndex={-1}
         style={{
           backgroundColor: '#ffffff',
-          borderRadius: '0.75rem',
+          borderRadius: '0px',
           maxWidth: '560px',
           width: '100%',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
@@ -101,7 +101,7 @@ export function KeyboardShortcutsModal({
           <button
             onClick={onClose}
             aria-label="Close keyboard shortcuts modal"
-            className="w-8 h-8 rounded-lg bg-[#262a35] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-white/5 cursor-pointer shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-none bg-[#262a35] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-white/5 cursor-pointer shrink-0 shadow-sm"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -135,7 +135,7 @@ export function KeyboardShortcutsModal({
                       style={{
                         backgroundColor: '#f1f5f9',
                         border: '1px solid #cbd5e1',
-                        borderRadius: '0.25rem',
+                        borderRadius: '0px',
                         padding: '0.2rem 0.4rem',
                         color: '#0f172a',
                         boxShadow: '0 1px 1px rgba(0,0,0,0.05)',
@@ -152,7 +152,7 @@ export function KeyboardShortcutsModal({
                       className="text-xs"
                       style={{
                         padding: '0.15rem 0.4rem',
-                        borderRadius: '0.25rem',
+                        borderRadius: '0px',
                         backgroundColor:
                           sc.category === 'Global'
                             ? '#eff6ff'
@@ -194,7 +194,7 @@ export function KeyboardShortcutsModal({
               backgroundColor: '#2563eb',
               color: '#ffffff',
               border: 'none',
-              borderRadius: '0.375rem',
+              borderRadius: '0px',
               fontWeight: 600,
               cursor: 'pointer',
               fontSize: '0.875rem',

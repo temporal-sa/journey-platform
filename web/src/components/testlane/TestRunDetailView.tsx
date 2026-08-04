@@ -188,12 +188,12 @@ function TestRunDetailViewInner({
   return (
     <div className="w-full flex flex-col gap-6 text-[#dfe2f1] font-['Outfit',sans-serif]">
       {/* Test Mode Banner Header */}
-      <div className="bg-[#0F131D]/90 backdrop-blur-xl p-5 rounded-2xl border border-[#464554] flex flex-wrap items-center justify-between gap-4 shadow-xl">
+      <div className="bg-[#0F131D]/90 backdrop-blur-xl p-5 rounded-none border border-[#464554] flex flex-wrap items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-3">
           {onBackToList && (
             <button
               onClick={onBackToList}
-              className="px-4 py-2 rounded-xl bg-[#171b26] border border-[#464554] text-[#dfe2f1] hover:text-white hover:border-[#c0c1ff] text-xs font-semibold transition-all cursor-pointer"
+              className="px-4 py-2 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] hover:text-white hover:border-[#c0c1ff] text-xs font-semibold transition-all cursor-pointer"
             >
               ← Back to Runs
             </button>
@@ -205,7 +205,7 @@ function TestRunDetailViewInner({
               </h2>
               <span
                 data-testid="test-mode-badge"
-                className="px-2.5 py-1 rounded-md bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
+                className="px-2.5 py-1 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
               >
                 TEST MODE
               </span>
@@ -218,7 +218,7 @@ function TestRunDetailViewInner({
 
         <div className="text-right">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider border ${
+            className={`px-3 py-1 rounded-none text-xs font-mono font-bold uppercase tracking-wider border ${
               data.status === 'passed'
                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                 : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
@@ -233,26 +233,26 @@ function TestRunDetailViewInner({
       </div>
       {/* Summary KPI Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-white/10 shadow-xl font-mono">
+        <div className="p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-white/10 shadow-xl font-mono">
           <div className="text-[10px] text-slate-400 uppercase tracking-wider">Total Test Members</div>
           <div className="text-2xl font-bold text-white mt-1">{data.totalMembers}</div>
         </div>
-        <div className="p-4 rounded-2xl bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 shadow-xl font-mono">
+        <div className="p-4 rounded-none bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 shadow-xl font-mono">
           <div className="text-[10px] text-emerald-400 uppercase tracking-wider">Completed Journey</div>
           <div className="text-2xl font-bold text-emerald-300 mt-1">{data.completedMembers}</div>
         </div>
-        <div className="p-4 rounded-2xl bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 shadow-xl font-mono">
+        <div className="p-4 rounded-none bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 shadow-xl font-mono">
           <div className="text-[10px] text-amber-400 uppercase tracking-wider">Suppressions</div>
           <div className="text-2xl font-bold text-amber-300 mt-1">{data.suppressedMembersCount}</div>
         </div>
-        <div className="p-4 rounded-2xl bg-indigo-500/10 backdrop-blur-xl border border-indigo-500/20 shadow-xl font-mono">
+        <div className="p-4 rounded-none bg-indigo-500/10 backdrop-blur-xl border border-indigo-500/20 shadow-xl font-mono">
           <div className="text-[10px] text-indigo-400 uppercase tracking-wider">Fake Deliveries</div>
           <div className="text-2xl font-bold text-indigo-300 mt-1">{data.fakeDeliveries.length}</div>
         </div>
       </div>
 
       {/* Main Tabbed Interface */}
-      <div className="bg-[#0F131D]/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+      <div className="bg-[#0F131D]/90 backdrop-blur-xl rounded-none border border-white/10 shadow-xl overflow-hidden">
         {/* Navigation Tabs */}
         <div className="flex border-b border-white/10 bg-slate-900/60 px-4 gap-2">
           {[
@@ -288,7 +288,7 @@ function TestRunDetailViewInner({
                   <button
                     key={m.memberId}
                     onClick={() => setSelectedMemberId(m.memberId)}
-                    className={`text-left p-3 rounded-xl border transition-all ${
+                    className={`text-left p-3 rounded-none border transition-all ${
                       activeMemberId === m.memberId
                         ? 'border-indigo-500/50 bg-indigo-500/10 text-white shadow-lg shadow-indigo-500/10'
                         : 'border-white/10 bg-slate-900/60 text-slate-400 hover:text-white hover:bg-white/5'
@@ -310,7 +310,7 @@ function TestRunDetailViewInner({
                       Execution Path for <code className="text-[#4cd7f6] font-mono">{currentMemberDetail.memberId}</code> ({currentMemberDetail.maskedRecipient})
                     </h3>
                     <span
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                      className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider border ${
                         currentMemberDetail.status === 'completed'
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                           : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -324,9 +324,9 @@ function TestRunDetailViewInner({
                     {currentMemberDetail.visitSteps.map((step) => (
                       <div
                         key={step.stepIndex}
-                        className="flex items-start gap-4 p-4 rounded-xl bg-[#171b26] border border-[#464554] shadow-sm"
+                        className="flex items-start gap-4 p-4 rounded-none bg-[#171b26] border border-[#464554] shadow-sm"
                       >
-                        <div className="w-7 h-7 rounded-full bg-[#4cd7f6]/10 text-[#4cd7f6] border border-[#4cd7f6]/30 flex items-center justify-center font-mono text-xs font-bold shrink-0">
+                        <div className="w-7 h-7 rounded-none bg-[#4cd7f6]/10 text-[#4cd7f6] border border-[#4cd7f6]/30 flex items-center justify-center font-mono text-xs font-bold shrink-0">
                           {step.stepIndex}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -357,7 +357,7 @@ function TestRunDetailViewInner({
             <h3 className="font-['Outfit'] font-bold text-sm text-white">
               Condition & Experiment Branch Decisions
             </h3>
-            <div className="rounded-xl border border-[#464554] bg-[#11141d] overflow-hidden">
+            <div className="rounded-none border border-[#464554] bg-[#11141d] overflow-hidden">
               <table className="w-full text-left text-xs font-mono">
                 <thead>
                   <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase">
@@ -378,7 +378,7 @@ function TestRunDetailViewInner({
                       </td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                          className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase border ${
                             b.evaluatedResult
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
@@ -402,7 +402,7 @@ function TestRunDetailViewInner({
             <h3 className="font-['Outfit'] font-bold text-sm text-white">
               Target Suppressions & Opt-Out Log
             </h3>
-            <div className="rounded-xl border border-[#464554] bg-[#11141d] overflow-hidden">
+            <div className="rounded-none border border-[#464554] bg-[#11141d] overflow-hidden">
               <table className="w-full text-left text-xs font-mono">
                 <thead>
                   <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase">
@@ -419,7 +419,7 @@ function TestRunDetailViewInner({
                       <td className="p-3 text-[#dfe2f1] font-bold">{s.memberId}</td>
                       <td className="p-3 text-[#4cd7f6]">{s.maskedRecipient}</td>
                       <td className="p-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                        <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/20">
                           {s.reason.replace(/_/g, ' ')}
                         </span>
                       </td>
@@ -439,7 +439,7 @@ function TestRunDetailViewInner({
             <h3 className="font-['Outfit'] font-bold text-sm text-white">
               Fake Delivery Dispatch Log
             </h3>
-            <div className="rounded-xl border border-[#464554] bg-[#11141d] overflow-hidden">
+            <div className="rounded-none border border-[#464554] bg-[#11141d] overflow-hidden">
               <table className="w-full text-left text-xs font-mono">
                 <thead>
                   <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase">
@@ -460,7 +460,7 @@ function TestRunDetailViewInner({
                       <td className="p-3 uppercase text-[10px] font-semibold text-[#c0c1ff]">{d.channel}</td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                          className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider border ${
                             d.status === 'delivered'
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : d.status === 'bounced'

@@ -185,7 +185,7 @@ export function Palette({ onAddNode }: PaletteProps) {
           </div>
           <button
             onClick={toggleAll}
-            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#c0c1ff]/10 text-[#c0c1ff] hover:bg-[#c0c1ff]/20 border border-[#c0c1ff]/20 transition-colors cursor-pointer"
+            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-[#c0c1ff]/10 text-[#c0c1ff] hover:bg-[#c0c1ff]/20 border border-[#c0c1ff]/20 transition-colors cursor-pointer"
             title={isAllCollapsed ? 'Expand All Sections' : 'Collapse All Sections'}
           >
             {isAllCollapsed ? 'EXPAND ALL' : 'COLLAPSE ALL'}
@@ -200,7 +200,7 @@ export function Palette({ onAddNode }: PaletteProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter components..."
-            className="w-full bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-lg px-3 py-1.5 text-xs text-[#dfe2f1] placeholder-[#64748b] outline-none transition-all"
+            className="w-full bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none px-3 py-1.5 text-xs text-[#dfe2f1] placeholder-[#64748b] outline-none transition-all"
           />
           {searchQuery && (
             <button
@@ -241,7 +241,7 @@ export function Palette({ onAddNode }: PaletteProps) {
                 className="w-fit cursor-pointer select-none group focus:outline-none"
               >
                 <span
-                  className={`text-xs font-mono font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full border flex items-center gap-2 transition-all hover:opacity-90 ${styles.labelBg}`}
+                  className={`text-xs font-mono font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-none border flex items-center gap-2 transition-all hover:opacity-90 ${styles.labelBg}`}
                 >
                   <span>
                     {category} ({items.length})
@@ -271,12 +271,12 @@ export function Palette({ onAddNode }: PaletteProps) {
                         }
                       }}
                       title={item.description}
-                      className="group flex items-center gap-4 py-3 px-3.5 rounded-xl bg-[#1c1f2a] border border-[#464554] hover:border-[#c0c1ff] hover:bg-[#262a35] hover:shadow-lg transition-all cursor-grab active:cursor-grabbing"
+                      className="group flex items-center gap-4 py-3 px-3.5 rounded-none bg-[#1c1f2a] border border-[#464554] hover:border-[#c0c1ff] hover:bg-[#262a35] hover:shadow-lg transition-all cursor-grab active:cursor-grabbing"
                       data-testid={`palette-item-${item.type}`}
                     >
                       {/* Node Icon Badge */}
                       <div
-                        className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 mr-2 ${item.badgeBg}`}
+                        className={`w-9 h-9 rounded-none border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 mr-2 ${item.badgeBg}`}
                       >
                         <span className="material-symbols-outlined text-lg">{item.icon}</span>
                       </div>

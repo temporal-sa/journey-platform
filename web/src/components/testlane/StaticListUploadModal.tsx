@@ -221,17 +221,17 @@ export function StaticListUploadModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-2xl w-full max-w-3xl max-h-[580px] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal shrink-0">
+      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-none w-full max-w-3xl max-h-[580px] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal shrink-0">
         <div className="bg-[#171b26] p-5 border-b border-[#464554] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
+            <div className="w-10 h-10 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
               <span className="material-symbols-outlined text-xl">upload_file</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span
                   data-testid="test-mode-badge"
-                  className="px-2.5 py-1 rounded-md bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
+                  className="px-2.5 py-1 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
                 >
                   TEST MODE ACTIVE
                 </span>
@@ -250,7 +250,7 @@ export function StaticListUploadModal({
           <button
             onClick={onClose}
             aria-label="Close upload modal"
-            className="w-8 h-8 rounded-xl bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -271,7 +271,7 @@ export function StaticListUploadModal({
           ) : (
             <>
           {errorMsg && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2" role="alert">
+            <div className="p-4 rounded-none bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2" role="alert">
               <span className="material-symbols-outlined text-lg text-rose-400">error</span>
               <span>{errorMsg}</span>
             </div>
@@ -288,7 +288,7 @@ export function StaticListUploadModal({
                 type="text"
                 value={listId}
                 onChange={(e) => setListId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6]"
               />
             </div>
             <div>
@@ -300,7 +300,7 @@ export function StaticListUploadModal({
                 type="text"
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6]"
               />
             </div>
           </div>
@@ -314,7 +314,7 @@ export function StaticListUploadModal({
                 id="list-version-select"
                 value={selectedVersion}
                 onChange={(e) => setSelectedVersion(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
               >
                 <option value="v1 (immutable)">v1 - Initial Commit (Immutable)</option>
                 <option value="v2 (immutable)">v2 - Draft Delta (Immutable)</option>
@@ -328,7 +328,7 @@ export function StaticListUploadModal({
                 id="list-ttl-select"
                 value={ttlHours}
                 onChange={(e) => setTtlHours(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
               >
                 <option value="1">1 Hour</option>
                 <option value="24">24 Hours (Default)</option>
@@ -339,7 +339,7 @@ export function StaticListUploadModal({
           </div>
 
           {/* File Picker & Upload Area */}
-          <div className="p-6 rounded-2xl border-2 border-dashed border-[#4cd7f6]/40 bg-[#4cd7f6]/5 text-center hover:border-[#4cd7f6]/80 transition-colors">
+          <div className="p-6 rounded-none border-2 border-dashed border-[#4cd7f6]/40 bg-[#4cd7f6]/5 text-center hover:border-[#4cd7f6]/80 transition-colors">
             <input
               id="csv-file-input"
               aria-label="Choose CSV File"
@@ -350,7 +350,7 @@ export function StaticListUploadModal({
             />
             <label
               htmlFor="csv-file-input"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] font-bold text-xs shadow-lg shadow-[#4cd7f6]/20 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-none bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] font-bold text-xs shadow-lg shadow-[#4cd7f6]/20 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">folder_open</span>
               <span>Choose CSV File</span>
@@ -373,7 +373,7 @@ export function StaticListUploadModal({
                 <span>Upload Progress</span>
                 <span>{uploadProgress}%</span>
               </div>
-              <div className="w-full h-2 bg-[#171b26] border border-[#464554] rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-[#171b26] border border-[#464554] rounded-none overflow-hidden">
                 <div
                   role="progressbar"
                   aria-valuenow={uploadProgress}
@@ -389,15 +389,15 @@ export function StaticListUploadModal({
           {/* Validation Summary Cards */}
           {summary && (
             <div className="grid grid-cols-3 gap-3 font-mono">
-              <div className="p-3.5 rounded-xl bg-[#c0c1ff]/10 border border-[#c0c1ff]/20 text-[#c0c1ff]">
+              <div className="p-3.5 rounded-none bg-[#c0c1ff]/10 border border-[#c0c1ff]/20 text-[#c0c1ff]">
                 <div className="text-[10px] text-[#908fa0] uppercase">Total Rows</div>
                 <div className="text-lg font-bold text-white mt-0.5">{summary.rowCount}</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+              <div className="p-3.5 rounded-none bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
                 <div className="text-[10px] text-[#908fa0] uppercase">Verified Contacts</div>
                 <div className="text-lg font-bold text-emerald-400 mt-0.5">{summary.verifiedContacts}</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300">
+              <div className="p-3.5 rounded-none bg-rose-500/10 border border-rose-500/20 text-rose-300">
                 <div className="text-[10px] text-[#908fa0] uppercase">Formula Rejections</div>
                 <div className="text-lg font-bold text-rose-400 mt-0.5">{summary.formulaRejections}</div>
               </div>
@@ -405,7 +405,7 @@ export function StaticListUploadModal({
           )}
 
           {/* Expiry Display Box */}
-          <div className="p-3.5 rounded-xl bg-[#171b26] border border-[#464554] text-[#dfe2f1] text-xs font-mono flex items-center gap-2">
+          <div className="p-3.5 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] text-xs font-mono flex items-center gap-2">
             <span className="material-symbols-outlined text-base text-[#4cd7f6]">schedule</span>
             <span><strong className="text-[#4cd7f6]">List Expiry Target:</strong> {getExpiryLabel()}</span>
           </div>
@@ -416,7 +416,7 @@ export function StaticListUploadModal({
               <h4 className="font-['Outfit'] font-bold text-xs text-white">
                 Masked Member Preview ({previews.length} members)
               </h4>
-              <div className="max-h-40 overflow-y-auto rounded-xl border border-[#464554] bg-[#11141d]">
+              <div className="max-h-40 overflow-y-auto rounded-none border border-[#464554] bg-[#11141d]">
                 <table className="w-full text-left text-xs font-mono">
                   <thead>
                     <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase">
@@ -450,13 +450,13 @@ export function StaticListUploadModal({
         <div className="p-5 border-t border-[#464554] bg-[#171b26] flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleUploadSubmit}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
               isProcessing
                 ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
                 : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'
