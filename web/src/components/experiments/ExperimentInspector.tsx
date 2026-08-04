@@ -301,7 +301,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
   return (
     <div
       data-testid="experiment-inspector"
-      className="glass-panel p-6 lg:p-8 bg-[#0F131D]/95 backdrop-blur-xl rounded-2xl border border-[#1F2937] text-[#DFE2F1] font-['Outfit',sans-serif] shadow-2xl space-y-6 max-w-4xl mx-auto"
+      className="glass-panel p-6 lg:p-8 bg-[#0F131D] rounded-none border border-[#1F2937] text-[#DFE2F1] font-['Outfit',sans-serif] space-y-6 max-w-4xl mx-auto"
     >
       {/* Header */}
       <div className="flex justify-between items-center border-b border-[#1F2937] pb-5">
@@ -315,7 +315,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
           </p>
         </div>
         <span
-          className={`px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-wider shadow-sm border ${
+          className={`px-3 py-1 rounded-none text-xs font-bold font-mono uppercase tracking-wider shadow-sm border ${
             formState.status === 'active'
               ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
               : 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/40'
@@ -338,7 +338,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               value={formState.experiment_id}
               onChange={(e) => handleFieldChange('experiment_id', e.target.value)}
               disabled={readOnly}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
             />
           </div>
 
@@ -352,7 +352,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               value={formState.name}
               onChange={(e) => handleFieldChange('name', e.target.value)}
               disabled={readOnly}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
             />
           </div>
         </div>
@@ -368,7 +368,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               value={formState.randomization_unit}
               onChange={(e) => handleFieldChange('randomization_unit', e.target.value as RandomizationUnit)}
               disabled={readOnly}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer box-border"
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer box-border"
             >
               {randomizationUnits.map((unit) => (
                 <option key={unit} value={unit} className="bg-[#090D14] text-[#DFE2F1]">
@@ -391,7 +391,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                 value={getAttributionValue()}
                 onChange={(e) => handleAttributionChange(Number(e.target.value), attributionUnit)}
                 disabled={readOnly}
-                className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
+                className="flex-1 min-w-0 px-3.5 py-2.5 rounded-none bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
               />
               <select
                 aria-label="Attribution Unit"
@@ -402,7 +402,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                   handleAttributionChange(getAttributionValue(), newUnit);
                 }}
                 disabled={readOnly}
-                className="px-3 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-xs focus:outline-none focus:border-[#6366F1] disabled:opacity-50 cursor-pointer"
+                className="px-3 py-2.5 rounded-none bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-xs focus:outline-none focus:border-[#6366F1] disabled:opacity-50 cursor-pointer"
               >
                 <option value="days" className="bg-[#090D14] text-[#DFE2F1]">Days</option>
                 <option value="hours" className="bg-[#090D14] text-[#DFE2F1]">Hours</option>
@@ -423,7 +423,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               onChange={(e) => handleFieldChange('salt', e.target.value)}
               disabled={readOnly}
               placeholder="e.g. salt-welcome-v1"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
             />
           </div>
         </div>
@@ -431,7 +431,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         {/* Allocation Summary & Validator Banner */}
         <div
           data-testid="allocation-total"
-          className={`glass-panel p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all ${
+          className={`glass-panel p-4 rounded-none border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all ${
             isAllocationValid
               ? 'border-[#10b981]/40 bg-[#10b981]/10 status-strip-emerald'
               : 'border-[#f43f5e]/40 bg-[#f43f5e]/10 status-strip-rose'
@@ -448,7 +448,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
             </div>
           </div>
           <div
-            className={`px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-wider border shadow-sm shrink-0 ${
+            className={`px-3 py-1 rounded-none text-xs font-bold font-mono uppercase tracking-wider border shadow-sm shrink-0 ${
               isAllocationValid
                 ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
                 : 'bg-[#f43f5e]/20 text-[#ffb4ab] border-[#f43f5e]/40 animate-pulse'
@@ -470,7 +470,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               data-testid="add-variant-btn"
               onClick={handleAddVariant}
               disabled={readOnly || formState.variants.length >= 5}
-              className="px-3.5 py-1.5 rounded-xl border border-[#313540] hover:border-[#6366F1] bg-[#171b26] hover:bg-[#262a35] text-[#c0c1ff] font-semibold text-xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              className="px-3.5 py-1.5 rounded-none border border-[#313540] hover:border-[#6366F1] bg-[#171b26] hover:bg-[#262a35] text-[#c0c1ff] font-semibold text-xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             >
               + Add Variant
             </button>
@@ -484,7 +484,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                 <div
                   key={variant.key || `var-idx-${index}`}
                   data-testid={`variant-row-${variant.key}`}
-                  className={`glass-panel p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-12 gap-3 items-center shadow-md transition-all ${
+                  className={`glass-panel p-4 rounded-none border grid grid-cols-1 sm:grid-cols-12 gap-3 items-center shadow-md transition-all ${
                     variant.is_control
                       ? 'border-[#ddb7ff]/40 bg-[#ddb7ff]/10'
                       : 'border-[#1F2937] bg-[#171b26] hover:border-[#313540]'
@@ -501,7 +501,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       value={variant.key}
                       onChange={(e) => handleVariantChange(index, 'key', e.target.value)}
                       disabled={readOnly}
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#ddb7ff] font-mono text-xs font-semibold focus:outline-none focus:border-[#6366F1] box-border"
+                      className="w-full px-3 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#ddb7ff] font-mono text-xs font-semibold focus:outline-none focus:border-[#6366F1] box-border"
                     />
                   </div>
 
@@ -516,7 +516,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       value={variant.name}
                       onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
                       disabled={readOnly}
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
+                      className="w-full px-3 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                     />
                   </div>
 
@@ -535,7 +535,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                         value={weightPercentage}
                         onChange={(e) => handleVariantChange(index, 'weight_basis_points', e.target.value)}
                         disabled={readOnly}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs font-bold focus:outline-none focus:border-[#6366F1] box-border"
+                        className="w-full px-2.5 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs font-bold focus:outline-none focus:border-[#6366F1] box-border"
                       />
                       <span className="text-xs text-[#908fa0] font-mono font-bold">%</span>
                     </div>
@@ -571,7 +571,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       aria-label={`Remove Variant ${variant.key}`}
                       onClick={() => handleRemoveVariant(index)}
                       disabled={readOnly || formState.variants.length <= 2}
-                      className="p-1.5 rounded-lg border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      className="p-1.5 rounded-none border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
@@ -593,7 +593,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               type="button"
               onClick={handleAddMetric}
               disabled={readOnly}
-              className="px-3.5 py-1.5 rounded-xl border border-[#313540] hover:border-[#6366F1] bg-[#171b26] hover:bg-[#262a35] text-[#c0c1ff] font-semibold text-xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              className="px-3.5 py-1.5 rounded-none border border-[#313540] hover:border-[#6366F1] bg-[#171b26] hover:bg-[#262a35] text-[#c0c1ff] font-semibold text-xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             >
               + Add Metric
             </button>
@@ -603,7 +603,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
             {formState.metrics.map((metric, index) => (
               <div
                 key={metric.key || `metric-${index}`}
-                className="glass-panel p-3.5 rounded-xl border border-[#1F2937] bg-[#171b26] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center shadow-md"
+                className="glass-panel p-3.5 rounded-none border border-[#1F2937] bg-[#171b26] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center shadow-md"
               >
                 <div className="sm:col-span-3">
                   <label htmlFor={`metric-key-${index}`} className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
@@ -616,7 +616,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     value={metric.key}
                     onChange={(e) => handleMetricChange(index, 'key', e.target.value)}
                     disabled={readOnly}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
+                    className="w-full px-3 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                   />
                 </div>
 
@@ -631,7 +631,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     value={metric.name}
                     onChange={(e) => handleMetricChange(index, 'name', e.target.value)}
                     disabled={readOnly}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
+                    className="w-full px-3 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                   />
                 </div>
 
@@ -646,7 +646,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     value={metric.event_type}
                     onChange={(e) => handleMetricChange(index, 'event_type', e.target.value)}
                     disabled={readOnly}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
+                    className="w-full px-3 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                   />
                 </div>
 
@@ -662,7 +662,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       handleMetricChange(index, 'type', e.target.value as 'conversion' | 'sum' | 'mean')
                     }
                     disabled={readOnly}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] cursor-pointer"
+                    className="w-full px-2.5 py-1.5 rounded-none bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] cursor-pointer"
                   >
                     <option value="conversion" className="bg-[#090D14] text-[#dfe2f1]">conversion</option>
                     <option value="sum" className="bg-[#090D14] text-[#dfe2f1]">sum</option>
@@ -676,7 +676,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     aria-label={`Remove Metric ${metric.key}`}
                     onClick={() => handleRemoveMetric(index)}
                     disabled={readOnly || formState.metrics.length <= 1}
-                    className="p-1.5 rounded-lg border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1.5 rounded-none border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">close</span>
                   </button>
@@ -690,7 +690,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         {!isValid && (
           <div
             data-testid="allocation-error"
-            className="glass-panel p-4 rounded-xl border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] text-xs space-y-1.5 status-strip-rose shadow-md"
+            className="glass-panel p-4 rounded-none border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] text-xs space-y-1.5 status-strip-rose shadow-md"
           >
             <div className="font-bold text-white font-['Outfit']">
               Validation Issues (Save Blocked):
@@ -709,7 +709,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2.5 rounded-xl border border-[#464554] hover:bg-[#262a35] text-[#c7c4d7] hover:text-white font-medium text-sm transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-none border border-[#464554] hover:bg-[#262a35] text-[#c7c4d7] hover:text-white font-medium text-sm transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -719,7 +719,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
             type="submit"
             data-testid="save-experiment-btn"
             disabled={!isValid || readOnly}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8b5cf6] hover:opacity-90 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 border border-[#8083ff]/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            className="px-6 py-2.5 rounded-none bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-sm shadow-md border border-[#8083ff]/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
             Save Experiment
           </button>

@@ -361,6 +361,9 @@ code, pre, .font-mono {
 .bg-\[\#262a35\] { background-color: #262a35; }
 .bg-\[\#11141d\] { background-color: #11141d; }
 
+.bg-\[\#6366F1\] { background-color: #6366F1 !important; }
+.bg-\[\#4F46E5\] { background-color: #4F46E5 !important; }
+.bg-transparent { background-color: transparent !important; }
 /* Obsidian Purple/Lavender Palette */
 .bg-\[\#b76dff\] { background-color: #b76dff; }
 .bg-\[\#b76dff\]\/20 { background-color: rgba(183, 109, 255, 0.2); }
@@ -409,6 +412,10 @@ code, pre, .font-mono {
 .border-\[\#c0c1ff\]\/30 { border-color: rgba(192, 193, 255, 0.3); }
 .border-\[\#c0c1ff\]\/20 { border-color: rgba(192, 193, 255, 0.2); }
 
+.border-\[\#1F2937\] { border-color: #1F2937 !important; }
+.border-\[\#313540\] { border-color: #313540 !important; }
+.border-\[\#6366F1\] { border-color: #6366F1 !important; }
+.border-\[\#8083ff\] { border-color: #8083ff !important; }
 .border-indigo-500\/40 { border-color: rgba(99, 102, 241, 0.4); }
 .border-indigo-500\/30 { border-color: rgba(99, 102, 241, 0.3); }
 .border-indigo-500\/20 { border-color: rgba(99, 102, 241, 0.2); }

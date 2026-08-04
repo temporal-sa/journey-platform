@@ -127,7 +127,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
     <div
       data-testid="experiment-report-view"
       aria-label="Experiment Analytics Report Dashboard"
-      className="p-6 lg:p-8 bg-[#0F131D]/95 backdrop-blur-xl rounded-2xl border border-[#1F2937] text-[#DFE2F1] font-['Outfit',sans-serif] shadow-2xl space-y-6"
+      className="p-6 lg:p-8 bg-[#0B0F19] text-[#DFE2F1] font-['Outfit',sans-serif] space-y-6 w-full max-w-full min-h-screen"
     >
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1F2937] pb-5">
@@ -139,9 +139,9 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
             </h2>
             <span
               data-testid="data-freshness-indicator"
-              className="text-[11px] font-mono font-medium px-3 py-1 rounded-full bg-[#6366F1]/10 text-[#c0c1ff] border border-[#6366F1]/30 flex items-center gap-1.5 shadow-sm"
+              className="text-[11px] font-mono font-medium px-3 py-1 rounded-none bg-[#6366F1]/10 text-[#c0c1ff] border border-[#6366F1]/30 flex items-center gap-1.5 shadow-sm"
             >
-              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="w-2 h-2 rounded-none bg-[#10b981] animate-pulse" />
               Fresh ({formatFreshness(mergedReport.data_freshness_seconds)})
             </span>
           </div>
@@ -156,16 +156,16 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
           {/* Raw vs Filtered Indicator / Toggle */}
           <div
             data-testid="raw-vs-filtered-toggle"
-            className="flex items-center bg-[#171b26] p-1 rounded-xl border border-[#313540] text-xs shadow-inner"
+            className="flex items-center bg-[#0a0e18] p-1 rounded-none border border-[#1F2937] text-xs shadow-inner"
           >
             <button
               type="button"
               data-testid="filtered-view-btn"
               onClick={() => setIsFiltered(true)}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-4 py-2 rounded-none text-xs font-semibold transition-all ${
                 isFiltered
-                  ? 'bg-[#6366F1] text-white shadow-md font-semibold'
-                  : 'text-[#c7c4d7] hover:text-white'
+                  ? 'bg-[#171b26] text-[#c0c1ff] border border-[#6366F1] shadow-sm'
+                  : 'bg-transparent text-[#908fa0] hover:text-[#dfe2f1] hover:bg-[#171b26]/50 border border-transparent'
               }`}
             >
               Filtered Data
@@ -174,10 +174,10 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
               type="button"
               data-testid="raw-view-btn"
               onClick={() => setIsFiltered(false)}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-4 py-2 rounded-none text-xs font-semibold transition-all ${
                 !isFiltered
-                  ? 'bg-[#353944] text-white shadow-md font-semibold'
-                  : 'text-[#c7c4d7] hover:text-white'
+                  ? 'bg-[#171b26] text-[#c0c1ff] border border-[#6366F1] shadow-sm'
+                  : 'bg-transparent text-[#908fa0] hover:text-[#dfe2f1] hover:bg-[#171b26]/50 border border-transparent'
               }`}
             >
               Raw Dataset
@@ -188,7 +188,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
             <button
               type="button"
               onClick={onRefresh}
-              className="px-3.5 py-2 rounded-xl bg-[#171b26] hover:bg-[#262a35] text-[#dfe2f1] border border-[#313540] font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="px-4 py-2 rounded-none bg-[#171b26] hover:bg-[#262a35] text-[#dfe2f1] border border-[#313540] font-semibold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <span className="material-symbols-outlined text-sm text-[#4cd7f6]">refresh</span>
               <span>Refresh</span>
@@ -199,7 +199,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
             type="button"
             onClick={handleExportCSV}
             data-testid="export-csv-btn"
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8b5cf6] hover:opacity-90 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 border border-[#8083ff]/30 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 rounded-none bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs border border-[#8083ff] transition-colors flex items-center gap-2 cursor-pointer shadow-md"
           >
             <span className="material-symbols-outlined text-sm">download</span>
             <span>Export CSV</span>
@@ -210,7 +210,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
       {/* Privacy Callout Banner */}
       <div
         data-testid="privacy-indicator"
-        className="glass-panel p-4 rounded-xl border border-[#03b5d3]/30 bg-[#03b5d3]/10 text-[#dfe2f1] text-xs flex items-center gap-3 shadow-md"
+        className="glass-panel p-4 rounded-none border border-[#03b5d3]/30 bg-[#03b5d3]/10 text-[#dfe2f1] text-xs flex items-center gap-3 shadow-md"
       >
         <span className="material-symbols-outlined text-[#4cd7f6] text-lg shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
           lock
@@ -223,7 +223,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
       {/* Sample Ratio Mismatch (SRM) Status Card */}
       <div
         data-testid="srm-status-card"
-        className={`glass-panel p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all ${
+        className={`glass-panel p-4 rounded-none border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all ${
           isSrmPassed
             ? 'border-[#10b981]/40 bg-[#10b981]/10 status-strip-emerald'
             : 'border-[#f43f5e]/40 bg-[#f43f5e]/10 status-strip-rose'
@@ -243,7 +243,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
               </span>
               <span
                 data-testid="srm-status-badge"
-                className={`text-[10px] font-bold font-mono px-3 py-1 rounded-full uppercase tracking-wider border shadow-sm ${
+                className={`text-[10px] font-bold font-mono px-3 py-1 rounded-none uppercase tracking-wider border shadow-sm ${
                   isSrmPassed
                     ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
                     : 'bg-[#f43f5e]/20 text-[#ffb4ab] border-[#f43f5e]/40'
@@ -260,7 +260,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
 
         {mergedReport.srm_p_value !== undefined && (
           <div className="text-xs font-mono text-[#c7c4d7] shrink-0 sm:text-right">
-            p-value: <code className="font-bold text-white bg-[#171b26] px-2.5 py-1 rounded-md border border-[#313540]">{mergedReport.srm_p_value.toFixed(4)}</code>
+            p-value: <code className="font-bold text-white bg-[#171b26] px-2.5 py-1 rounded-none border border-[#313540]">{mergedReport.srm_p_value.toFixed(4)}</code>
           </div>
         )}
       </div>
@@ -291,9 +291,9 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
         />
       </div>
 
-      {/* Aggregate Breakdown Table */}
-      <div className="glass-panel rounded-2xl border border-[#1F2937] shadow-xl overflow-hidden bg-[#171b26]/90">
-        <div className="px-6 py-4 border-b border-[#1F2937] flex justify-between items-center bg-[#0a0e18]/80">
+      {/* Aggregate Breakdown Table Container */}
+      <div className="glass-panel rounded-none border border-[#1F2937] shadow-xl overflow-hidden bg-[#171b26]/90 p-6 mt-6 mb-6">
+        <div className="px-2 pb-4 mb-4 border-b border-[#1F2937] flex justify-between items-center bg-transparent">
           <h3 className="font-['Outfit'] font-bold text-sm text-white flex items-center gap-2">
             <span className="material-symbols-outlined text-[#4cd7f6] text-base">table_chart</span>
             <span>Variant Performance Breakdown ({isFiltered ? 'Filtered Data' : 'Raw Dataset'})</span>
@@ -310,18 +310,18 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
           >
             <thead>
               <tr className="bg-[#0a0e18] border-b border-[#1F2937] text-[#908fa0] font-mono uppercase tracking-wider text-[10px]">
-                <th className="p-3.5 font-semibold">Variant</th>
-                <th className="p-3.5 font-semibold">Assigned</th>
-                <th className="p-3.5 font-semibold">Exposed</th>
-                <th className="p-3.5 font-semibold">Attempted</th>
-                <th className="p-3.5 font-semibold">Accepted</th>
-                <th className="p-3.5 font-semibold">Delivered</th>
-                <th className="p-3.5 font-semibold">Unique Opens</th>
-                <th className="p-3.5 font-semibold">Unique Clicks</th>
-                <th className="p-3.5 font-semibold">Conversions</th>
-                <th className="p-3.5 font-semibold">Conv Rate</th>
-                <th className="p-3.5 font-semibold">Lift %</th>
-                <th className="p-3.5 font-semibold">95% CI</th>
+                <th className="px-6 py-4 font-semibold text-left">Variant</th>
+                <th className="px-6 py-4 font-semibold text-left">Assigned</th>
+                <th className="px-6 py-4 font-semibold text-left">Exposed</th>
+                <th className="px-6 py-4 font-semibold text-left">Attempted</th>
+                <th className="px-6 py-4 font-semibold text-left">Accepted</th>
+                <th className="px-6 py-4 font-semibold text-left">Delivered</th>
+                <th className="px-6 py-4 font-semibold text-left">Unique Opens</th>
+                <th className="px-6 py-4 font-semibold text-left">Unique Clicks</th>
+                <th className="px-6 py-4 font-semibold text-left">Conversions</th>
+                <th className="px-6 py-4 font-semibold text-left">Conv Rate</th>
+                <th className="px-6 py-4 font-semibold text-left">Lift %</th>
+                <th className="px-6 py-4 font-semibold text-left">95% CI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1F2937]/60 font-mono text-[#dfe2f1]">
@@ -338,30 +338,30 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
                       v.is_control ? 'bg-[#ddb7ff]/5 hover:bg-[#ddb7ff]/10' : ''
                     }`}
                   >
-                    <td className="p-3.5">
+                    <td className="px-6 py-4">
                       <div className="font-semibold text-white font-['Outfit'] text-xs flex items-center gap-2">
                         <div
-                          className={`w-2 h-2 rounded-full ${
+                          className={`w-2 h-2 rounded-none ${
                             v.is_control ? 'bg-[#c7c4d7]' : 'bg-[#ddb7ff]'
                           }`}
                         />
                         <span>{v.variant_name}</span>
                       </div>
-                      <div className="text-[10px] text-[#908fa0] mt-0.5 font-mono">
+                      <div className="text-[10px] text-[#908fa0] mt-1 font-mono">
                         Key: <code className="text-[#ddb7ff] font-medium">{v.variant_key}</code>{' '}
                         {v.is_control && <span className="text-[#ddb7ff] font-semibold">(Control)</span>}
                       </div>
                     </td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.assigned.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.exposed.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.attempted.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.accepted.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.delivered.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.unique_open.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.unique_click.toLocaleString()}</td>
-                    <td className="p-3.5 text-[#dfe2f1]">{v.conversion.toLocaleString()}</td>
-                    <td className="p-3.5 font-bold text-white font-mono">{convRatePct}%</td>
-                    <td className="p-3.5">
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.assigned.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.exposed.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.attempted.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.accepted.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.delivered.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.unique_open.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.unique_click.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-[#dfe2f1]">{v.conversion.toLocaleString()}</td>
+                    <td className="px-6 py-4 font-bold text-white font-mono">{convRatePct}%</td>
+                    <td className="px-6 py-4">
                       {v.is_control ? (
                         <span className="text-[#908fa0] font-semibold font-mono text-[11px]">Baseline</span>
                       ) : (
@@ -375,8 +375,8 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="p-3.5 text-[11px]">
-                      <span className="font-mono text-[#c7c4d7] bg-[#0a0e18] px-2 py-0.5 rounded border border-[#313540]">
+                    <td className="px-6 py-4 text-[11px]">
+                      <span className="font-mono text-[#c7c4d7] bg-[#0a0e18] px-2.5 py-1 rounded-none border border-[#313540]">
                         {`[${ciLower}%, ${ciUpper}%]`}
                       </span>
                     </td>
@@ -408,7 +408,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
 }) => (
   <div
     data-testid={testId}
-    className="glass-panel p-4 rounded-xl border border-[#1F2937] bg-[#171b26]/90 hover:bg-[#262a35]/60 transition-all flex flex-col justify-between shadow-lg group"
+    className="glass-panel p-4 rounded-none border border-[#1F2937] bg-[#171b26]/90 hover:bg-[#262a35]/60 transition-all flex flex-col justify-between shadow-lg group"
   >
     <div className="text-[10px] font-bold uppercase tracking-wider text-[#908fa0] font-['Inter'] group-hover:text-[#c7c4d7] transition-colors">
       {label}
