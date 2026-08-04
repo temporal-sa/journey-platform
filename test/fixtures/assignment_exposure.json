@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "assignment_id": "asg-999",
+  "experiment_id": "exp-onboarding-v2",
+  "variant_id": "var-treatment",
+  "subject_id": "usr-9999",
+  "assigned_at": "2026-07-27T14:01:00Z",
+  "exposed_at": "2026-07-27T14:02:00Z",
+  "weight_basis_points": 5000,
+  "data_classification": "NonPII",
+  "context": {
+    "device": "mobile",
+    "region": "US"
+  }
+}

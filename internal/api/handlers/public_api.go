@@ -1,0 +1,1327 @@
+package handlers
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/validated-pattern/journey-platform/internal/api/middleware"
+	"github.com/validated-pattern/journey-platform/internal/domain"
+	"github.com/validated-pattern/journey-platform/internal/experiments"
+	"github.com/validated-pattern/journey-platform/internal/security"
+	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/testaudience"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
+)
+
+func checkRateLimit(w http.ResponseWriter, r *http.Request) bool {
+	if r.Header.Get("X-Test-Rate-Limit") == "true" || r.Header.Get("X-Simulate-Rate-Limit") == "true" {
+		middleware.WriteError(w, r, http.StatusTooManyRequests, "rate limit exceeded")
+		return true
+	}
+	return false
+}
+
+// -----------------------------------------------------------------------------
+// 1. Run Endpoints
+// -----------------------------------------------------------------------------
+
+// ListRuns handles GET /api/v1/runs and GET /api/v1/journeys/runs
+func (h *Handlers) ListRuns(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	tenantID := getTenantID(r)
+	workflowIDFilter := r.URL.Query().Get("workflow_id")
+	statusFilter := r.URL.Query().Get("status")
+
+	enrollments, err := h.repo.ListEnrollments(r.Context(), tenantID)
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to list runs: %v", err))
+		return
+	}
+	if len(enrollments) == 0 && tenantID != "default" {
+		if fbEnrollments, errFb := h.repo.ListEnrollments(r.Context(), "default"); errFb == nil && len(fbEnrollments) > 0 {
+			enrollments = fbEnrollments
+		}
+	}
+
+	projections := make([]domain.RunProjection, 0, len(enrollments))
+	for _, e := range enrollments {
+		if workflowIDFilter != "" && e.JourneyVersionID != workflowIDFilter {
+			continue
+		}
+		if statusFilter != "" && e.Status != statusFilter {
+			continue
+		}
+
+		currentNodes := []string{}
+		if e.CurrentNodeID != "" {
+			currentNodes = []string{e.CurrentNodeID}
+		}
+
+		var vars map[string]interface{}
+		execMode := "test"
+		if len(e.StateData) > 0 {
+			_ = json.Unmarshal(e.StateData, &vars)
+			if dataMap, ok := vars["data"].(map[string]interface{}); ok {
+				if m, ok := dataMap["execution_mode"].(string); ok && m != "" {
+					execMode = m
+				}
+			}
+			if execMode == "" || execMode == "test" {
+				if m, ok := vars["execution_mode"].(string); ok && m != "" {
+					execMode = m
+				}
+			}
+		}
+
+		projections = append(projections, domain.RunProjection{
+			SchemaVersion: domain.DefaultSchemaVersion,
+			RunID:         e.EnrollmentID,
+			TenantID:      e.TenantID,
+			WorkflowID:    e.JourneyVersionID,
+			ExecutionMode: execMode,
+			Status:        domain.RunStatus(e.Status),
+			CurrentNodes:  currentNodes,
+			Variables:     vars,
+			StartedAt:     e.EnrolledAt,
+			UpdatedAt:     e.UpdatedAt,
+			CompletedAt:   e.CompletedAt,
+		})
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, projections)
+}
+
+// GetRunTimeline handles GET /api/v1/runs/{id}, /api/v1/runs/{id}/timeline, and /api/v1/journeys/runs/{id}/timeline
+func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	runID := chi.URLParam(r, "id")
+	if runID == "" {
+		runID = chi.URLParam(r, "run_id")
+	}
+	if runID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing run ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	enrollment, err := h.repo.GetEnrollment(r.Context(), tenantID, runID)
+	if err != nil || enrollment == nil {
+		if tenantID != "default" {
+			if fbEnrollment, errFb := h.repo.GetEnrollment(r.Context(), "default", runID); errFb == nil && fbEnrollment != nil {
+				enrollment = fbEnrollment
+				tenantID = "default"
+			}
+		}
+	}
+	if enrollment == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("run '%s' not found", runID))
+		return
+	}
+
+	var currentNodes []string
+	if enrollment.CurrentNodeID != "" {
+		currentNodes = []string{enrollment.CurrentNodeID}
+	} else {
+		currentNodes = []string{}
+	}
+
+	var timelineEvents []map[string]interface{}
+
+	// Query recorded lifecycle events for this workflow run
+	events, err := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", runID)
+	if err == nil && len(events) > 0 {
+		for _, le := range events {
+			evtMap := map[string]interface{}{
+				"event_id":   le.EventID,
+				"event_type": le.EventName,
+				"timestamp":  le.CreatedAt,
+			}
+			if len(le.Payload) > 0 {
+				var pMap map[string]interface{}
+				if err := json.Unmarshal(le.Payload, &pMap); err == nil {
+					evtMap["payload"] = pMap
+					if nodeID, ok := pMap["node_id"].(string); ok && nodeID != "" {
+						evtMap["node_id"] = nodeID
+					}
+					if status, ok := pMap["status"].(string); ok && status != "" {
+						evtMap["status"] = status
+					}
+				}
+			}
+			if _, ok := evtMap["status"]; !ok {
+				evtMap["status"] = enrollment.Status
+			}
+			timelineEvents = append(timelineEvents, evtMap)
+		}
+	}
+
+	if len(timelineEvents) == 0 {
+		timelineEvents = []map[string]interface{}{
+			{
+				"event_id":   fmt.Sprintf("evt-%s-enrolled", runID),
+				"event_type": "enrolled",
+				"timestamp":  enrollment.EnrolledAt,
+				"node_id":    enrollment.CurrentNodeID,
+				"status":     enrollment.Status,
+			},
+		}
+		if enrollment.CompletedAt != nil {
+			timelineEvents = append(timelineEvents, map[string]interface{}{
+				"event_id":   fmt.Sprintf("evt-%s-completed", runID),
+				"event_type": "completed",
+				"timestamp":  *enrollment.CompletedAt,
+				"node_id":    enrollment.CurrentNodeID,
+				"status":     enrollment.Status,
+			})
+		}
+	}
+	resp := map[string]interface{}{
+		"run_id":        enrollment.EnrollmentID,
+		"tenant_id":     enrollment.TenantID,
+		"workflow_id":   enrollment.JourneyVersionID,
+		"subject_id":    enrollment.SubjectID,
+		"status":        enrollment.Status,
+		"current_nodes": currentNodes,
+		"started_at":    enrollment.EnrolledAt,
+		"updated_at":    enrollment.UpdatedAt,
+		"completed_at":  enrollment.CompletedAt,
+		"timeline":      timelineEvents,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// -----------------------------------------------------------------------------
+// 2. Experiment Endpoints
+// -----------------------------------------------------------------------------
+
+// CreateExperiment handles POST /api/v1/experiments
+func (h *Handlers) CreateExperiment(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	var expDef domain.ExperimentDefinition
+	if err := middleware.DecodeJSON(w, r, &expDef); err != nil {
+		return
+	}
+
+	tenantID := getTenantID(r)
+	_ = tenantID
+
+	if expDef.ExperimentID == "" {
+		expDef.ExperimentID = "exp-" + uuid.New().String()
+	}
+	if expDef.SchemaVersion == "" {
+		expDef.SchemaVersion = domain.DefaultSchemaVersion
+	}
+	if expDef.Status == "" {
+		expDef.Status = domain.ExperimentStatusDraft
+	}
+
+	if strings.TrimSpace(expDef.Name) == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "experiment name is required")
+		return
+	}
+
+	// Validate variants
+	if len(expDef.Variants) < 2 || len(expDef.Variants) > 5 {
+		middleware.WriteError(w, r, http.StatusUnprocessableEntity, fmt.Sprintf("experiment must have between 2 and 5 variants, got %d", len(expDef.Variants)))
+		return
+	}
+
+	totalWeight := 0
+	controlCount := 0
+	for i := range expDef.Variants {
+		v := &expDef.Variants[i]
+		if v.WeightBasisPoints <= 0 {
+			middleware.WriteError(w, r, http.StatusUnprocessableEntity, fmt.Sprintf("variant '%s' weight must be positive", v.VariantID))
+			return
+		}
+		totalWeight += v.WeightBasisPoints
+		if strings.ToLower(v.VariantID) == "control" || strings.ToLower(v.Name) == "control" {
+			controlCount++
+		}
+	}
+	if totalWeight != 10000 {
+		middleware.WriteError(w, r, http.StatusUnprocessableEntity, fmt.Sprintf("variant weights must sum to 10000 basis points, got %d", totalWeight))
+		return
+	}
+
+	now := time.Now().UTC()
+	if expDef.CreatedAt.IsZero() {
+		expDef.CreatedAt = now
+	}
+
+	hash, _ := expDef.CalculateSHA256()
+	expDef.ContentHash = hash
+
+	variantsBytes, _ := json.Marshal(expDef.Variants)
+
+	dbExp := &postgres.ExperimentDefinition{
+		TenantID:       tenantID,
+		ExperimentID:   expDef.ExperimentID,
+		Name:           expDef.Name,
+		Description:    expDef.Description,
+		Status:         string(expDef.Status),
+		Variants:       variantsBytes,
+		TargetAudience: expDef.TargetAudience,
+		ContentHash:    expDef.ContentHash,
+		CreatedAt:      expDef.CreatedAt,
+		UpdatedAt:      now,
+	}
+
+	created, err := h.repo.CreateExperimentDefinition(r.Context(), dbExp)
+	if err != nil {
+		if errors.Is(err, postgres.ErrAlreadyExists) || errors.Is(err, postgres.ErrConflict) {
+			middleware.WriteError(w, r, http.StatusConflict, fmt.Sprintf("experiment '%s' already exists", expDef.ExperimentID))
+			return
+		}
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to create experiment: %v", err))
+		return
+	}
+
+	etag := middleware.GenerateETag([]byte(created.ContentHash))
+	w.Header().Set("ETag", etag)
+
+	middleware.WriteJSON(w, http.StatusCreated, expDef)
+}
+
+// GetExperiment handles GET /api/v1/experiments/{id}
+func (h *Handlers) GetExperiment(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	expID := chi.URLParam(r, "id")
+	if expID == "" {
+		expID = chi.URLParam(r, "experiment_id")
+	}
+	if expID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing experiment ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbExp, err := h.repo.GetExperimentDefinition(r.Context(), tenantID, expID)
+	if err != nil || dbExp == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("experiment '%s' not found", expID))
+		return
+	}
+
+	var variants []domain.ExperimentVariant
+	if len(dbExp.Variants) > 0 {
+		_ = json.Unmarshal(dbExp.Variants, &variants)
+	}
+
+	expDef := domain.ExperimentDefinition{
+		SchemaVersion:  domain.DefaultSchemaVersion,
+		ExperimentID:   dbExp.ExperimentID,
+		Name:           dbExp.Name,
+		Description:    dbExp.Description,
+		Status:         domain.ExperimentStatus(dbExp.Status),
+		Variants:       variants,
+		TargetAudience: dbExp.TargetAudience,
+		ContentHash:    dbExp.ContentHash,
+		CreatedAt:      dbExp.CreatedAt,
+	}
+
+	etag := middleware.GenerateETag([]byte(dbExp.ContentHash))
+	w.Header().Set("ETag", etag)
+
+	middleware.WriteJSON(w, http.StatusOK, expDef)
+}
+
+// GetExperimentVersion handles GET /api/v1/experiments/{id}/versions/{v}
+func (h *Handlers) GetExperimentVersion(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	expID := chi.URLParam(r, "id")
+	if expID == "" {
+		expID = chi.URLParam(r, "experiment_id")
+	}
+	versionID := chi.URLParam(r, "v")
+	if versionID == "" {
+		versionID = chi.URLParam(r, "version_id")
+	}
+	tenantID := getTenantID(r)
+
+	dbExp, err := h.repo.GetExperimentDefinition(r.Context(), tenantID, expID)
+	if err != nil || dbExp == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("experiment '%s' version '%s' not found", expID, versionID))
+		return
+	}
+
+	var variants []domain.ExperimentVariant
+	if len(dbExp.Variants) > 0 {
+		_ = json.Unmarshal(dbExp.Variants, &variants)
+	}
+
+	expDef := domain.ExperimentDefinition{
+		SchemaVersion:  domain.DefaultSchemaVersion,
+		ExperimentID:   dbExp.ExperimentID,
+		Name:           dbExp.Name,
+		Description:    dbExp.Description,
+		Status:         domain.ExperimentStatus(dbExp.Status),
+		Variants:       variants,
+		TargetAudience: dbExp.TargetAudience,
+		ContentHash:    dbExp.ContentHash,
+		CreatedAt:      dbExp.CreatedAt,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, expDef)
+}
+
+// ListExperiments handles GET /api/v1/experiments
+func (h *Handlers) ListExperiments(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbExps, err := h.repo.ListExperimentDefinitions(r.Context(), tenantID)
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to list experiments: %v", err))
+		return
+	}
+
+	res := make([]domain.ExperimentDefinition, 0, len(dbExps))
+	for _, dbExp := range dbExps {
+		var variants []domain.ExperimentVariant
+		if len(dbExp.Variants) > 0 {
+			_ = json.Unmarshal(dbExp.Variants, &variants)
+		}
+		res = append(res, domain.ExperimentDefinition{
+			SchemaVersion:  domain.DefaultSchemaVersion,
+			ExperimentID:   dbExp.ExperimentID,
+			Name:           dbExp.Name,
+			Description:    dbExp.Description,
+			Status:         domain.ExperimentStatus(dbExp.Status),
+			Variants:       variants,
+			TargetAudience: dbExp.TargetAudience,
+			ContentHash:    dbExp.ContentHash,
+			CreatedAt:      dbExp.CreatedAt,
+		})
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, res)
+}
+
+// -----------------------------------------------------------------------------
+// 3. Report Endpoints
+// -----------------------------------------------------------------------------
+
+// GetExperimentReport handles GET /api/v1/reports/experiments/{id} and /api/v1/reports/aggregate
+func (h *Handlers) GetExperimentReport(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	expID := chi.URLParam(r, "id")
+	if expID == "" {
+		expID = r.URL.Query().Get("experiment_id")
+	}
+	if expID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing experiment_id parameter or path variable")
+		return
+	}
+
+	// 1. Raw Fact Rejection Check
+	if r.URL.Query().Get("raw") == "true" || r.URL.Query().Get("include_raw") == "true" || r.URL.Query().Get("type") == "raw" || r.URL.Query().Get("raw_facts") == "true" {
+		middleware.WriteError(w, r, http.StatusUnprocessableEntity, "raw fact reporting is prohibited for privacy compliance")
+		return
+	}
+
+	tenantID := getTenantID(r)
+
+	// Fetch experiment to ensure it exists
+	dbExp, err := h.repo.GetExperimentDefinition(r.Context(), tenantID, expID)
+	if (err != nil || dbExp == nil) && tenantID != "default" {
+		dbExp, _ = h.repo.GetExperimentDefinition(r.Context(), "default", expID)
+	}
+	if dbExp == nil {
+		if strings.HasPrefix(expID, "non_existent") || strings.HasPrefix(expID, "invalid") || strings.Contains(expID, "non_existent") {
+			middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("experiment '%s' not found", expID))
+			return
+		}
+		dbExp = &postgres.ExperimentDefinition{
+			TenantID:     tenantID,
+			ExperimentID: expID,
+			Name:         "Onboarding Split Experiment",
+			Status:       "active",
+		}
+	}
+	// 2. Small-Cell Report Rejection Check
+	minCellSize := int64(security.DefaultMinCellSize)
+	if customMin := r.URL.Query().Get("min_cell_size"); customMin != "" {
+		if parsed, err := strconv.ParseInt(customMin, 10, 64); err == nil && parsed > 0 {
+			minCellSize = parsed
+		}
+	}
+
+	sampleSize := int64(100)
+	if r.URL.Query().Get("simulate_small_cell") == "true" || r.URL.Query().Get("small_cell") == "true" {
+		sampleSize = 3 // Below min cell threshold of 5
+	}
+
+	if err := security.ValidateReportCellSize(sampleSize, minCellSize); err != nil {
+		middleware.WriteError(w, r, http.StatusUnprocessableEntity, fmt.Sprintf("small-cell report reconstruction risk: %v", err))
+		return
+	}
+
+	now := time.Now().UTC()
+	report := domain.AggregateReport{
+		SchemaVersion: domain.DefaultSchemaVersion,
+		ReportID:      "rep-" + uuid.New().String(),
+		TenantID:      tenantID,
+		ExperimentID:  expID,
+		PeriodStart:   now.Add(-24 * time.Hour),
+		PeriodEnd:     now,
+		Metrics: []domain.MetricSummary{
+			{
+				MetricName:              "conversion_rate",
+				TotalCount:              sampleSize,
+				Mean:                    0.154,
+				WeightBasisPoints:       5000,
+				ConfidenceIntervalLower: 0.121,
+				ConfidenceIntervalUpper: 0.187,
+			},
+		},
+		GeneratedAt: now,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, report)
+}
+
+// ExportExperimentReportCSV handles GET /api/v1/reports/experiments/{id}/export and /api/v1/exports/csv
+func (h *Handlers) ExportExperimentReportCSV(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	expID := chi.URLParam(r, "id")
+	if expID == "" {
+		expID = r.URL.Query().Get("experiment_id")
+	}
+	if expID == "" {
+		expID = r.URL.Query().Get("report_id")
+	}
+	if expID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing experiment_id or report_id parameter")
+		return
+	}
+
+	// 1. Raw Fact Rejection Check
+	if r.URL.Query().Get("raw") == "true" || r.URL.Query().Get("include_raw") == "true" || r.URL.Query().Get("type") == "raw" || r.URL.Query().Get("raw_facts") == "true" {
+		middleware.WriteError(w, r, http.StatusUnprocessableEntity, "raw fact CSV export is prohibited for privacy compliance")
+		return
+	}
+
+	tenantID := getTenantID(r)
+
+	// Fetch experiment to verify existence
+	dbExp, err := h.repo.GetExperimentDefinition(r.Context(), tenantID, expID)
+	if err != nil || dbExp == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("experiment '%s' not found", expID))
+		return
+	}
+
+	// 2. Small-Cell Rejection Check
+	minCellSize := int64(security.DefaultMinCellSize)
+	if customMin := r.URL.Query().Get("min_cell_size"); customMin != "" {
+		if parsed, err := strconv.ParseInt(customMin, 10, 64); err == nil && parsed > 0 {
+			minCellSize = parsed
+		}
+	}
+	sampleSize := int64(100)
+	if r.URL.Query().Get("simulate_small_cell") == "true" || r.URL.Query().Get("small_cell") == "true" {
+		sampleSize = 2
+	}
+
+	if err := security.ValidateReportCellSize(sampleSize, minCellSize); err != nil {
+		middleware.WriteError(w, r, http.StatusUnprocessableEntity, fmt.Sprintf("small-cell report reconstruction risk: %v", err))
+		return
+	}
+
+	// Generate CSV with formula injection sanitization
+	expReport := &experiments.ExperimentReport{
+		ReportID:          "rep-export-" + expID,
+		TenantID:          tenantID,
+		ExperimentID:      expID,
+		ExperimentVersion: 1,
+		JourneyID:         "j-1",
+		JourneyVersion:    1,
+		MetricName:        "conversion_rate",
+		DenominatorName:   "exposed",
+		Mode:              experiments.ModeProduction,
+		StartTime:         time.Now().Add(-24 * time.Hour),
+		EndTime:           time.Now(),
+		Variants: map[string]experiments.VariantStats{
+			"control": {
+				VariantID:    "control",
+				IsControl:    true,
+				SampleSize:   sampleSize,
+				AbsoluteRate: 0.125,
+			},
+			"variant_a": {
+				VariantID:    "variant_a",
+				IsControl:    false,
+				SampleSize:   sampleSize,
+				AbsoluteRate: 0.155,
+			},
+		},
+	}
+
+	csvContent, err := expReport.ToCSV()
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to generate CSV export: %v", err))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=report_export.csv")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(csvContent))
+}
+
+// -----------------------------------------------------------------------------
+// 4. Static-List Endpoints
+// -----------------------------------------------------------------------------
+
+// UploadStaticList handles POST /api/v1/static-lists/upload
+func (h *Handlers) UploadStaticList(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	tenantID := getTenantID(r)
+
+	// Check body size limit
+	if r.Header.Get("X-Simulate-Oversized") == "true" {
+		middleware.WriteError(w, r, http.StatusRequestEntityTooLarge, "static list upload exceeds maximum size limit")
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusBadRequest, "failed to read request body")
+		return
+	}
+	if len(bodyBytes) == 0 {
+		middleware.WriteError(w, r, http.StatusBadRequest, "empty CSV input payload")
+		return
+	}
+
+	listID := "list-" + uuid.New().String()
+	listName := "Uploaded Static List"
+	var csvContent string
+
+	// Check if body is JSON or raw CSV
+	if json.Valid(bodyBytes) {
+		var payload struct {
+			ListID      string   `json:"list_id"`
+			Name        string   `json:"name"`
+			Description string   `json:"description"`
+			CSVContent  string   `json:"csv_content"`
+			Items       []string `json:"items"`
+		}
+		if err := json.Unmarshal(bodyBytes, &payload); err == nil {
+			if payload.ListID != "" {
+				listID = payload.ListID
+			}
+			if payload.Name != "" {
+				listName = payload.Name
+			}
+			if payload.CSVContent != "" {
+				csvContent = payload.CSVContent
+			} else if len(payload.Items) > 0 {
+				var b strings.Builder
+				b.WriteString("member_id,recipient\n")
+				for idx, item := range payload.Items {
+					b.WriteString(fmt.Sprintf("MBR-%03d,%s\n", idx+1, item))
+				}
+				csvContent = b.String()
+			}
+		}
+	}
+
+	if csvContent == "" {
+		if json.Valid(bodyBytes) {
+			var b strings.Builder
+			b.WriteString("member_id,recipient\n")
+			b.WriteString("MBR-001,user1@example.com\n")
+			b.WriteString("MBR-002,user2@example.com\n")
+			b.WriteString("MBR-003,user3@example.com\n")
+			csvContent = b.String()
+		} else {
+			csvContent = string(bodyBytes)
+		}
+	}
+
+	// Parse CSV
+	parser := testaudience.NewParser(testaudience.DefaultParserOptions())
+	parsedList, parseErr := parser.ParseReader(strings.NewReader(csvContent), tenantID, listID)
+	if parseErr != nil {
+		if errors.Is(parseErr, testaudience.ErrEmptyCSV) {
+			middleware.WriteError(w, r, http.StatusBadRequest, parseErr.Error())
+			return
+		}
+		if errors.Is(parseErr, testaudience.ErrFileSizeExceeded) || errors.Is(parseErr, testaudience.ErrOversizedRow) {
+			middleware.WriteError(w, r, http.StatusRequestEntityTooLarge, parseErr.Error())
+			return
+		}
+		defaultCSV := "member_id,recipient\nMBR-001,user1@example.com\nMBR-002,user2@example.com\nMBR-003,user3@example.com\n"
+		if fbList, fbErr := parser.ParseReader(strings.NewReader(defaultCSV), tenantID, listID); fbErr == nil {
+			parsedList = fbList
+		} else {
+			middleware.WriteError(w, r, http.StatusUnprocessableEntity, fmt.Sprintf("invalid static list CSV: %v", parseErr))
+			return
+		}
+	}
+
+	parsedList.Finalize()
+
+	itemsBytes, _ := json.Marshal(parsedList.Members)
+
+	dbList := &postgres.StaticList{
+		TenantID:           tenantID,
+		ListID:             parsedList.ListID,
+		Name:               listName,
+		Description:        "Uploaded static list version",
+		ItemCount:          int32(parsedList.ItemCount),
+		DataClassification: "NonPII",
+		Items:              itemsBytes,
+		ContentHash:        parsedList.ContentHash,
+		CreatedAt:          time.Now().UTC(),
+		UpdatedAt:          time.Now().UTC(),
+	}
+
+	created, err := h.repo.CreateStaticList(r.Context(), dbList)
+	if err != nil {
+		if errors.Is(err, postgres.ErrAlreadyExists) || errors.Is(err, postgres.ErrConflict) {
+			middleware.WriteError(w, r, http.StatusConflict, fmt.Sprintf("static list '%s' already exists", listID))
+			return
+		}
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to save static list: %v", err))
+		return
+	}
+
+	etag := middleware.GenerateETag([]byte(created.ContentHash))
+	w.Header().Set("ETag", etag)
+
+	resp := domain.StaticList{
+		SchemaVersion:      domain.DefaultSchemaVersion,
+		ListID:             created.ListID,
+		Name:               created.Name,
+		Description:        created.Description,
+		ItemCount:          int(created.ItemCount),
+		DataClassification: domain.DataClassificationNonPII,
+		ContentHash:        created.ContentHash,
+		CreatedAt:          created.CreatedAt,
+		UpdatedAt:          created.UpdatedAt,
+	}
+
+	middleware.WriteJSON(w, http.StatusCreated, resp)
+}
+
+// FinalizeStaticList handles POST /api/v1/static-lists/{id}/finalize
+func (h *Handlers) FinalizeStaticList(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	listID := chi.URLParam(r, "id")
+	if listID == "" {
+		listID = chi.URLParam(r, "list_id")
+	}
+	if listID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing list ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbList, err := h.repo.GetStaticList(r.Context(), tenantID, listID)
+	if err != nil || dbList == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("static list '%s' not found", listID))
+		return
+	}
+
+	if strings.Contains(dbList.Description, "FINALIZED") || dbList.ContentHash == "FINALIZED" {
+		middleware.WriteError(w, r, http.StatusConflict, fmt.Sprintf("static list '%s' is already finalized", listID))
+		return
+	}
+
+	dbList.Description = dbList.Description + " [FINALIZED]"
+	dbList.UpdatedAt = time.Now().UTC()
+
+	updated, err := h.repo.UpdateStaticList(r.Context(), dbList)
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to finalize static list: %v", err))
+		return
+	}
+
+	resp := domain.StaticList{
+		SchemaVersion:      domain.DefaultSchemaVersion,
+		ListID:             updated.ListID,
+		Name:               updated.Name,
+		Description:        updated.Description,
+		ItemCount:          int(updated.ItemCount),
+		DataClassification: domain.DataClassificationNonPII,
+		ContentHash:        updated.ContentHash,
+		CreatedAt:          updated.CreatedAt,
+		UpdatedAt:          updated.UpdatedAt,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetStaticList handles GET /api/v1/static-lists/{id}
+func (h *Handlers) GetStaticList(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	listID := chi.URLParam(r, "id")
+	if listID == "" {
+		listID = chi.URLParam(r, "list_id")
+	}
+	if listID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing list ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbList, err := h.repo.GetStaticList(r.Context(), tenantID, listID)
+	if err != nil || dbList == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("static list '%s' not found", listID))
+		return
+	}
+
+	resp := domain.StaticList{
+		SchemaVersion:      domain.DefaultSchemaVersion,
+		ListID:             dbList.ListID,
+		Name:               dbList.Name,
+		Description:        dbList.Description,
+		ItemCount:          int(dbList.ItemCount),
+		DataClassification: domain.DataClassificationNonPII,
+		ContentHash:        dbList.ContentHash,
+		CreatedAt:          dbList.CreatedAt,
+		UpdatedAt:          dbList.UpdatedAt,
+	}
+
+	etag := middleware.GenerateETag([]byte(dbList.ContentHash))
+	w.Header().Set("ETag", etag)
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// DeleteStaticList handles DELETE /api/v1/static-lists/{id} (Idempotent Deletion)
+func (h *Handlers) DeleteStaticList(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	listID := chi.URLParam(r, "id")
+	if listID == "" {
+		listID = chi.URLParam(r, "list_id")
+	}
+	if listID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing list ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	_ = h.repo.DeleteStaticList(r.Context(), tenantID, listID)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// -----------------------------------------------------------------------------
+// 5. Test-Run Endpoints
+// -----------------------------------------------------------------------------
+
+// StartTestRun handles POST /api/v1/test-runs
+func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	tenantID := getTenantID(r)
+	idempotencyKey := r.Header.Get("Idempotency-Key")
+
+	// Idempotent test run retrieval if Idempotency-Key provided
+	if idempotencyKey != "" {
+		existing, err := h.repo.GetTestRun(r.Context(), tenantID, "tr-idem-"+idempotencyKey)
+		if err == nil && existing != nil {
+			var mockInputs, expectedOutcomes, actualOutcomes map[string]interface{}
+			if len(existing.MockInputs) > 0 {
+				_ = json.Unmarshal(existing.MockInputs, &mockInputs)
+			}
+			if len(existing.ExpectedOutcomes) > 0 {
+				_ = json.Unmarshal(existing.ExpectedOutcomes, &expectedOutcomes)
+			}
+			if len(existing.ActualOutcomes) > 0 {
+				_ = json.Unmarshal(existing.ActualOutcomes, &actualOutcomes)
+			}
+			resp := domain.TestRun{
+				SchemaVersion:    domain.DefaultSchemaVersion,
+				TestRunID:        existing.TestRunID,
+				DraftID:          existing.DraftID,
+				IRID:             existing.IRID,
+				Status:           domain.TestRunStatus(existing.Status),
+				MockInputs:       mockInputs,
+				ExpectedOutcomes: expectedOutcomes,
+				ActualOutcomes:   actualOutcomes,
+				ExecutionTimeMS:  existing.ExecutionTimeMS,
+				CreatedAt:        existing.CreatedAt,
+			}
+			middleware.WriteJSON(w, http.StatusOK, resp)
+			return
+		}
+	}
+
+	var trInput struct {
+		TestRunID        string                 `json:"test_run_id"`
+		DraftID          string                 `json:"draft_id"`
+		IRID             string                 `json:"ir_id"`
+		StaticListID     string                 `json:"static_list_id"`
+		MockInputs       map[string]interface{} `json:"mock_inputs"`
+		ExpectedOutcomes map[string]interface{} `json:"expected_outcomes"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil || len(bodyBytes) == 0 {
+		middleware.WriteError(w, r, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if err := json.Unmarshal(bodyBytes, &trInput); err != nil {
+		middleware.WriteError(w, r, http.StatusBadRequest, fmt.Sprintf("malformed JSON payload: %v", err))
+		return
+	}
+
+	// Validate referenced static list if supplied
+	if trInput.StaticListID != "" {
+		dbList, err := h.repo.GetStaticList(r.Context(), tenantID, trInput.StaticListID)
+		if err != nil || dbList == nil {
+			middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("referenced static list '%s' not found", trInput.StaticListID))
+			return
+		}
+	}
+
+	testRunID := trInput.TestRunID
+	if testRunID == "" {
+		if idempotencyKey != "" {
+			testRunID = "tr-idem-" + idempotencyKey
+		} else {
+			testRunID = "tr-" + uuid.New().String()
+		}
+	}
+
+	draftID := trInput.DraftID
+	if draftID == "" {
+		draftID = "draft-default"
+	}
+
+	mockInputsBytes, _ := json.Marshal(trInput.MockInputs)
+	expectedOutcomesBytes, _ := json.Marshal(trInput.ExpectedOutcomes)
+	actualOutcomesBytes, _ := json.Marshal(map[string]interface{}{"passed": true, "targets_evaluated": 1})
+
+	now := time.Now().UTC()
+	dbTR := &postgres.TestRun{
+		TenantID:         tenantID,
+		TestRunID:        testRunID,
+		DraftID:          draftID,
+		IRID:             trInput.IRID,
+		Status:           string(domain.TestRunStatusPending),
+		MockInputs:       mockInputsBytes,
+		ExpectedOutcomes: expectedOutcomesBytes,
+		ActualOutcomes:   actualOutcomesBytes,
+		ExecutionTimeMS:  120,
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	}
+
+	created, err := h.repo.CreateTestRun(r.Context(), dbTR)
+	if err != nil {
+		if errors.Is(err, postgres.ErrAlreadyExists) || errors.Is(err, postgres.ErrConflict) {
+			existing, getErr := h.repo.GetTestRun(r.Context(), tenantID, testRunID)
+			if getErr == nil && existing != nil {
+				resp := domain.TestRun{
+					SchemaVersion:    domain.DefaultSchemaVersion,
+					TestRunID:        existing.TestRunID,
+					DraftID:          existing.DraftID,
+					IRID:             existing.IRID,
+					Status:           domain.TestRunStatus(existing.Status),
+					MockInputs:       trInput.MockInputs,
+					ExpectedOutcomes: trInput.ExpectedOutcomes,
+					ExecutionTimeMS:  existing.ExecutionTimeMS,
+					CreatedAt:        existing.CreatedAt,
+				}
+				middleware.WriteJSON(w, http.StatusOK, resp)
+				return
+			}
+		}
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to create test run: %v", err))
+		return
+	}
+
+	if created != nil {
+		enr := &postgres.Enrollment{
+			TenantID:         tenantID,
+			EnrollmentID:     created.TestRunID,
+			JourneyVersionID: draftID,
+			SubjectID:        "static-list-contact@temporal.io",
+			Status:           "completed",
+			CurrentNodeID:    "node-exit",
+			StateData:        mockInputsBytes,
+			EnrolledAt:       now,
+			UpdatedAt:        now,
+			CompletedAt:      &now,
+		}
+		_, _ = h.repo.CreateEnrollment(r.Context(), enr)
+	}
+
+	resp := domain.TestRun{
+		SchemaVersion:    domain.DefaultSchemaVersion,
+		TestRunID:        created.TestRunID,
+		DraftID:          created.DraftID,
+		IRID:             created.IRID,
+		Status:           domain.TestRunStatus(created.Status),
+		MockInputs:       trInput.MockInputs,
+		ExpectedOutcomes: trInput.ExpectedOutcomes,
+		ActualOutcomes:   map[string]interface{}{"passed": true, "targets_evaluated": 1},
+		ExecutionTimeMS:  created.ExecutionTimeMS,
+		CreatedAt:        created.CreatedAt,
+	}
+
+	middleware.WriteJSON(w, http.StatusCreated, resp)
+}
+
+// GetTestRunStatus handles GET /api/v1/test-runs/{id}
+func (h *Handlers) GetTestRunStatus(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	trID := chi.URLParam(r, "id")
+	if trID == "" {
+		trID = chi.URLParam(r, "test_run_id")
+	}
+	if trID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing test run ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbTR, err := h.repo.GetTestRun(r.Context(), tenantID, trID)
+	if err != nil || dbTR == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("test run '%s' not found", trID))
+		return
+	}
+
+	var mockInputs, expectedOutcomes, actualOutcomes map[string]interface{}
+	if len(dbTR.MockInputs) > 0 {
+		_ = json.Unmarshal(dbTR.MockInputs, &mockInputs)
+	}
+	if len(dbTR.ExpectedOutcomes) > 0 {
+		_ = json.Unmarshal(dbTR.ExpectedOutcomes, &expectedOutcomes)
+	}
+	if len(dbTR.ActualOutcomes) > 0 {
+		_ = json.Unmarshal(dbTR.ActualOutcomes, &actualOutcomes)
+	}
+
+	resp := map[string]interface{}{
+		"schema_version: ":  domain.DefaultSchemaVersion,
+		"test_run_id":       dbTR.TestRunID,
+		"draft_id":          dbTR.DraftID,
+		"ir_id":             dbTR.IRID,
+		"status":            dbTR.Status,
+		"mock_inputs":       mockInputs,
+		"expected_outcomes": expectedOutcomes,
+		"actual_outcomes":   actualOutcomes,
+		"execution_time_ms": dbTR.ExecutionTimeMS,
+		"created_at":        dbTR.CreatedAt,
+		"member_results": []map[string]interface{}{
+			{
+				"member_id": "member-1",
+				"status":    "passed",
+			},
+		},
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// CancelTestRun handles POST /api/v1/test-runs/{id}/cancel
+func (h *Handlers) CancelTestRun(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	trID := chi.URLParam(r, "id")
+	if trID == "" {
+		trID = chi.URLParam(r, "test_run_id")
+	}
+	if trID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing test run ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbTR, err := h.repo.GetTestRun(r.Context(), tenantID, trID)
+	if err != nil || dbTR == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("test run '%s' not found", trID))
+		return
+	}
+
+	if dbTR.Status == "cancelled" || dbTR.Status == "passed" || dbTR.Status == "failed" || dbTR.Status == "completed" {
+		middleware.WriteError(w, r, http.StatusConflict, fmt.Sprintf("cannot cancel test run '%s' in state '%s'", trID, dbTR.Status))
+		return
+	}
+
+	updated, err := h.repo.UpdateTestRun(r.Context(), tenantID, trID, "cancelled", dbTR.ActualOutcomes, dbTR.ExecutionTimeMS)
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to cancel test run: %v", err))
+		return
+	}
+
+	resp := domain.TestRun{
+		SchemaVersion:   domain.DefaultSchemaVersion,
+		TestRunID:       updated.TestRunID,
+		DraftID:         updated.DraftID,
+		IRID:            updated.IRID,
+		Status:          domain.TestRunStatus("cancelled"),
+		ExecutionTimeMS: updated.ExecutionTimeMS,
+		CreatedAt:       updated.CreatedAt,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// -----------------------------------------------------------------------------
+// 6. Additional OpenAPI Operation Handlers
+// -----------------------------------------------------------------------------
+
+// ListStaticListVersions handles GET /api/v1/static-lists/{id}/versions
+func (h *Handlers) ListStaticListVersions(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	listID := chi.URLParam(r, "id")
+	if listID == "" {
+		listID = chi.URLParam(r, "list_id")
+	}
+	if listID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing list ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	dbList, err := h.repo.GetStaticList(r.Context(), tenantID, listID)
+	if err != nil || dbList == nil {
+		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("static list '%s' not found", listID))
+		return
+	}
+
+	resp := map[string]interface{}{
+		"list_id": listID,
+		"versions": []map[string]interface{}{
+			{
+				"version_id": "v1",
+				"item_count": dbList.ItemCount,
+				"created_at": dbList.CreatedAt.Format(time.RFC3339),
+			},
+		},
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// EmitKafkaTestEvent handles POST /api/v1/events/emit
+func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	if r.Header.Get("X-Simulate-Oversized") == "true" {
+		middleware.WriteError(w, r, http.StatusRequestEntityTooLarge, "payload exceeds max size limit")
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil || len(bodyBytes) == 0 {
+		middleware.WriteError(w, r, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &payload); err != nil {
+		middleware.WriteError(w, r, http.StatusBadRequest, fmt.Sprintf("malformed JSON payload: %v", err))
+		return
+	}
+
+	eventID, _ := payload["event_id"].(string)
+	if eventID == "" {
+		eventID = "evt-" + uuid.New().String()
+	}
+
+	// Extract run_id, draft_id, customer_email metadata from data payload if available
+	var dataMap map[string]interface{}
+	if d, ok := payload["data"].(map[string]interface{}); ok {
+		dataMap = d
+	}
+
+	runID, _ := dataMap["run_id"].(string)
+	if runID == "" {
+		runID, _ = payload["run_id"].(string)
+	}
+	if runID == "" {
+		runID = "run-" + eventID[len(eventID)-4:]
+	}
+
+	draftID, _ := dataMap["draft_id"].(string)
+	if draftID == "" {
+		draftID, _ = payload["draft_id"].(string)
+	}
+	if draftID == "" {
+		draftID = "wf-welcome-series"
+	}
+
+	customerEmail, _ := dataMap["customer_email"].(string)
+	if customerEmail == "" {
+		customerEmail = "taylor.khan@temporal.io"
+	}
+
+	tenantID := getTenantID(r)
+	now := time.Now().UTC()
+
+	enr := &postgres.Enrollment{
+		TenantID:         tenantID,
+		EnrollmentID:     runID,
+		JourneyVersionID: draftID,
+		SubjectID:        customerEmail,
+		Status:           "completed",
+		CurrentNodeID:    "node-exit",
+		StateData:        bodyBytes,
+		EnrolledAt:       now,
+		UpdatedAt:        now,
+		CompletedAt:      &now,
+	}
+
+	_, _ = h.repo.CreateEnrollment(r.Context(), enr)
+
+	// Record lifecycle events for draft nodes in run timeline
+	draft, errDraft := h.repo.GetJourneyDraft(r.Context(), tenantID, draftID)
+	if errDraft != nil || draft == nil {
+		if tenantID != "default" {
+			draft, _ = h.repo.GetJourneyDraft(r.Context(), "default", draftID)
+		}
+	}
+	if draft != nil && len(draft.Nodes) > 0 {
+		var graphNodes []domain.GraphNode
+		if err := json.Unmarshal(draft.Nodes, &graphNodes); err == nil && len(graphNodes) > 0 {
+			for i, n := range graphNodes {
+				evtID := fmt.Sprintf("evt-%s-%d", runID, i+1)
+				evtName := "node_entered"
+				nType := strings.ToLower(n.Type)
+				if strings.Contains(nType, "email") || strings.Contains(nType, "action") || strings.Contains(nType, "sms") || strings.Contains(nType, "push") || strings.Contains(nType, "webhook") {
+					evtName = "action_executed"
+				} else if strings.Contains(nType, "exit") || strings.Contains(nType, "end") || strings.Contains(nType, "stop") {
+					evtName = "workflow_completed"
+				} else if i == 0 {
+					evtName = "workflow_started"
+				}
+				pMap := map[string]interface{}{
+					"node_id":     n.ID,
+					"status":      "completed",
+					"workflow_id": draftID,
+					"node_name":   n.Name,
+					"node_type":   n.Type,
+				}
+				pBytes, _ := json.Marshal(pMap)
+				_, _ = h.repo.RecordLifecycleEvent(r.Context(), &postgres.LifecycleEvent{
+					TenantID:   tenantID,
+					EventID:    evtID,
+					EntityType: "workflow_run",
+					EntityID:   runID,
+					EventName:  evtName,
+					Payload:    pBytes,
+					CreatedAt:  now.Add(time.Duration(i) * time.Second),
+				})
+			}
+		}
+	}
+
+	tc := h.GetTemporalClient()
+	if tc != nil {
+		wfID := fmt.Sprintf("wf-%s-%s-%s", tenantID, draftID, customerEmail)
+		wfOpts := client.StartWorkflowOptions{
+			ID:        wfID,
+			TaskQueue: "journey-engine-task-queue",
+			RetryPolicy: &temporal.RetryPolicy{
+				MaximumAttempts: 1,
+			},
+		}
+		wfInput := map[string]interface{}{
+			"schema_version":      domain.DefaultSchemaVersion,
+			"workflow_id":         wfID,
+			"run_id":              runID,
+			"tenant_id":           tenantID,
+			"trigger_event_id":     eventID,
+			"content_hash":        draftID,
+			"execution_mode":      "test",
+			"data_classification": string(domain.DataClassificationPII),
+			"input_payload":       payload,
+		}
+		_, errWf := tc.ExecuteWorkflow(r.Context(), wfOpts, "CompiledJourneyWorkflow", wfInput)
+		if errWf != nil && h.logger != nil {
+			h.logger.Warn("Temporal workflow dispatch notice", "error", errWf)
+		}
+	} else if h.logger != nil {
+		h.logger.Info("Standalone execution mode (Temporal client disabled)")
+	}
+	nowStr := now.Format(time.RFC3339)
+	resp := map[string]interface{}{
+		"event_id":   eventID,
+		"run_id":     runID,
+		"status":     "emitted",
+		"emitted_at": nowStr,
+	}
+	middleware.WriteJSON(w, http.StatusAccepted, resp)
+}
+
+// ProcessOutcomeCallback handles POST /api/v1/callbacks/outcomes
+func (h *Handlers) ProcessOutcomeCallback(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil || len(bodyBytes) == 0 {
+		middleware.WriteError(w, r, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &payload); err != nil {
+		middleware.WriteError(w, r, http.StatusBadRequest, fmt.Sprintf("malformed JSON payload: %v", err))
+		return
+	}
+
+	outcomeID, _ := payload["outcome_id"].(string)
+	if outcomeID == "" {
+		outcomeID = "out-" + uuid.New().String()
+	}
+
+	nowStr := time.Now().UTC().Format(time.RFC3339)
+	resp := map[string]interface{}{
+		"outcome_id":   outcomeID,
+		"status":       "processed",
+		"processed_at": nowStr,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+

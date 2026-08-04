@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Journey Engine | Conflict Resolver</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#4cd7f6",
+                        "on-secondary": "#003640",
+                        "inverse-on-surface": "#2c303b",
+                        "tertiary": "#ddb7ff",
+                        "surface-container-lowest": "#0a0e18",
+                        "on-background": "#dfe2f1",
+                        "on-primary": "#1000a9",
+                        "secondary-container": "#03b5d3",
+                        "outline-variant": "#464554",
+                        "surface-tint": "#c0c1ff",
+                        "inverse-surface": "#dfe2f1",
+                        "on-tertiary": "#490080",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "surface-container-low": "#171b26",
+                        "primary-container": "#8083ff",
+                        "tertiary-fixed-dim": "#ddb7ff",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#2c0051",
+                        "surface-dim": "#0f131d",
+                        "surface-bright": "#353944",
+                        "on-error": "#690005",
+                        "on-secondary-fixed": "#001f26",
+                        "primary": "#c0c1ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#6900b3",
+                        "on-surface-variant": "#c7c4d7",
+                        "on-primary-fixed": "#07006c",
+                        "tertiary-container": "#b76dff",
+                        "secondary": "#4cd7f6",
+                        "surface": "#0f131d",
+                        "inverse-primary": "#494bd6",
+                        "on-tertiary-container": "#400071",
+                        "on-surface": "#dfe2f1",
+                        "on-secondary-fixed-variant": "#004e5c",
+                        "on-secondary-container": "#00424e",
+                        "surface-container-high": "#262a35",
+                        "secondary-fixed": "#acedff",
+                        "surface-container": "#1c1f2a",
+                        "background": "#0f131d",
+                        "tertiary-fixed": "#f0dbff",
+                        "outline": "#908fa0",
+                        "surface-container-highest": "#313540",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-container": "#0d0096",
+                        "surface-variant": "#313540"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "md": "24px",
+                        "xl": "64px",
+                        "margin-desktop": "32px",
+                        "xs": "8px",
+                        "sm": "16px",
+                        "gutter": "20px",
+                        "lg": "40px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "display-lg": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Outfit"],
+                        "title-md": ["Outfit"],
+                        "headline-lg": ["Outfit"],
+                        "label-sm": ["Inter"],
+                        "mono-code": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "mono-code": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .diff-added {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 2px solid #10b981;
+        }
+        .diff-changed {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 2px solid #f59e0b;
+        }
+        .canvas-bg {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .node-glow {
+            box-shadow: 0 0 15px -3px rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex overflow-hidden">
+<!-- Background Canvas (Dimmed) -->
+<div class="fixed inset-0 z-0 opacity-20 pointer-events-none canvas-bg overflow-hidden flex">
+<!-- Sidebar Shell Placeholder -->
+<aside class="w-64 border-r border-outline-variant bg-surface-container-lowest h-full flex flex-col p-md">
+<div class="h-10 w-40 bg-surface-container-highest rounded-lg mb-xl"></div>
+<div class="space-y-sm">
+<div class="h-10 w-full bg-surface-container-highest rounded-lg"></div>
+<div class="h-10 w-full bg-surface-container-highest rounded-lg"></div>
+<div class="h-10 w-full bg-surface-container-highest rounded-lg"></div>
+</div>
+</aside>
+<main class="flex-1 relative p-lg">
+<!-- Mock Nodes -->
+<div class="absolute top-20 left-40 w-48 h-32 bg-surface-container-low border border-outline-variant rounded-xl p-sm shadow-xl">
+<div class="w-8 h-2 bg-emerald-500 rounded-full mb-xs"></div>
+<div class="h-4 w-24 bg-surface-container-highest rounded"></div>
+</div>
+<div class="absolute top-64 left-80 w-48 h-32 bg-surface-container-low border border-outline-variant rounded-xl p-sm shadow-xl">
+<div class="w-8 h-2 bg-primary rounded-full mb-xs"></div>
+<div class="h-4 w-32 bg-surface-container-highest rounded"></div>
+</div>
+<svg class="absolute inset-0 w-full h-full stroke-outline-variant stroke-2 fill-none">
+<path d="M 232 144 L 320 256"></path>
+</svg>
+</main>
+</div>
+<!-- Conflict Modal Overlay -->
+<div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-md">
+<!-- Modal Content -->
+<div class="glass-panel w-full max-w-5xl max-h-[921px] rounded-xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+<!-- Header -->
+<header class="px-md py-sm border-b border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-3xl" style="font-variation-settings: 'FILL' 1;">error</span>
+<div>
+<h1 class="font-display-lg text-title-md text-on-surface">409 Conflict: Concurrent Revision Detected</h1>
+<p class="text-on-surface-variant font-body-md">Another user or process updated this journey while you were editing. Choose how to proceed.</p>
+</div>
+</div>
+<button class="p-xs hover:bg-surface-container-highest rounded-full transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<!-- Diff Content -->
+<div class="flex-1 overflow-y-auto p-md grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Left: Local Draft -->
+<div class="flex flex-col gap-sm">
+<div class="flex items-center gap-2 px-sm">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">drafts</span>
+<h2 class="font-title-md text-body-lg">Your Unsaved Local Draft</h2>
+</div>
+<div class="bg-surface-container rounded-lg border border-outline-variant overflow-hidden flex flex-col h-full">
+<!-- Diff Row 1 -->
+<div class="p-sm border-b border-outline-variant diff-added">
+<div class="flex justify-between items-start mb-base">
+<span class="font-mono-code text-label-sm text-on-surface-variant">NODE_ID: 88fa-22</span>
+<span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Added</span>
+</div>
+<h3 class="font-title-md text-body-md text-on-surface">Webhook: Payment Gateway</h3>
+<p class="text-on-surface-variant text-label-sm mt-base">Endpoint: https://api.stripe.com/v1/webhooks</p>
+</div>
+<!-- Diff Row 2 -->
+<div class="p-sm border-b border-outline-variant opacity-60">
+<div class="flex justify-between items-start mb-base">
+<span class="font-mono-code text-label-sm text-on-surface-variant">NODE_ID: 11ac-49</span>
+<span class="text-on-surface-variant text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Unchanged</span>
+</div>
+<h3 class="font-title-md text-body-md text-on-surface">Trigger: User Signup</h3>
+<p class="text-on-surface-variant text-label-sm mt-base">Source: Auth0 Production</p>
+</div>
+<!-- Diff Row 3 -->
+<div class="p-sm border-b border-outline-variant diff-added">
+<div class="flex justify-between items-start mb-base">
+<span class="font-mono-code text-label-sm text-on-surface-variant">CONNECTOR_ID: c1</span>
+<span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Connected</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-label-sm">
+<span class="material-symbols-outlined text-sm">link</span>
+                                Signup -> Payment Gateway
+                            </div>
+</div>
+<div class="flex-1 bg-surface-container-low/30 min-h-[120px]"></div>
+</div>
+</div>
+<!-- Right: Server Version -->
+<div class="flex flex-col gap-sm">
+<div class="flex items-center gap-2 px-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">cloud_done</span>
+<h2 class="font-title-md text-body-lg">Latest Server Revision (v2)</h2>
+</div>
+<div class="bg-surface-container rounded-lg border border-outline-variant overflow-hidden flex flex-col h-full">
+<!-- Diff Row 1 (Empty on server) -->
+<div class="p-sm border-b border-outline-variant bg-surface-container-low/20 italic text-on-surface-variant text-body-md flex items-center justify-center h-[92px]">
+                            Node does not exist in this revision
+                        </div>
+<!-- Diff Row 2 (Unchanged) -->
+<div class="p-sm border-b border-outline-variant">
+<div class="flex justify-between items-start mb-base">
+<span class="font-mono-code text-label-sm text-on-surface-variant">NODE_ID: 11ac-49</span>
+<span class="text-on-surface-variant text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Unchanged</span>
+</div>
+<h3 class="font-title-md text-body-md text-on-surface">Trigger: User Signup</h3>
+<p class="text-on-surface-variant text-label-sm mt-base">Source: Auth0 Production</p>
+</div>
+<!-- Diff Row 3 (Conflicting Property) -->
+<div class="p-sm border-b border-outline-variant diff-changed">
+<div class="flex justify-between items-start mb-base">
+<span class="font-mono-code text-label-sm text-on-surface-variant">GLOBAL_CONFIG</span>
+<span class="bg-amber-500/20 text-amber-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Modified on Server</span>
+</div>
+<div class="flex flex-col gap-base">
+<div class="flex items-center gap-2">
+<span class="text-error line-through text-label-sm">env: "staging"</span>
+<span class="material-symbols-outlined text-xs">arrow_forward</span>
+<span class="text-emerald-400 text-label-sm font-bold">env: "production"</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-error line-through text-label-sm">timeout: 5000</span>
+<span class="material-symbols-outlined text-xs">arrow_forward</span>
+<span class="text-emerald-400 text-label-sm font-bold">timeout: 2500</span>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low/30 min-h-[120px]"></div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<footer class="px-md py-md bg-surface-container-high/50 border-t border-outline-variant flex flex-col md:flex-row items-center justify-between gap-md">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">history</span>
+<p class="text-label-sm">Last Server Sync: 42 seconds ago by <span class="text-primary font-bold">Admin-Bot-01</span></p>
+</div>
+<div class="flex items-center gap-sm w-full md:w-auto">
+<button class="flex-1 md:flex-none px-md py-sm rounded-lg font-bold border border-outline-variant hover:bg-surface-container-highest transition-all text-on-surface">
+                        Reload Server Version
+                    </button>
+<button class="flex-1 md:flex-none px-md py-sm rounded-lg font-bold border border-primary/40 text-primary hover:bg-primary/10 transition-all">
+                        Merge Manually
+                    </button>
+<button class="flex-1 md:flex-none px-md py-sm rounded-lg font-bold bg-gradient-to-r from-primary to-tertiary-container text-on-primary shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                        Overwrite Server Draft
+                    </button>
+</div>
+</footer>
+</div>
+</div>
+<!-- Interaction Toast -->
+<div class="fixed bottom-xl left-1/2 -translate-x-1/2 glass-panel px-md py-sm rounded-full flex items-center gap-sm opacity-0 pointer-events-none transition-all duration-300 translate-y-4" id="toast">
+<span class="material-symbols-outlined text-primary">sync_problem</span>
+<p class="text-label-sm font-bold uppercase tracking-widest">Resolving Conflict...</p>
+</div>
+<script>
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const toast = document.getElementById('toast');
+                toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-4');
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                }, 2000);
+            });
+        });
+
+        // Atmospheric node drift
+        document.addEventListener('mousemove', (e) => {
+            const nodes = document.querySelectorAll('.absolute.w-48');
+            const mouseX = (e.clientX / window.innerWidth) - 0.5;
+            const mouseY = (e.clientY / window.innerHeight) - 0.5;
+            
+            nodes.forEach((node, idx) => {
+                const speed = (idx + 1) * 10;
+                node.style.transform = `translate(${mouseX * speed}px, ${mouseY * speed}px)`;
+            });
+        });
+    </script>
+</body></html>

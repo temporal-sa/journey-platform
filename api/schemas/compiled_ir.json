@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/compiled_ir.json",
+  "title": "CompiledIR",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "ir_id",
+    "draft_id",
+    "tenant_id",
+    "version",
+    "entry_node_id",
+    "nodes",
+    "edges",
+    "content_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "ir_id": {
+      "type": "string"
+    },
+    "draft_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer"
+    },
+    "entry_node_id": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "activity_name"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "activity_name": { "type": "string" },
+          "params": { "type": "object" },
+          "timeout_seconds": { "type": "integer" },
+          "retry_policy": {
+            "type": "object",
+            "properties": {
+              "maximum_attempts": { "type": "integer" },
+              "initial_interval_seconds": { "type": "integer" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source_id", "target_id"],
+        "properties": {
+          "id": { "type": "string" },
+          "source_id": { "type": "string" },
+          "target_id": { "type": "string" },
+          "condition_expression": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "compiled_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

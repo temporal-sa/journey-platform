@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/experiment_definition.json",
+  "title": "ExperimentDefinition",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "name",
+    "status",
+    "variants"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "experiment_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "paused", "completed"]
+    },
+    "variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["variant_id", "name", "weight_basis_points"],
+        "properties": {
+          "variant_id": { "type": "string" },
+          "name": { "type": "string" },
+          "weight_basis_points": { "type": "integer" },
+          "config": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "target_audience": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

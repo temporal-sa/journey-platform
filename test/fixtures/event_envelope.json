@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "event_id": "evt-12345-abcde",
+  "trace_id": "trace-67890-fghij",
+  "event_type": "user.signup.v1",
+  "source": "auth-service",
+  "subject": "usr-9999",
+  "timestamp": "2026-07-27T14:00:00Z",
+  "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "data_classification": "PII",
+  "data": {
+    "email": "user@example.com",
+    "tier": "gold"
+  }
+}

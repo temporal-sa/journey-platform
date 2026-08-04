@@ -1,0 +1,1737 @@
+openapi: 3.0.3
+info:
+  title: Journey Platform API
+  description: Event-Driven Journey Engine & Workflow Platform REST API Specification
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Base v1 API path
+
+paths:
+  # Catalogs
+  /catalogs/events:
+    get:
+      summary: List event catalog records
+      operationId: listEventCatalog
+      tags:
+        - Catalogs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of event catalog records
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogRecord'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /catalogs/actions:
+    get:
+      summary: List action catalog records
+      operationId: listActionCatalog
+      tags:
+        - Catalogs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of action catalog records
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogRecord'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /catalogs/attributes:
+    get:
+      summary: List attribute catalog records
+      operationId: listAttributeCatalog
+      tags:
+        - Catalogs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of attribute catalog records
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogRecord'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /catalogs/parameters:
+    get:
+      summary: List parameter catalog records
+      operationId: listParameterCatalog
+      tags:
+        - Catalogs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of parameter catalog records
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogRecord'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /catalogs/metrics:
+    get:
+      summary: List metric catalog records
+      operationId: listMetricCatalog
+      tags:
+        - Catalogs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of metric catalog records
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogRecord'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /catalogs/templates:
+    get:
+      summary: List journey templates
+      operationId: listJourneyTemplates
+      tags:
+        - Catalogs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of journey template catalog records
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogRecord'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  # Journey Drafts
+  /journeys/drafts:
+    post:
+      summary: Create a new journey draft
+      operationId: createJourneyDraft
+      tags:
+        - Journey Drafts
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphDraft'
+      responses:
+        '201':
+          description: Journey draft created successfully
+          headers:
+            ETag:
+              $ref: '#/components/headers/HeaderETag'
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphDraft'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}:
+    get:
+      summary: Get journey draft details
+      operationId: getJourneyDraft
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Journey draft details
+          headers:
+            ETag:
+              $ref: '#/components/headers/HeaderETag'
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphDraft'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+    put:
+      summary: Edit/update journey draft
+      operationId: updateJourneyDraft
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphDraft'
+      responses:
+        '200':
+          description: Journey draft updated
+          headers:
+            ETag:
+              $ref: '#/components/headers/HeaderETag'
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphDraft'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '412':
+          $ref: '#/components/responses/ErrorResponse412'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}/validate:
+    post:
+      summary: Validate a journey draft
+      operationId: validateJourneyDraft
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Validation result containing list of issues
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - draft_id
+                  - is_valid
+                  - issues
+                properties:
+                  draft_id:
+                    type: string
+                  is_valid:
+                    type: boolean
+                  issues:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ValidationIssue'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}/simulate:
+    post:
+      summary: Simulate execution of a journey draft
+      operationId: simulateJourneyDraft
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mock_inputs:
+                  type: object
+      responses:
+        '200':
+          description: Simulation results
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}/versions:
+    get:
+      summary: List version history of a journey draft
+      operationId: listJourneyDraftVersions
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of draft versions
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftVersionList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}/publish:
+    post:
+      summary: Publish journey draft (Publishing is disabled)
+      operationId: publishJourneyDraft
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '403':
+          description: Publish capability is disabled in local mode
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}/activate-local:
+    post:
+      summary: Activate journey locally
+      operationId: activateLocalJourney
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Journey activated locally
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - draft_id
+                  - status
+                  - activated_at
+                properties:
+                  draft_id:
+                    type: string
+                  status:
+                    type: string
+                    example: "active"
+                  activated_at:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/drafts/{draft_id}/pause-local:
+    post:
+      summary: Pause local journey
+      operationId: pauseLocalJourney
+      tags:
+        - Journey Drafts
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Local journey paused
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - draft_id
+                  - status
+                  - paused_at
+                properties:
+                  draft_id:
+                    type: string
+                  status:
+                    type: string
+                    example: "paused"
+                  paused_at:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  # Experiments
+  /experiments:
+    post:
+      summary: Create an experiment definition
+      operationId: createExperiment
+      tags:
+        - Experiments
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperimentDefinition'
+      responses:
+        '201':
+          description: Experiment created successfully
+          headers:
+            ETag:
+              $ref: '#/components/headers/HeaderETag'
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentDefinition'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+    get:
+      summary: List experiments
+      operationId: listExperiments
+      tags:
+        - Experiments
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of experiments
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExperimentDefinition'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /experiments/{experiment_id}/versions/{version_id}:
+    get:
+      summary: Get experiment specific version
+      operationId: getExperimentVersion
+      tags:
+        - Experiments
+      parameters:
+        - name: experiment_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Experiment version details
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentDefinition'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  # Reports & Exports
+  /reports/aggregate:
+    get:
+      summary: Get aggregate performance reports
+      operationId: getAggregateReport
+      tags:
+        - Reports & Exports
+      parameters:
+        - name: experiment_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: tenant_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Aggregate report data
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregateReport'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /exports/csv:
+    get:
+      summary: Download performance or metrics CSV export
+      operationId: exportCSV
+      tags:
+        - Reports & Exports
+      parameters:
+        - name: report_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: "attachment; filename=report_export.csv"
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  # Static Lists & Test Runs
+  /static-lists/upload:
+    post:
+      summary: Upload a static list
+      operationId: uploadStaticList
+      tags:
+        - Static Lists & Test Runs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaticList'
+      responses:
+        '201':
+          description: Static list uploaded successfully
+          headers:
+            ETag:
+              $ref: '#/components/headers/HeaderETag'
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /static-lists/{list_id}/versions:
+    get:
+      summary: List versions of a static list
+      operationId: listStaticListVersions
+      tags:
+        - Static Lists & Test Runs
+      parameters:
+        - name: list_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of static list versions
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticListVersionList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /test-runs:
+    post:
+      summary: Start a new test run
+      operationId: startTestRun
+      tags:
+        - Static Lists & Test Runs
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRun'
+      responses:
+        '201':
+          description: Test run created and started
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /test-runs/{test_run_id}:
+    get:
+      summary: Get test run status and details
+      operationId: getTestRunStatus
+      tags:
+        - Static Lists & Test Runs
+      parameters:
+        - name: test_run_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Test run status details
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /test-runs/{test_run_id}/cancel:
+    post:
+      summary: Cancel an ongoing test run
+      operationId: cancelTestRun
+      tags:
+        - Static Lists & Test Runs
+      parameters:
+        - name: test_run_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Test run cancelled successfully
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  # Journey Runs
+  /journeys/runs:
+    get:
+      summary: List active and historical journey runs
+      operationId: listJourneyRuns
+      tags:
+        - Journey Runs
+      parameters:
+        - name: workflow_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [running, completed, failed, terminated]
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: List of journey run projections
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RunProjection'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /journeys/runs/{run_id}/timeline:
+    get:
+      summary: Get detailed timeline for a specific journey run
+      operationId: getJourneyRunTimeline
+      tags:
+        - Journey Runs
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/HeaderRequestID'
+      responses:
+        '200':
+          description: Journey run execution timeline
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - run_id
+                  - timeline
+                properties:
+                  run_id:
+                    type: string
+                  timeline:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimelineEvent'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  # Kafka Test Event Emission & Outcome Callbacks
+  /events/emit:
+    post:
+      summary: Emit test event into Kafka / Event Ingress
+      operationId: emitKafkaTestEvent
+      tags:
+        - Event Ingress
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEnvelope'
+      responses:
+        '202':
+          description: Test event emitted to ingress topic successfully
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - event_id
+                  - status
+                  - emitted_at
+                properties:
+                  event_id:
+                    type: string
+                  status:
+                    type: string
+                    example: "emitted"
+                  emitted_at:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+  /callbacks/outcomes:
+    post:
+      summary: Receive outcome provider callback
+      operationId: processOutcomeCallback
+      tags:
+        - Outcome Callbacks
+      parameters:
+        - $ref: '#/components/parameters/HeaderRequestID'
+        - $ref: '#/components/parameters/HeaderIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NormalizedOutcome'
+      responses:
+        '200':
+          description: Outcome callback processed successfully
+          headers:
+            Request-ID:
+              $ref: '#/components/headers/HeaderRequestIDResponse'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - outcome_id
+                  - status
+                  - processed_at
+                properties:
+                  outcome_id:
+                    type: string
+                  status:
+                    type: string
+                    example: "processed"
+                  processed_at:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '500':
+          $ref: '#/components/responses/ErrorResponse500'
+
+components:
+  parameters:
+    HeaderRequestID:
+      name: Request-ID
+      in: header
+      required: false
+      description: Unique request identifier for distributed tracing
+      schema:
+        type: string
+        example: "req-12345678"
+
+    HeaderIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Key for safe retry of mutating requests
+      schema:
+        type: string
+        example: "idem-87654321"
+
+    HeaderIfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: ETag value for optimistic concurrency check
+      schema:
+        type: string
+        example: '"1.0.0-hash"'
+
+  headers:
+    HeaderRequestIDResponse:
+      description: Unique request identifier returned by the server
+      schema:
+        type: string
+        example: "req-12345678"
+
+    HeaderETag:
+      description: Resource state fingerprint for concurrency and caching
+      schema:
+        type: string
+        example: '"1.0.0-hash"'
+
+  responses:
+    ErrorResponse400:
+      description: Invalid client request body or parameters
+      headers:
+        Request-ID:
+          $ref: '#/components/headers/HeaderRequestIDResponse'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ErrorResponse404:
+      description: Requested resource not found
+      headers:
+        Request-ID:
+          $ref: '#/components/headers/HeaderRequestIDResponse'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ErrorResponse412:
+      description: Precondition failed (ETag / If-Match mismatch)
+      headers:
+        Request-ID:
+          $ref: '#/components/headers/HeaderRequestIDResponse'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ErrorResponse500:
+      description: Internal server error
+      headers:
+        Request-ID:
+          $ref: '#/components/headers/HeaderRequestIDResponse'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    CatalogRecord:
+      type: object
+      required:
+        - schema_version
+        - record_id
+        - name
+        - component_type
+        - version
+        - description
+        - tags
+        - is_deprecated
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        record_id:
+          type: string
+        name:
+          type: string
+        component_type:
+          type: string
+          enum: [activity, trigger, action, condition]
+        version:
+          type: string
+        description:
+          type: string
+        schema_definition:
+          type: object
+        content_hash:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        is_deprecated:
+          type: boolean
+      additionalProperties: false
+
+    GraphDraft:
+      type: object
+      required:
+        - schema_version
+        - draft_id
+        - tenant_id
+        - name
+        - version
+        - nodes
+        - edges
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        draft_id:
+          type: string
+        tenant_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+        content_hash:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      additionalProperties: false
+
+    GraphNode:
+      type: object
+      required:
+        - id
+        - type
+        - name
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        config:
+          type: object
+        position:
+          type: object
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+      additionalProperties: false
+
+    GraphEdge:
+      type: object
+      required:
+        - id
+        - source
+        - target
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        condition:
+          type: string
+      additionalProperties: false
+
+    ValidationIssue:
+      type: object
+      required:
+        - schema_version
+        - issue_id
+        - node_id
+        - severity
+        - code
+        - message
+        - field_path
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        issue_id:
+          type: string
+        node_id:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning, info]
+        code:
+          type: string
+        message:
+          type: string
+        field_path:
+          type: string
+      additionalProperties: false
+
+    SimulationResult:
+      type: object
+      required:
+        - draft_id
+        - success
+        - execution_path
+        - outputs
+      properties:
+        draft_id:
+          type: string
+        success:
+          type: boolean
+        execution_path:
+          type: array
+          items:
+            type: string
+        outputs:
+          type: object
+
+    DraftVersionList:
+      type: object
+      required:
+        - draft_id
+        - versions
+      properties:
+        draft_id:
+          type: string
+        versions:
+          type: array
+          items:
+            type: object
+            required:
+              - version
+              - content_hash
+              - updated_at
+            properties:
+              version:
+                type: integer
+              content_hash:
+                type: string
+              updated_at:
+                type: string
+
+    ExperimentDefinition:
+      type: object
+      required:
+        - schema_version
+        - experiment_id
+        - name
+        - status
+        - variants
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        experiment_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, paused, completed]
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperimentVariant'
+        target_audience:
+          type: string
+        content_hash:
+          type: string
+        created_at:
+          type: string
+      additionalProperties: false
+
+    ExperimentVariant:
+      type: object
+      required:
+        - variant_id
+        - name
+        - weight_basis_points
+      properties:
+        variant_id:
+          type: string
+        name:
+          type: string
+        weight_basis_points:
+          type: integer
+        config:
+          type: object
+      additionalProperties: false
+
+    AggregateReport:
+      type: object
+      required:
+        - schema_version
+        - report_id
+        - tenant_id
+        - experiment_id
+        - period_start
+        - period_end
+        - metrics
+        - generated_at
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        report_id:
+          type: string
+        tenant_id:
+          type: string
+        experiment_id:
+          type: string
+        period_start:
+          type: string
+        period_end:
+          type: string
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportMetric'
+        generated_at:
+          type: string
+      additionalProperties: false
+
+    ReportMetric:
+      type: object
+      required:
+        - metric_name
+        - total_count
+        - mean
+        - weight_basis_points
+      properties:
+        metric_name:
+          type: string
+        total_count:
+          type: integer
+        mean:
+          type: number
+        weight_basis_points:
+          type: integer
+        confidence_interval_lower:
+          type: number
+        confidence_interval_upper:
+          type: number
+      additionalProperties: false
+
+    StaticList:
+      type: object
+      required:
+        - schema_version
+        - list_id
+        - name
+        - item_count
+        - data_classification
+        - items
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        list_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        item_count:
+          type: integer
+        data_classification:
+          type: string
+          enum: [PII, NonPII, Sensitive]
+        items:
+          type: array
+          items:
+            type: string
+        content_hash:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      additionalProperties: false
+
+    StaticListVersionList:
+      type: object
+      required:
+        - list_id
+        - versions
+      properties:
+        list_id:
+          type: string
+        versions:
+          type: array
+          items:
+            type: object
+            required:
+              - version_id
+              - item_count
+              - created_at
+            properties:
+              version_id:
+                type: string
+              item_count:
+                type: integer
+              created_at:
+                type: string
+
+    TestRun:
+      type: object
+      required:
+        - schema_version
+        - test_run_id
+        - draft_id
+        - ir_id
+        - status
+        - execution_time_ms
+        - created_at
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        test_run_id:
+          type: string
+        draft_id:
+          type: string
+        ir_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, passed, failed]
+        mock_inputs:
+          type: object
+        expected_outcomes:
+          type: object
+        actual_outcomes:
+          type: object
+        execution_time_ms:
+          type: integer
+        created_at:
+          type: string
+      additionalProperties: false
+
+    RunProjection:
+      type: object
+      required:
+        - schema_version
+        - run_id
+        - tenant_id
+        - workflow_id
+        - status
+        - current_nodes
+        - started_at
+        - updated_at
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        run_id:
+          type: string
+        tenant_id:
+          type: string
+        workflow_id:
+          type: string
+        status:
+          type: string
+          enum: [running, completed, failed, terminated]
+        current_nodes:
+          type: array
+          items:
+            type: string
+        variables:
+          type: object
+        started_at:
+          type: string
+        updated_at:
+          type: string
+        completed_at:
+          type: string
+      additionalProperties: false
+
+    TimelineEvent:
+      type: object
+      required:
+        - event_id
+        - node_id
+        - status
+        - timestamp
+      properties:
+        event_id:
+          type: string
+        node_id:
+          type: string
+        status:
+          type: string
+        payload:
+          type: object
+        timestamp:
+          type: string
+
+    EventEnvelope:
+      type: object
+      required:
+        - schema_version
+        - event_id
+        - trace_id
+        - event_type
+        - source
+        - timestamp
+        - data_classification
+        - data
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        event_id:
+          type: string
+        trace_id:
+          type: string
+        event_type:
+          type: string
+        source:
+          type: string
+        subject:
+          type: string
+        timestamp:
+          type: string
+        content_hash:
+          type: string
+        data_classification:
+          type: string
+          enum: [PII, NonPII, Sensitive]
+        data:
+          type: object
+      additionalProperties: false
+
+    NormalizedOutcome:
+      type: object
+      required:
+        - schema_version
+        - outcome_id
+        - run_id
+        - event_name
+        - value
+        - unit
+        - data_classification
+        - timestamp
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        outcome_id:
+          type: string
+        run_id:
+          type: string
+        event_name:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+        data_classification:
+          type: string
+          enum: [PII, NonPII, Sensitive]
+        timestamp:
+          type: string
+        metadata:
+          type: object
+      additionalProperties: false
+
+    ActionResult:
+      type: object
+      required:
+        - schema_version
+        - action_id
+        - activity_type
+        - status
+        - execution_duration_ms
+        - completed_at
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        action_id:
+          type: string
+        activity_type:
+          type: string
+        status:
+          type: string
+          enum: [success, failure, retrying]
+        output:
+          type: object
+        error_message:
+          type: string
+        execution_duration_ms:
+          type: integer
+        completed_at:
+          type: string
+      additionalProperties: false
+
+    AssignmentExposure:
+      type: object
+      required:
+        - schema_version
+        - assignment_id
+        - experiment_id
+        - variant_id
+        - subject_id
+        - assigned_at
+        - exposed_at
+        - weight_basis_points
+        - data_classification
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        assignment_id:
+          type: string
+        experiment_id:
+          type: string
+        variant_id:
+          type: string
+        subject_id:
+          type: string
+        assigned_at:
+          type: string
+        exposed_at:
+          type: string
+        weight_basis_points:
+          type: integer
+        data_classification:
+          type: string
+          enum: [PII, NonPII, Sensitive]
+        context:
+          type: object
+      additionalProperties: false
+
+    CompiledIR:
+      type: object
+      required:
+        - schema_version
+        - ir_id
+        - draft_id
+        - tenant_id
+        - version
+        - entry_node_id
+        - nodes
+        - edges
+        - content_hash
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        ir_id:
+          type: string
+        draft_id:
+          type: string
+        tenant_id:
+          type: string
+        version:
+          type: integer
+        entry_node_id:
+          type: string
+        nodes:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - type
+              - activity_name
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              activity_name:
+                type: string
+              params:
+                type: object
+              timeout_seconds:
+                type: integer
+              retry_policy:
+                type: object
+                properties:
+                  maximum_attempts:
+                    type: integer
+                  initial_interval_seconds:
+                    type: integer
+        edges:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - source_id
+              - target_id
+            properties:
+              id:
+                type: string
+              source_id:
+                type: string
+              target_id:
+                type: string
+              condition_expression:
+                type: string
+        content_hash:
+          type: string
+        compiled_at:
+          type: string
+      additionalProperties: false
+
+    WorkflowInput:
+      type: object
+      required:
+        - schema_version
+        - workflow_id
+        - run_id
+        - tenant_id
+        - trigger_event_id
+        - ir_id
+        - data_classification
+        - input_payload
+      properties:
+        schema_version:
+          type: string
+          enum: ["1.0"]
+        workflow_id:
+          type: string
+        run_id:
+          type: string
+        tenant_id:
+          type: string
+        trigger_event_id:
+          type: string
+        ir_id:
+          type: string
+        data_classification:
+          type: string
+          enum: [PII, NonPII, Sensitive]
+        input_payload:
+          type: object
+      additionalProperties: false
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - request_id
+      properties:
+        code:
+          type: string
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          example: "Validation failed"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              issue:
+                type: string
+        request_id:
+          type: string
+          example: "req-12345678"
+      additionalProperties: false

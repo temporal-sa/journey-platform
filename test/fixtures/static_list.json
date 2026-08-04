@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "list_id": "list-vip-users",
+  "name": "VIP Beta Testers",
+  "description": "Static audience list for priority access",
+  "item_count": 3,
+  "data_classification": "Sensitive",
+  "items": [
+    "usr-001",
+    "usr-002",
+    "usr-003"
+  ],
+  "content_hash": "e5f67890123456789abcdef0123456789abcdef0123456789abcdef01234",
+  "created_at": "2026-07-27T14:00:00Z",
+  "updated_at": "2026-07-27T14:05:00Z"
+}

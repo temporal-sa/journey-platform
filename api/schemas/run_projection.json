@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/run_projection.json",
+  "title": "RunProjection",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "tenant_id",
+    "workflow_id",
+    "status",
+    "current_nodes",
+    "started_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["running", "completed", "failed", "terminated"]
+    },
+    "current_nodes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "variables": {
+      "type": "object"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

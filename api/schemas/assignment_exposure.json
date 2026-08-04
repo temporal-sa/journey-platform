@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/assignment_exposure.json",
+  "title": "AssignmentExposure",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "assignment_id",
+    "experiment_id",
+    "variant_id",
+    "subject_id",
+    "assigned_at",
+    "exposed_at",
+    "weight_basis_points",
+    "data_classification"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "assignment_id": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": "string"
+    },
+    "variant_id": {
+      "type": "string"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "assigned_at": {
+      "type": "string"
+    },
+    "exposed_at": {
+      "type": "string"
+    },
+    "weight_basis_points": {
+      "type": "integer"
+    },
+    "data_classification": {
+      "type": "string",
+      "enum": ["PII", "NonPII", "Sensitive"]
+    },
+    "context": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

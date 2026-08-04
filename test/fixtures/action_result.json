@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "action_id": "act-333",
+  "activity_type": "SendEmailActivity",
+  "status": "success",
+  "output": {
+    "message_id": "msg-888"
+  },
+  "execution_duration_ms": 230,
+  "completed_at": "2026-07-27T14:01:30Z"
+}

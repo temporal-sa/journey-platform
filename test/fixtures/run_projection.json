@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "run_id": "run-444",
+  "tenant_id": "tenant-42",
+  "workflow_id": "wf-journey-101",
+  "status": "running",
+  "current_nodes": [
+    "node-2"
+  ],
+  "variables": {
+    "attempts": 1
+  },
+  "started_at": "2026-07-27T14:01:00Z",
+  "updated_at": "2026-07-27T14:02:00Z",
+  "completed_at": "2026-07-27T14:05:00Z"
+}

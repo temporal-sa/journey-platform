@@ -1,0 +1,14 @@
+version: "2"
+sql:
+  - schema: "migrations/postgres/000001_create_postgres_tables.up.sql"
+    queries: "internal/store/postgres/queries"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "postgres"
+        out: "internal/store/postgres"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: true
+        emit_exact_table_names: false

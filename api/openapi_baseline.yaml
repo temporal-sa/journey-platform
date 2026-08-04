@@ -1,0 +1,392 @@
+openapi: 3.0.3
+info:
+  title: Journey Platform API Baseline
+  description: Baseline OpenAPI specification for breaking change detection
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Base v1 API path
+
+paths:
+  /catalogs/events:
+    get:
+      summary: List event catalog records
+      operationId: listEventCatalog
+      responses:
+        '200':
+          description: List of event catalog records
+
+  /catalogs/actions:
+    get:
+      summary: List action catalog records
+      operationId: listActionCatalog
+      responses:
+        '200':
+          description: List of action catalog records
+
+  /catalogs/attributes:
+    get:
+      summary: List attribute catalog records
+      operationId: listAttributeCatalog
+      responses:
+        '200':
+          description: List of attribute catalog records
+
+  /catalogs/parameters:
+    get:
+      summary: List parameter catalog records
+      operationId: listParameterCatalog
+      responses:
+        '200':
+          description: List of parameter catalog records
+
+  /catalogs/metrics:
+    get:
+      summary: List metric catalog records
+      operationId: listMetricCatalog
+      responses:
+        '200':
+          description: List of metric catalog records
+
+  /catalogs/templates:
+    get:
+      summary: List journey templates
+      operationId: listJourneyTemplates
+      responses:
+        '200':
+          description: List of journey templates
+
+  /journeys/drafts:
+    post:
+      summary: Create a new journey draft
+      operationId: createJourneyDraft
+      responses:
+        '201':
+          description: Created
+
+  /journeys/drafts/{draft_id}:
+    get:
+      summary: Get journey draft details
+      operationId: getJourneyDraft
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Edit journey draft
+      operationId: updateJourneyDraft
+      responses:
+        '200':
+          description: OK
+
+  /journeys/drafts/{draft_id}/validate:
+    post:
+      summary: Validate a journey draft
+      operationId: validateJourneyDraft
+      responses:
+        '200':
+          description: OK
+
+  /journeys/drafts/{draft_id}/simulate:
+    post:
+      summary: Simulate journey draft
+      operationId: simulateJourneyDraft
+      responses:
+        '200':
+          description: OK
+
+  /journeys/drafts/{draft_id}/versions:
+    get:
+      summary: List draft versions
+      operationId: listJourneyDraftVersions
+      responses:
+        '200':
+          description: OK
+
+  /journeys/drafts/{draft_id}/publish:
+    post:
+      summary: Publish journey draft
+      operationId: publishJourneyDraft
+      responses:
+        '403':
+          description: Publish disabled
+
+  /journeys/drafts/{draft_id}/activate-local:
+    post:
+      summary: Activate journey locally
+      operationId: activateLocalJourney
+      responses:
+        '200':
+          description: OK
+
+  /journeys/drafts/{draft_id}/pause-local:
+    post:
+      summary: Pause local journey
+      operationId: pauseLocalJourney
+      responses:
+        '200':
+          description: OK
+
+  /experiments:
+    post:
+      summary: Create experiment
+      operationId: createExperiment
+      responses:
+        '201':
+          description: OK
+    get:
+      summary: List experiments
+      operationId: listExperiments
+      responses:
+        '200':
+          description: OK
+
+  /experiments/{experiment_id}/versions/{version_id}:
+    get:
+      summary: Get experiment version
+      operationId: getExperimentVersion
+      responses:
+        '200':
+          description: OK
+
+  /reports/aggregate:
+    get:
+      summary: Get aggregate report
+      operationId: getAggregateReport
+      responses:
+        '200':
+          description: OK
+
+  /exports/csv:
+    get:
+      summary: Export CSV
+      operationId: exportCSV
+      responses:
+        '200':
+          description: OK
+
+  /static-lists/upload:
+    post:
+      summary: Upload static list
+      operationId: uploadStaticList
+      responses:
+        '201':
+          description: OK
+
+  /static-lists/{list_id}/versions:
+    get:
+      summary: List static list versions
+      operationId: listStaticListVersions
+      responses:
+        '200':
+          description: OK
+
+  /test-runs:
+    post:
+      summary: Start test run
+      operationId: startTestRun
+      responses:
+        '201':
+          description: OK
+
+  /test-runs/{test_run_id}:
+    get:
+      summary: Get test run status
+      operationId: getTestRunStatus
+      responses:
+        '200':
+          description: OK
+
+  /test-runs/{test_run_id}/cancel:
+    post:
+      summary: Cancel test run
+      operationId: cancelTestRun
+      responses:
+        '200':
+          description: OK
+
+  /journeys/runs:
+    get:
+      summary: List journey runs
+      operationId: listJourneyRuns
+      responses:
+        '200':
+          description: OK
+
+  /journeys/runs/{run_id}/timeline:
+    get:
+      summary: Get journey run timeline
+      operationId: getJourneyRunTimeline
+      responses:
+        '200':
+          description: OK
+
+  /events/emit:
+    post:
+      summary: Emit Kafka test event
+      operationId: emitKafkaTestEvent
+      responses:
+        '202':
+          description: Accepted
+
+  /callbacks/outcomes:
+    post:
+      summary: Process outcome callback
+      operationId: processOutcomeCallback
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    CatalogRecord:
+      type: object
+      required:
+        - schema_version
+        - record_id
+        - name
+        - component_type
+        - version
+        - description
+        - tags
+        - is_deprecated
+    GraphDraft:
+      type: object
+      required:
+        - schema_version
+        - draft_id
+        - tenant_id
+        - name
+        - version
+        - nodes
+        - edges
+    ValidationIssue:
+      type: object
+      required:
+        - schema_version
+        - issue_id
+        - node_id
+        - severity
+        - code
+        - message
+        - field_path
+    ExperimentDefinition:
+      type: object
+      required:
+        - schema_version
+        - experiment_id
+        - name
+        - status
+        - variants
+    AggregateReport:
+      type: object
+      required:
+        - schema_version
+        - report_id
+        - tenant_id
+        - experiment_id
+        - period_start
+        - period_end
+        - metrics
+        - generated_at
+    StaticList:
+      type: object
+      required:
+        - schema_version
+        - list_id
+        - name
+        - item_count
+        - data_classification
+        - items
+    TestRun:
+      type: object
+      required:
+        - schema_version
+        - test_run_id
+        - draft_id
+        - ir_id
+        - status
+        - execution_time_ms
+        - created_at
+    RunProjection:
+      type: object
+      required:
+        - schema_version
+        - run_id
+        - tenant_id
+        - workflow_id
+        - status
+        - current_nodes
+        - started_at
+        - updated_at
+    EventEnvelope:
+      type: object
+      required:
+        - schema_version
+        - event_id
+        - trace_id
+        - event_type
+        - source
+        - timestamp
+        - data_classification
+        - data
+    NormalizedOutcome:
+      type: object
+      required:
+        - schema_version
+        - outcome_id
+        - run_id
+        - event_name
+        - value
+        - unit
+        - data_classification
+        - timestamp
+    ActionResult:
+      type: object
+      required:
+        - schema_version
+        - action_id
+        - activity_type
+        - status
+        - execution_duration_ms
+        - completed_at
+    AssignmentExposure:
+      type: object
+      required:
+        - schema_version
+        - assignment_id
+        - experiment_id
+        - variant_id
+        - subject_id
+        - assigned_at
+        - exposed_at
+        - weight_basis_points
+        - data_classification
+    CompiledIR:
+      type: object
+      required:
+        - schema_version
+        - ir_id
+        - draft_id
+        - tenant_id
+        - version
+        - entry_node_id
+        - nodes
+        - edges
+        - content_hash
+    WorkflowInput:
+      type: object
+      required:
+        - schema_version
+        - workflow_id
+        - run_id
+        - tenant_id
+        - trigger_event_id
+        - ir_id
+        - data_classification
+        - input_payload
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - request_id

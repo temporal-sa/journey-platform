@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "outcome_id": "out-777",
+  "run_id": "run-444",
+  "event_name": "email_clicked",
+  "value": 1.0,
+  "unit": "count",
+  "data_classification": "NonPII",
+  "timestamp": "2026-07-27T14:03:00Z",
+  "metadata": {
+    "link_id": "cta_button"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "exp-onboarding-v2",
+  "name": "Onboarding Email Variation Experiment",
+  "description": "Test 50/50 split between standard email and video email",
+  "status": "active",
+  "variants": [
+    {
+      "variant_id": "var-control",
+      "name": "Control (Standard Email)",
+      "weight_basis_points": 5000,
+      "config": {
+        "template": "standard"
+      }
+    },
+    {
+      "variant_id": "var-treatment",
+      "name": "Treatment (Video Email)",
+      "weight_basis_points": 5000,
+      "config": {
+        "template": "video"
+      }
+    }
+  ],
+  "target_audience": "new_users",
+  "content_hash": "d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0123",
+  "created_at": "2026-07-27T14:00:00Z"
+}

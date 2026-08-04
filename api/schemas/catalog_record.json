@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/catalog_record.json",
+  "title": "CatalogRecord",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_id",
+    "name",
+    "component_type",
+    "version",
+    "description",
+    "tags",
+    "is_deprecated"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "record_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "component_type": {
+      "type": "string",
+      "enum": ["activity", "trigger", "action", "condition"]
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "schema_definition": {
+      "type": "object"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "is_deprecated": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

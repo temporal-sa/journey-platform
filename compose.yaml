@@ -1,0 +1,259 @@
+name: journey-platform
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: journey-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-journey}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-journey_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-journeydb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-journey} -d $${POSTGRES_DB:-journeydb} || pg_isready -U postgres || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # Apache Kafka (KRaft mode)
+  # ---------------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: journey-kafka
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${KAFKA_PORT:-9092}:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:${KAFKA_PORT:-9092}'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_KEY_BUFFER_SIZE: 1000
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:${KAFKA_PORT:-9092}'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # Kafka Topic Initialization
+  # ---------------------------------------------------------------------------
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: journey-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init:/scripts/init:ro
+    entrypoint: ["/scripts/init/kafka-init.sh"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+
+  # ---------------------------------------------------------------------------
+  # Schema Registry
+  # ---------------------------------------------------------------------------
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    container_name: journey-schema-registry
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${SCHEMA_REGISTRY_PORT:-8081}:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # ClickHouse Analytics Database
+  # ---------------------------------------------------------------------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: journey-clickhouse
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CLICKHOUSE_HTTP_PORT:-8123}:8123"
+      - "127.0.0.1:${CLICKHOUSE_NATIVE_PORT:-9009}:9000"
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-journeydb}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-journey}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-journey_pass}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./scripts/init/clickhouse-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # MinIO Object Storage
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:RELEASE.2024-05-28T17-19-04Z
+    container_name: journey-minio
+    restart: unless-stopped
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:${MINIO_CONSOLE_PORT:-9001}"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || mc ready local || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # MinIO Bucket Initialization
+  # ---------------------------------------------------------------------------
+  minio-init:
+    image: minio/mc:latest
+    container_name: journey-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
+      /usr/bin/mc mb --ignore-existing myminio/journey-artifacts;
+      /usr/bin/mc mb --ignore-existing myminio/journey-static-lists;
+      exit 0;
+      "
+
+  # ---------------------------------------------------------------------------
+  # Mailpit Mock Email Server
+  # ---------------------------------------------------------------------------
+  mailpit:
+    image: axllent/mailpit:v1.18
+    container_name: journey-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8025/api/v1/info"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Temporal Workflow Orchestration Server
+  temporal:
+    image: temporalio/auto-setup:1.29.7
+    container_name: journey-temporal
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${TEMPORAL_PORT:-7233}:7233"
+    volumes:
+      - ./config/dynamicconfig/development-sql.yaml:/etc/temporal/config/dynamicconfig/development-sql.yaml
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-journey}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD:-journey_pass}
+      POSTGRES_SEEDS: postgres
+      BIND_ON_IP: "0.0.0.0"
+      TEMPORAL_BROADCAST_ADDRESS: "127.0.0.1"
+      ENABLE_ES: "false"
+  temporal-ui:
+    image: temporalio/ui:2.37.2
+    container_name: journey-temporal-ui
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    ports:
+      - "127.0.0.1:${TEMPORAL_UI_PORT:-8233}:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: "http://localhost:${FRONTEND_PORT:-3000},http://localhost:${TEMPORAL_UI_PORT:-8233}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Local Fake Provider Service
+  # ---------------------------------------------------------------------------
+  fake-provider:
+    build:
+      context: .
+      dockerfile: cmd/fake-provider/Dockerfile
+    container_name: journey-fake-provider
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FAKE_PROVIDER_PORT:-8082}:${FAKE_PROVIDER_PORT:-8082}"
+    environment:
+      PORT: "${FAKE_PROVIDER_PORT:-8082}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:$${PORT:-8082}/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Jaeger Tracing Collector & UI
+  # ---------------------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: journey-jaeger
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${JAEGER_UI_PORT:-16686}:16686"
+      - "127.0.0.1:${JAEGER_OTLP_GRPC_PORT:-4317}:4317"
+      - "127.0.0.1:${JAEGER_OTLP_HTTP_PORT:-4318}:4318"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:16686/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+volumes:
+  postgres_data:
+  kafka_data:
+  clickhouse_data:
+  minio_data:

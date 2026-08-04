@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "report_id": "rep-888",
+  "tenant_id": "tenant-42",
+  "experiment_id": "exp-onboarding-v2",
+  "period_start": "2026-07-01T00:00:00Z",
+  "period_end": "2026-07-27T23:59:59Z",
+  "metrics": [
+    {
+      "metric_name": "click_through_rate",
+      "total_count": 10000,
+      "mean": 0.245,
+      "weight_basis_points": 5000,
+      "confidence_interval_lower": 0.231,
+      "confidence_interval_upper": 0.259
+    }
+  ],
+  "generated_at": "2026-07-27T14:15:00Z"
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/workflow_input.json",
+  "title": "WorkflowInput",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "run_id",
+    "tenant_id",
+    "trigger_event_id",
+    "ir_id",
+    "data_classification",
+    "input_payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "trigger_event_id": {
+      "type": "string"
+    },
+    "ir_id": {
+      "type": "string"
+    },
+    "data_classification": {
+      "type": "string",
+      "enum": ["PII", "NonPII", "Sensitive"]
+    },
+    "input_payload": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,671 @@
+{
+  "events": [
+    {
+      "eventId": "1",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_STARTED",
+      "workflowExecutionStartedEventAttributes": {
+        "workflowType": {
+          "name": "CompiledJourneyWorkflow"
+        },
+        "taskQueue": {
+          "name": "journey-task-queue"
+        },
+        "input": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJzY2hlbWFfdmVyc2lvbiI6IjEuMCIsIndvcmtmbG93X2lkIjoid2YtcmVwbGF5LWV4cCIsInJ1bl9pZCI6InJ1bi1yZXBsYXktZXhwIiwidGVuYW50X2lkIjoidGVuYW50LXJlcGxheS10ZXN0IiwiY29udGVudF9oYXNoIjoiaGFzaC1leHAtcmVwbGF5IiwiZXhlY3V0aW9uX21vZGUiOiJwcm9kdWN0aW9uIiwiZGF0YV9jbGFzc2lmaWNhdGlvbiI6IiIsImlucHV0X3BheWxvYWQiOnsidXNlcl9pZCI6InVzcl85OTkifX0="
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eventId": "2",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "3",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "2"
+      }
+    },
+    {
+      "eventId": "4",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "2",
+        "startedEventId": "3"
+      }
+    },
+    {
+      "eventId": "5",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "5",
+        "activityType": {
+          "name": "LoadCompiledIR"
+        }
+      }
+    },
+    {
+      "eventId": "6",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "5"
+      }
+    },
+    {
+      "eventId": "7",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJzY2hlbWFfdmVyc2lvbiI6IjEuMCIsImlyX2lkIjoiaXItZXhwLXJlcGxheSIsImRyYWZ0X2lkIjoiIiwidGVuYW50X2lkIjoidGVuYW50LXJlcGxheS10ZXN0IiwidmVyc2lvbiI6MCwiZW50cnlfbm9kZV9pZCI6InN0YXJ0XzEiLCJub2RlcyI6W3siaWQiOiJzdGFydF8xIiwidHlwZSI6ImV2ZW50X3N0YXJ0IiwiYWN0aXZpdHlfbmFtZSI6IiJ9LHsiaWQiOiJleHBfMSIsInR5cGUiOiJleHBlcmltZW50IiwiYWN0aXZpdHlfbmFtZSI6IiIsInBhcmFtcyI6eyJleHBlcmltZW50X2lkIjoiZXhwXzEifX0seyJpZCI6ImVtYWlsXzEiLCJ0eXBlIjoiZW1haWwiLCJhY3Rpdml0eV9uYW1lIjoiIiwicGFyYW1zIjp7InRlbXBsYXRlIjoid2VsY29tZSJ9fSx7ImlkIjoiZXhpdF8xIiwidHlwZSI6ImV4aXQiLCJhY3Rpdml0eV9uYW1lIjoiIiwicGFyYW1zIjp7InN0YXR1cyI6InN1Y2NlZWRlZCJ9fV0sImVkZ2VzIjpbeyJpZCI6ImUxIiwic291cmNlX2lkIjoic3RhcnRfMSIsInRhcmdldF9pZCI6ImV4cF8xIn0seyJpZCI6ImUyIiwic291cmNlX2lkIjoiZXhwXzEiLCJ0YXJnZXRfaWQiOiJlbWFpbF8xIiwiY29uZGl0aW9uX2V4cHJlc3Npb24iOiJ2YXJpYW50X2EifSx7ImlkIjoiZTMiLCJzb3VyY2VfaWQiOiJlbWFpbF8xIiwidGFyZ2V0X2lkIjoiZXhpdF8xIn1dLCJjb250ZW50X2hhc2giOiJoYXNoLWV4cC1yZXBsYXkiLCJjb21waWxlZF9hdCI6IjAwMDEtMDEtMDFUMDA6MDA6MDBaIn0="
+            }
+          ]
+        },
+        "scheduledEventId": "5",
+        "startedEventId": "6"
+      }
+    },
+    {
+      "eventId": "8",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "9",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "8"
+      }
+    },
+    {
+      "eventId": "10",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "8",
+        "startedEventId": "9"
+      }
+    },
+    {
+      "eventId": "11",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "11",
+        "activityType": {
+          "name": "EmitLifecycleEvent"
+        }
+      }
+    },
+    {
+      "eventId": "12",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "11"
+      }
+    },
+    {
+      "eventId": "13",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "YmluYXJ5L251bGw="
+              }
+            }
+          ]
+        },
+        "scheduledEventId": "11",
+        "startedEventId": "12"
+      }
+    },
+    {
+      "eventId": "14",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "15",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "14"
+      }
+    },
+    {
+      "eventId": "16",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "14",
+        "startedEventId": "15"
+      }
+    },
+    {
+      "eventId": "17",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "17",
+        "activityType": {
+          "name": "EmitLifecycleEvent"
+        }
+      }
+    },
+    {
+      "eventId": "18",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "17"
+      }
+    },
+    {
+      "eventId": "19",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "YmluYXJ5L251bGw="
+              }
+            }
+          ]
+        },
+        "scheduledEventId": "17",
+        "startedEventId": "18"
+      }
+    },
+    {
+      "eventId": "20",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "21",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "20"
+      }
+    },
+    {
+      "eventId": "22",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "20",
+        "startedEventId": "21"
+      }
+    },
+    {
+      "eventId": "23",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "23",
+        "activityType": {
+          "name": "EmitLifecycleEvent"
+        }
+      }
+    },
+    {
+      "eventId": "24",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "23"
+      }
+    },
+    {
+      "eventId": "25",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "YmluYXJ5L251bGw="
+              }
+            }
+          ]
+        },
+        "scheduledEventId": "23",
+        "startedEventId": "24"
+      }
+    },
+    {
+      "eventId": "26",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "27",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "26"
+      }
+    },
+    {
+      "eventId": "28",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "26",
+        "startedEventId": "27"
+      }
+    },
+    {
+      "eventId": "29",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "29",
+        "activityType": {
+          "name": "GetOrAssign"
+        }
+      }
+    },
+    {
+      "eventId": "30",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "29"
+      }
+    },
+    {
+      "eventId": "31",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJhc3NpZ25tZW50X2lkIjoiYXNnXzEiLCJ0ZW5hbnRfaWQiOiJ0ZW5hbnQtcmVwbGF5LXRlc3QiLCJleHBlcmltZW50X2lkIjoiZXhwXzEiLCJ2ZXJzaW9uIjowLCJzdWJqZWN0X2lkIjoidXNyXzk5OSIsInZhcmlhbnRfaWQiOiJ2YXJpYW50X2EiLCJ3ZWlnaHRfYmFzaXNfcG9pbnRzIjo1MDAwLCJidWNrZXQiOjAsImlzX3Rlc3RfbW9kZSI6ZmFsc2UsImFzc2lnbmVkX2F0IjoiMDAwMS0wMS0wMVQwMDowMDowMFoiLCJjcmVhdGVkX2F0IjoiMDAwMS0wMS0wMVQwMDowMDowMFoifQ=="
+            }
+          ]
+        },
+        "scheduledEventId": "29",
+        "startedEventId": "30"
+      }
+    },
+    {
+      "eventId": "32",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "33",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "32"
+      }
+    },
+    {
+      "eventId": "34",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "32",
+        "startedEventId": "33"
+      }
+    },
+    {
+      "eventId": "35",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "35",
+        "activityType": {
+          "name": "RecordExposure"
+        }
+      }
+    },
+    {
+      "eventId": "36",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "35"
+      }
+    },
+    {
+      "eventId": "37",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJleHBvc3VyZV9pZCI6ImV4cF9yZWNfMSIsInRlbmFudF9pZCI6IiIsImV4cGVyaW1lbnRfaWQiOiIiLCJleHBlcmltZW50X3ZlcnNpb24iOjAsImFzc2lnbm1lbnRfaWQiOiIiLCJzdWJqZWN0X2lkIjoiIiwidmFyaWFudF9pZCI6IiIsIndlaWdodF9iYXNpc19wb2ludHMiOjAsImlzX3Rlc3RfbW9kZSI6ZmFsc2UsImV4cG9zZWRfYXQiOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiIsImNyZWF0ZWRfYXQiOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiJ9"
+            }
+          ]
+        },
+        "scheduledEventId": "35",
+        "startedEventId": "36"
+      }
+    },
+    {
+      "eventId": "38",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "39",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "38"
+      }
+    },
+    {
+      "eventId": "40",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "38",
+        "startedEventId": "39"
+      }
+    },
+    {
+      "eventId": "41",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "41",
+        "activityType": {
+          "name": "EmitLifecycleEvent"
+        }
+      }
+    },
+    {
+      "eventId": "42",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "41"
+      }
+    },
+    {
+      "eventId": "43",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "YmluYXJ5L251bGw="
+              }
+            }
+          ]
+        },
+        "scheduledEventId": "41",
+        "startedEventId": "42"
+      }
+    },
+    {
+      "eventId": "44",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "45",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "44"
+      }
+    },
+    {
+      "eventId": "46",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "44",
+        "startedEventId": "45"
+      }
+    },
+    {
+      "eventId": "47",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "47",
+        "activityType": {
+          "name": "ExecuteActionGateway"
+        }
+      }
+    },
+    {
+      "eventId": "48",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "47"
+      }
+    },
+    {
+      "eventId": "49",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJpZGVtcG90ZW5jeV9rZXkiOiJnd18xIiwic3RhdHVzIjoiYWNjZXB0ZWQiLCJleGVjdXRlZF9hdCI6IjAwMDEtMDEtMDFUMDA6MDA6MDBaIn0="
+            }
+          ]
+        },
+        "scheduledEventId": "47",
+        "startedEventId": "48"
+      }
+    },
+    {
+      "eventId": "50",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "51",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "50"
+      }
+    },
+    {
+      "eventId": "52",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "50",
+        "startedEventId": "51"
+      }
+    },
+    {
+      "eventId": "53",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "53",
+        "activityType": {
+          "name": "EmitLifecycleEvent"
+        }
+      }
+    },
+    {
+      "eventId": "54",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "53"
+      }
+    },
+    {
+      "eventId": "55",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "YmluYXJ5L251bGw="
+              }
+            }
+          ]
+        },
+        "scheduledEventId": "53",
+        "startedEventId": "54"
+      }
+    },
+    {
+      "eventId": "56",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "57",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "56"
+      }
+    },
+    {
+      "eventId": "58",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "56",
+        "startedEventId": "57"
+      }
+    },
+    {
+      "eventId": "59",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
+      "activityTaskScheduledEventAttributes": {
+        "activityId": "59",
+        "activityType": {
+          "name": "EmitLifecycleEvent"
+        }
+      }
+    },
+    {
+      "eventId": "60",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
+      "activityTaskStartedEventAttributes": {
+        "scheduledEventId": "59"
+      }
+    },
+    {
+      "eventId": "61",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
+      "activityTaskCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "YmluYXJ5L251bGw="
+              }
+            }
+          ]
+        },
+        "scheduledEventId": "59",
+        "startedEventId": "60"
+      }
+    },
+    {
+      "eventId": "62",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
+      "workflowTaskScheduledEventAttributes": {}
+    },
+    {
+      "eventId": "63",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
+      "workflowTaskStartedEventAttributes": {
+        "scheduledEventId": "62"
+      }
+    },
+    {
+      "eventId": "64",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
+      "workflowTaskCompletedEventAttributes": {
+        "scheduledEventId": "62",
+        "startedEventId": "63"
+      }
+    },
+    {
+      "eventId": "65",
+      "eventTime": "2026-08-04T08:46:34.877412Z",
+      "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED",
+      "workflowExecutionCompletedEventAttributes": {
+        "result": {
+          "payloads": [
+            {
+              "metadata": {
+                "encoding": "anNvbi9wbGFpbg=="
+              },
+              "data": "eyJydW5faWQiOiJydW4tcmVwbGF5LWV4cCIsIndvcmtmbG93X2lkIjoid2YtcmVwbGF5LWV4cCIsInN0YXR1cyI6InN1Y2NlZWRlZCIsImN1cnJlbnRfbm9kZV9pZCI6ImV4aXRfMSIsInZpc2l0X2NvdW50cyI6eyJlbWFpbF8xIjoxLCJleGl0XzEiOjEsImV4cF8xIjoxLCJzdGFydF8xIjoxfSwibm9kZV9vdXRwdXRzIjp7ImV4aXRfMSI6InN1Y2NlZWRlZCIsImV4cF8xIjoidmFyaWFudF9hIiwic3RhcnRfMSI6InN0YXJ0ZWQifX0="
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

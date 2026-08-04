@@ -1,0 +1,16 @@
+# Journey Engine: Event-Driven Workflow & Experimentation Engine
+
+## Core Concept
+A high-fidelity visual canvas and dashboard for orchestrating complex event-driven journeys and A/B experiments.
+
+## Key Screens to Build:
+1. **Journeys Canvas (The Editor)**: The primary workflow builder with a node-graph editor, floating toolbars, and a node inspector drawer.
+2. **Experiment Authoring & Analytics**: A dual-purpose screen for configuring A/B tests and viewing aggregate performance KPI cards/tables.
+3. **Static-List Test Lane**: A "Test Mode" view showing CSV uploads, member previews, and execution timelines.
+4. **ETag Conflict Resolver**: A specialized modal view for side-by-side diffing of unsaved drafts vs server revisions.
+
+## Design Constraints:
+- Use Obsidian/Slate dark mode exclusively.
+- Implement glassmorphism for overlays and floating panels.
+- Ensure all nodes have distinct geometric shapes and color-coded status badges.
+- Maintain PII masking and system health indicators in the global header.

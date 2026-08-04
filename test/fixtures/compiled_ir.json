@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "ir_id": "ir-555",
+  "draft_id": "draft-101",
+  "tenant_id": "tenant-42",
+  "version": 1,
+  "entry_node_id": "ir-node-1",
+  "nodes": [
+    {
+      "id": "ir-node-1",
+      "type": "activity",
+      "activity_name": "SendEmailActivity",
+      "params": {
+        "template_id": "tpl_welcome_01"
+      },
+      "timeout_seconds": 30,
+      "retry_policy": {
+        "maximum_attempts": 3,
+        "initial_interval_seconds": 5
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "ir-edge-1",
+      "source_id": "ir-node-1",
+      "target_id": "ir-node-2",
+      "condition_expression": "outcome.status == 'sent'"
+    }
+  ],
+  "content_hash": "b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef01",
+  "compiled_at": "2026-07-27T14:10:00Z"
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/static_list.json",
+  "title": "StaticList",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "list_id",
+    "name",
+    "item_count",
+    "data_classification",
+    "items"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "list_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "item_count": {
+      "type": "integer"
+    },
+    "data_classification": {
+      "type": "string",
+      "enum": ["PII", "NonPII", "Sensitive"]
+    },
+    "items": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

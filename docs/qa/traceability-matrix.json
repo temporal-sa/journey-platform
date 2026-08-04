@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0",
+  "project": "journey-platform",
+  "traceability": [
+    {
+      "requirement_id": "FND-001",
+      "automated_test_id": "internal/testkit/pinning_test.go",
+      "human_qa_case_id": "HQA-001"
+    },
+    {
+      "requirement_id": "FND-002",
+      "automated_test_id": "Makefile",
+      "human_qa_case_id": "HQA-001"
+    },
+    {
+      "requirement_id": "FND-003",
+      "automated_test_id": "scripts/check-stack.sh",
+      "human_qa_case_id": "HQA-001"
+    },
+    {
+      "requirement_id": "CON-001",
+      "automated_test_id": "internal/domain/domain_test.go",
+      "human_qa_case_id": "HQA-002"
+    },
+    {
+      "requirement_id": "CON-002",
+      "automated_test_id": "api/openapi_test.go",
+      "human_qa_case_id": "HQA-002"
+    },
+    {
+      "requirement_id": "DAT-001",
+      "automated_test_id": "internal/store/postgres/repository_test.go",
+      "human_qa_case_id": "HQA-003"
+    },
+    {
+      "requirement_id": "DAT-002",
+      "automated_test_id": "internal/store/object/object_test.go",
+      "human_qa_case_id": "HQA-007"
+    },
+    {
+      "requirement_id": "DAT-003",
+      "automated_test_id": "internal/store/analytics/analytics_test.go",
+      "human_qa_case_id": "HQA-006"
+    },
+    {
+      "requirement_id": "CMP-001",
+      "automated_test_id": "internal/compiler/canonicalizer_test.go",
+      "human_qa_case_id": "HQA-002"
+    },
+    {
+      "requirement_id": "CMP-002",
+      "automated_test_id": "internal/compiler/validator_test.go",
+      "human_qa_case_id": "HQA-002"
+    },
+    {
+      "requirement_id": "CMP-003",
+      "automated_test_id": "internal/compiler/expression/expression_test.go",
+      "human_qa_case_id": "HQA-002"
+    },
+    {
+      "requirement_id": "CMP-004",
+      "automated_test_id": "internal/compiler/simulator_test.go",
+      "human_qa_case_id": "HQA-002"
+    },
+    {
+      "requirement_id": "API-001",
+      "automated_test_id": "internal/api/middleware/middleware_test.go",
+      "human_qa_case_id": "HQA-003"
+    },
+    {
+      "requirement_id": "API-002",
+      "automated_test_id": "internal/api/handlers/journey_test.go",
+      "human_qa_case_id": "HQA-003"
+    },
+    {
+      "requirement_id": "API-003",
+      "automated_test_id": "internal/api/handlers/public_api_test.go",
+      "human_qa_case_id": "HQA-003"
+    },
+    {
+      "requirement_id": "KFK-001",
+      "automated_test_id": "internal/ingress/codec/codec_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "KFK-002",
+      "automated_test_id": "internal/ingress/capture_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "KFK-003",
+      "automated_test_id": "internal/ingress/dispatch_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "TMP-001",
+      "automated_test_id": "internal/workflows/workflows_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "TMP-002",
+      "automated_test_id": "internal/workflows/journey_workflow_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "TMP-003",
+      "automated_test_id": "internal/workflows/wait_for_event_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "TMP-004",
+      "automated_test_id": "internal/workflows/workflow_nodes_test.go",
+      "human_qa_case_id": "HQA-004"
+    },
+    {
+      "requirement_id": "EXP-001",
+      "automated_test_id": "internal/experiments/experiments_test.go",
+      "human_qa_case_id": "HQA-006"
+    },
+    {
+      "requirement_id": "EXP-002",
+      "automated_test_id": "internal/outcomes/outcomes_test.go",
+      "human_qa_case_id": "HQA-006"
+    },
+    {
+      "requirement_id": "EXP-003",
+      "automated_test_id": "internal/experiments/reporting_test.go",
+      "human_qa_case_id": "HQA-006"
+    },
+    {
+      "requirement_id": "TST-001",
+      "automated_test_id": "internal/testaudience/testaudience_test.go",
+      "human_qa_case_id": "HQA-007"
+    },
+    {
+      "requirement_id": "TST-002",
+      "automated_test_id": "internal/testaudience/coordinator_test.go",
+      "human_qa_case_id": "HQA-007"
+    },
+    {
+      "requirement_id": "ACT-001",
+      "automated_test_id": "internal/activities/resolution_test.go",
+      "human_qa_case_id": "HQA-005"
+    },
+    {
+      "requirement_id": "ACT-002",
+      "automated_test_id": "internal/activities/policy_test.go",
+      "human_qa_case_id": "HQA-005"
+    },
+    {
+      "requirement_id": "ACT-003",
+      "automated_test_id": "internal/activities/gateway_test.go",
+      "human_qa_case_id": "HQA-005"
+    },
+    {
+      "requirement_id": "ACT-004",
+      "automated_test_id": "internal/activities/providers/providers_test.go",
+      "human_qa_case_id": "HQA-005"
+    },
+    {
+      "requirement_id": "SEC-001",
+      "automated_test_id": "internal/security/security_test.go",
+      "human_qa_case_id": "HQA-008"
+    },
+    {
+      "requirement_id": "INT-001",
+      "automated_test_id": "internal/integration/integration_test.go",
+      "human_qa_case_id": "HQA-001"
+    }
+  ]
+}

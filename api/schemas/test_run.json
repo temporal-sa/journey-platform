@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://validated-pattern.github.io/journey-platform/schemas/test_run.json",
+  "title": "TestRun",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "test_run_id",
+    "draft_id",
+    "ir_id",
+    "status",
+    "execution_time_ms",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "test_run_id": {
+      "type": "string"
+    },
+    "draft_id": {
+      "type": "string"
+    },
+    "ir_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "passed", "failed"]
+    },
+    "mock_inputs": {
+      "type": "object"
+    },
+    "expected_outcomes": {
+      "type": "object"
+    },
+    "actual_outcomes": {
+      "type": "object"
+    },
+    "execution_time_ms": {
+      "type": "integer"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

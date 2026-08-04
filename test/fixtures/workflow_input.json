@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "workflow_id": "wf-journey-101",
+  "run_id": "run-444",
+  "tenant_id": "tenant-42",
+  "trigger_event_id": "evt-12345-abcde",
+  "ir_id": "ir-555",
+  "data_classification": "PII",
+  "input_payload": {
+    "user_id": "usr-9999",
+    "email": "user@example.com"
+  }
+}
