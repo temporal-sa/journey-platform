@@ -13,7 +13,7 @@ export interface NodeInspectorProps {
 }
 
 function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
-  const { currentDraft, updateNodes, validationResult, isInspectorOpen } = useEditorStore();
+  const { currentDraft, updateNodes, validationResult, isInspectorOpen, isCanvasLocked } = useEditorStore();
 
   const { data: actionCatalog = [] } = useQuery<CatalogRecord[]>({
     queryKey: ['actionCatalogNodes'],
@@ -262,6 +262,16 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           </button>
         )}
       </div>
+
+      {isCanvasLocked && (
+        <div
+          data-testid="canvas-locked-inspector-banner"
+          className="mx-4 mt-3 px-3 py-2 rounded-none bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-sm">lock</span>
+          <span>Canvas is Locked (Read Only)</span>
+        </div>
+      )}
 
 
       {/* Node Validation Summary Alert Banner */}

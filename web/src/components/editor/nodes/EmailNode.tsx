@@ -12,9 +12,19 @@ export function EmailNode({ data, selected }: NodeProps<CustomNode>) {
       role="group"
       aria-label={`Node: ${displayName}, Category: Action, Type: Email`}
       data-node-type="Email"
-      className={`relative w-72 glass-panel rounded-full border-2 px-5 py-4 flex items-center gap-3.5 shadow-xl transition-all ${
+      style={{
+        width: '346px',
+        minWidth: '346px',
+        maxWidth: '346px',
+        height: '112px',
+        minHeight: '112px',
+        maxHeight: '112px',
+        boxSizing: 'border-box',
+        ...(selected ? { borderColor: '#c0c1ff', backgroundColor: 'rgba(192, 193, 255, 0.15)' } : {})
+      }}
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex items-center gap-5 shadow-xl transition-all text-left ${
         selected
-          ? 'border-[#c0c1ff] ring-4 ring-[#c0c1ff]/30 scale-105 shadow-[0_0_25px_rgba(192,193,255,0.4)]'
+          ? 'border-[#c0c1ff] ring-2 ring-[#c0c1ff]/50 bg-[#c0c1ff]/10 scale-[1.02]'
           : 'border-[#c0c1ff]/60 hover:border-[#c0c1ff]'
       }`}
     >
@@ -36,19 +46,19 @@ export function EmailNode({ data, selected }: NodeProps<CustomNode>) {
         type="target"
         position={Position.Top}
         id="target"
-        className="!w-8 !h-8 !bg-[#c0c1ff] !border-3 !border-[#0B0F19] !-top-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-[#c0c1ff] !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
       {/* Primary Mail Icon Circle */}
-      <div className="w-10 h-10 rounded-full bg-[#c0c1ff] flex items-center justify-center text-[#1000a9] shadow-lg shrink-0 overflow-hidden">
+      <div className="w-10 h-10 rounded-none bg-[#c0c1ff]/20 border border-[#c0c1ff]/40 flex items-center justify-center text-[#c0c1ff] shadow-lg shrink-0 overflow-hidden">
         <span className="material-symbols-outlined text-lg">mail</span>
       </div>
 
       {/* Main Text Content */}
-      <div className="flex-grow min-w-0 ml-4">
-        <div className="text-[10px] font-bold text-[#c0c1ff] uppercase tracking-widest font-['Outfit']">Action</div>
-        <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit']">{displayName}</div>
-        <div className="flex items-center gap-2 mt-1">
+      <div className="flex-grow min-w-0 text-left">
+        <div className="text-[10px] font-bold text-[#c0c1ff] uppercase tracking-widest font-['Outfit'] text-left">ACTION</div>
+        <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
+        <div className="flex items-center gap-2 mt-1.5 text-left">
           <span className="text-[10px] font-mono bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">v2.1</span>
           <span className="w-1 h-1 rounded-full bg-slate-500" />
           <span className="text-[10px] text-slate-400 uppercase tracking-tighter font-mono">Draft</span>
@@ -63,7 +73,7 @@ export function EmailNode({ data, selected }: NodeProps<CustomNode>) {
         type="source"
         position={Position.Bottom}
         id="source"
-        className="!w-8 !h-8 !bg-[#c0c1ff] !border-3 !border-[#0B0F19] !-bottom-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-[#c0c1ff] !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
     </div>
   );

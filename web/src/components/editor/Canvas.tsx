@@ -11,7 +11,6 @@ import {
   useReactFlow,
   OnNodesChange,
   OnEdgesChange,
-  OnConnect,
   OnReconnect,
   SelectionMode,
 } from '@xyflow/react';
@@ -406,9 +405,11 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
   const autoArrangeVertical = useEditorStore((s) => s.autoArrangeVertical);
   const validationResult = useEditorStore((s) => s.validationResult);
 
+  const isCanvasLocked = useEditorStore((s) => s.isCanvasLocked);
+  const toggleCanvasLock = useEditorStore((s) => s.toggleCanvasLock);
+
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isPanMode, setIsPanMode] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
 
   // Auto-clear validation notification after 4s
   useEffect(() => {
@@ -628,8 +629,9 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
     [currentDraft]
   );
 
-  const onConnect: OnConnect = useCallback(
+  const onConnect = useCallback(
     (connection: Connection) => {
+      if (isCanvasLocked) return;
       if (!currentDraft) return;
       setValidationError(null);
 
@@ -679,13 +681,13 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
 
       storeAddEdge(newEdge);
     },
-    [currentDraft, storeAddEdge]
+    [currentDraft, storeAddEdge, isCanvasLocked]
   );
 
   // Handle Edge Reconnection
   const onReconnect: OnReconnect = useCallback(
     (oldEdge, newConnection) => {
-      if (!currentDraft) return;
+      if (isCanvasLocked || !currentDraft) return;
 
       const result = validateConnection(
         newConnection,
@@ -717,18 +719,20 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
 
       updateEdges(updatedEdges);
     },
-    [currentDraft, updateEdges]
+    [currentDraft, updateEdges, isCanvasLocked]
   );
 
   // Handle Palette Drag-and-Drop Drop
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
+    if (isCanvasLocked) return;
     event.dataTransfer.dropEffect = 'move';
-  }, []);
+  }, [isCanvasLocked]);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+      if (isCanvasLocked) return;
 
       const type = event.dataTransfer.getData('application/reactflow/type');
       const name = event.dataTransfer.getData('application/reactflow/name');
@@ -759,12 +763,13 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
       addNode(newNode);
       setSelectedNodeId(newNode.id);
     },
-    [screenToFlowPosition, addNode, setSelectedNodeId, snapToGridEnabled]
+    [screenToFlowPosition, addNode, setSelectedNodeId, snapToGridEnabled, isCanvasLocked]
   );
 
   // Handle Direct Node Creation from Palette Click
   const handleAddNodeFromPalette = useCallback(
     (type: string, name: string) => {
+      if (isCanvasLocked) return;
       const GRID_SIZE = 16;
       const initialPos = { x: 300 + Math.random() * 50, y: 200 + Math.random() * 50 };
       const finalPosition = snapToGridEnabled
@@ -866,8 +871,8 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           hasSelection={hasSelection}
           isPanMode={isPanMode}
           onTogglePanMode={() => setIsPanMode((prev) => !prev)}
-          isLocked={isLocked}
-          onToggleLock={() => setIsLocked((prev) => !prev)}
+          isLocked={isCanvasLocked}
+          onToggleLock={toggleCanvasLock}
           onSaveDraft={onSaveDraft}
           onSimulateConflict={onSimulateConflict}
           onPublish={onPublish}
@@ -917,9 +922,11 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           selectionOnDrag={!isPanMode}
           panOnDrag={isPanMode}
           multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
-          nodesDraggable={!isLocked}
-          nodesConnectable={!isLocked}
-          elementsSelectable={!isLocked}
+          nodesDraggable={!isCanvasLocked}
+          nodesConnectable={!isCanvasLocked}
+          elementsSelectable={!isCanvasLocked}
+          edgesFocusable={!isCanvasLocked}
+          nodesFocusable={!isCanvasLocked}
           minZoom={0.1}
           maxZoom={4}
           defaultViewport={DEFAULT_VIEWPORT}

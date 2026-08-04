@@ -381,4 +381,38 @@ describe('editorStore', () => {
     expect(arrangedNodes![2].id).toBe('node-action-2');
     expect(arrangedNodes![2].position).toEqual({ x: 112, y: 608 });
   });
+
+  it('arranges decision true branch to the left and false branch to the right without crossing', () => {
+    const mockDraft: GraphDraft = {
+      schema_version: '1.0',
+      draft_id: 'draft-decision',
+      tenant_id: 'tenant-1',
+      name: 'Decision Test Journey',
+      version: 1,
+      nodes: [
+        { id: 'node-cond', type: 'Condition', name: 'Check Plan', position: { x: 0, y: 0 } },
+        { id: 'node-false-target', type: 'Email', name: 'False Action', position: { x: 0, y: 0 } },
+        { id: 'node-true-target', type: 'Email', name: 'True Action', position: { x: 0, y: 0 } },
+      ],
+      edges: [
+        { id: 'e-false', source: 'node-cond', sourceHandle: 'false', target: 'node-false-target' },
+        { id: 'e-true', source: 'node-cond', sourceHandle: 'true', target: 'node-true-target' },
+      ],
+    };
+
+    useEditorStore.getState().setDraft(mockDraft);
+    useEditorStore.getState().autoArrangeVertical();
+
+    const nodes = useEditorStore.getState().currentDraft?.nodes;
+    expect(nodes).toBeDefined();
+
+    const trueNode = nodes!.find(n => n.id === 'node-true-target');
+    const falseNode = nodes!.find(n => n.id === 'node-false-target');
+
+    expect(trueNode).toBeDefined();
+    expect(falseNode).toBeDefined();
+
+    // True branch target should have a smaller X coordinate than False branch target
+    expect(trueNode!.position?.x ?? 0).toBeLessThan(falseNode!.position?.x ?? 0);
+  });
 });

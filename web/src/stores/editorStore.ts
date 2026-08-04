@@ -27,6 +27,7 @@ export interface EditorPresentationState {
   isSidebarOpen: boolean;
   isInspectorOpen: boolean;
   snapToGridEnabled: boolean;
+  isCanvasLocked: boolean;
 }
 
 export interface HistoryState {
@@ -76,6 +77,8 @@ export interface EditorActions {
   snapAllNodesToGrid: () => void;
   autoArrangeHorizontal: () => void;
   autoArrangeVertical: () => void;
+  setIsCanvasLocked: (isLocked: boolean) => void;
+  toggleCanvasLock: () => void;
 
   // Server Draft Actions
   setDraft: (draft: GraphDraft | null) => void;
@@ -131,6 +134,7 @@ const initialPresentationState: EditorPresentationState = {
   isSidebarOpen: true,
   isInspectorOpen: false,
   snapToGridEnabled: true,
+  isCanvasLocked: false,
 };
 
 const initialHistoryState: HistoryState = {
@@ -235,6 +239,65 @@ function computeNodeLevels(nodes: GraphNode[], edges: GraphEdge[]) {
   return levels;
 }
 
+function getHandleRank(handle?: string | null): number {
+  if (!handle) return 1;
+  const h = handle.toLowerCase();
+  if (h === 'true' || h === 'variant_a' || h === 'event' || h === 'yes' || h.endsWith('_a') || h.endsWith('-a')) {
+    return 0; // Left branch
+  }
+  if (h === 'false' || h === 'variant_b' || h === 'timeout' || h === 'no' || h.endsWith('_b') || h.endsWith('-b')) {
+    return 2; // Right branch
+  }
+  return 1;
+}
+
+function sortLevelNodesByBranchHandles(
+  nodesByLevel: Record<number, string[]>,
+  levels: Record<string, number>,
+  edges: GraphEdge[]
+) {
+  const maxLevel = Math.max(...Object.values(levels), 0);
+
+  const incomingEdges: Record<string, GraphEdge[]> = {};
+  edges.forEach(e => {
+    if (!incomingEdges[e.target]) {
+      incomingEdges[e.target] = [];
+    }
+    incomingEdges[e.target].push(e);
+  });
+
+  for (let lvl = 1; lvl <= maxLevel; lvl++) {
+    const levelNodes = nodesByLevel[lvl];
+    if (!levelNodes || levelNodes.length <= 1) continue;
+
+    const prevLevelNodes = nodesByLevel[lvl - 1] || [];
+    const prevOrderMap: Record<string, number> = {};
+    prevLevelNodes.forEach((id, idx) => {
+      prevOrderMap[id] = idx;
+    });
+
+    levelNodes.sort((aId, bId) => {
+      const aEdges = incomingEdges[aId] || [];
+      const bEdges = incomingEdges[bId] || [];
+
+      const aEdge = aEdges[0];
+      const bEdge = bEdges[0];
+
+      const aParentIdx = aEdge && prevOrderMap[aEdge.source] !== undefined ? prevOrderMap[aEdge.source] : 999;
+      const bParentIdx = bEdge && prevOrderMap[bEdge.source] !== undefined ? prevOrderMap[bEdge.source] : 999;
+
+      if (aParentIdx !== bParentIdx) {
+        return aParentIdx - bParentIdx;
+      }
+
+      const aRank = aEdge ? getHandleRank(aEdge.sourceHandle) : 1;
+      const bRank = bEdge ? getHandleRank(bEdge.sourceHandle) : 1;
+
+      return aRank - bRank;
+    });
+  }
+}
+
 export const useEditorStore = create<EditorStore>()((set, get) => ({
   ...initialPresentationState,
   ...initialHistoryState,
@@ -304,7 +367,12 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
 
   setSnapToGridEnabled: (snapToGridEnabled) => set({ snapToGridEnabled }),
 
+  setIsCanvasLocked: (isCanvasLocked) => set({ isCanvasLocked }),
+
+  toggleCanvasLock: () => set((state) => ({ isCanvasLocked: !state.isCanvasLocked })),
+
   snapAllNodesToGrid: () => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft || !currentDraft.nodes) return;
 
@@ -345,6 +413,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   autoArrangeHorizontal: () => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft || !currentDraft.nodes) return;
 
@@ -360,6 +429,8 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
       }
       nodesByLevel[lvl].push(n.id);
     });
+
+    sortLevelNodesByBranchHandles(nodesByLevel, levels, edges);
 
     const HORIZONTAL_SPACING = 384;
     const VERTICAL_SPACING = 224;
@@ -404,6 +475,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   autoArrangeVertical: () => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft || !currentDraft.nodes) return;
 
@@ -419,6 +491,8 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
       }
       nodesByLevel[lvl].push(n.id);
     });
+
+    sortLevelNodesByBranchHandles(nodesByLevel, levels, edges);
 
     const HORIZONTAL_SPACING = 384;
     const VERTICAL_SPACING = 224;
@@ -488,6 +562,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   markSaved: () => set({ hasUnsavedChanges: false }),
 
   setDraftName: (name) => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft || currentDraft.name === name) return;
 
@@ -508,6 +583,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
   // Graph Editing Actions
   addNode: (node) => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft) {
       const newDraft: GraphDraft = {
@@ -547,6 +623,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   updateNodes: (nodes, skipHistory = false) => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft) return;
 
@@ -578,6 +655,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   updateEdges: (edges) => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft) return;
 
@@ -598,6 +676,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   addEdge: (edge) => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
     if (!currentDraft) return;
 
@@ -622,6 +701,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   deleteElements: (nodeIds, edgeIds) => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past, selectedNodeId, selectedEdgeId, selectedNodeIds, selectedEdgeIds } = get();
     if (!currentDraft) return;
 
@@ -679,6 +759,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
 
   // Undo / Redo Actions
   undo: () => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past, future } = get();
     if (!currentDraft || past.length === 0) return;
 
@@ -697,6 +778,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   redo: () => {
+    if (get().isCanvasLocked) return;
     const { currentDraft, past, future } = get();
     if (!currentDraft || future.length === 0) return;
 
@@ -726,6 +808,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
 
   // Unsaved Inspector Edits Actions
   updateInspectorEdit: (nodeId, field, value) => {
+    if (get().isCanvasLocked) return;
     const state = get();
     const nodeEdits = { ...(state.unsavedInspectorEdits[nodeId] || {}), [field]: value };
     const updatedEdits = { ...state.unsavedInspectorEdits, [nodeId]: nodeEdits };
@@ -753,6 +836,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   },
 
   commitInspectorEdits: (nodeId) => {
+    if (get().isCanvasLocked) return;
     const state = get();
     const edits = state.unsavedInspectorEdits[nodeId];
     if (!edits || !state.currentDraft) return;

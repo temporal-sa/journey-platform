@@ -18,10 +18,20 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
       role="group"
       aria-label={`Node: ${displayName}, Category: Decision, Type: Experiment`}
       data-node-type="Experiment"
-      className={`relative w-60 glass-panel rounded-xl border transition-all ${
+      style={{
+        width: '346px',
+        minWidth: '346px',
+        maxWidth: '346px',
+        height: '112px',
+        minHeight: '112px',
+        maxHeight: '112px',
+        boxSizing: 'border-box',
+        ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
+      }}
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex flex-col justify-between shadow-xl transition-all text-left ${
         selected
-          ? 'border-[#ddb7ff] shadow-[0_0_25px_-5px_rgba(221,183,255,0.6)] scale-105'
-          : 'border-[#ddb7ff]/60 shadow-[0_0_25px_-5px_rgba(221,183,255,0.2)]'
+          ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#f59e0b]/10 scale-[1.02]'
+          : 'border-[#f59e0b]/60 hover:border-[#f59e0b]'
       }`}
     >
       {hasBadge && (
@@ -42,63 +52,49 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         type="target"
         position={Position.Top}
         id="target"
-        className="!w-8 !h-8 !bg-[#ddb7ff] !border-3 !border-[#0B0F19] !-top-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
-      {/* Header Bar */}
-      <div className="px-4 py-3.5 bg-[#ddb7ff]/10 border-b border-[#ddb7ff]/20 flex items-center justify-between rounded-t-xl">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#ddb7ff] text-lg">call_split</span>
-          <span className="text-[10px] font-bold text-[#ddb7ff] uppercase font-['Outfit'] tracking-wider">A/B TEST</span>
+      <div className="flex items-center gap-5 w-full text-left">
+        {/* Primary Experiment Icon Badge */}
+        <div className="w-10 h-10 rounded-none bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shrink-0 overflow-hidden">
+          <span className="material-symbols-outlined text-lg">science</span>
         </div>
-        <div className="px-2 py-0.5 bg-[#ddb7ff] text-[#400071] rounded text-[9px] font-bold">LIVE</div>
-      </div>
 
-      {/* Card Content */}
-      <div className="p-4 space-y-3.5">
-        <div className="text-xs font-semibold text-[#dfe2f1] font-['Outfit'] truncate">{displayName}</div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono">
-            <span className="text-[#ddb7ff] font-semibold">Variant A</span>
-            <span className="text-[#ddb7ff]" data-testid="experiment-node-pct-a">{variantAPct}%</span>
+        {/* Main Text Content */}
+        <div className="flex-grow min-w-0 text-left">
+          <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
+          <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
+          <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-amber-300 text-left">
+            <span><span>Variant A</span>: <strong data-testid="experiment-node-pct-a">{variantAPct}%</strong></span>
+            <span className="text-slate-500">|</span>
+            <span><span>Variant B</span>: <strong data-testid="experiment-node-pct-b" className="text-slate-400">{variantBPct}%</strong></span>
           </div>
-          <div className="bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-[#ddb7ff] h-full transition-all duration-300" style={{ width: `${variantAPct}%` }} />
-          </div>
+        </div>
 
-          <div className="flex items-center justify-between text-[10px] font-mono mt-1">
-            <span className="text-slate-400 font-semibold">Variant B</span>
-            <span className="text-slate-400" data-testid="experiment-node-pct-b">{variantBPct}%</span>
-          </div>
-          <div className="bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-slate-500 h-full transition-all duration-300" style={{ width: `${variantBPct}%` }} />
-          </div>
+        <div className="pr-1 text-amber-400 opacity-80 shrink-0">
+          <span className="material-symbols-outlined text-lg">drag_indicator</span>
         </div>
       </div>
 
-      {/* Footer Controls */}
-      <div className="flex border-t border-white/10 text-slate-400 rounded-b-xl overflow-hidden">
-        <div className="flex-1 p-2.5 flex justify-center hover:text-[#ddb7ff] cursor-pointer transition-colors">
-          <span className="material-symbols-outlined text-sm">settings</span>
-        </div>
-        <div className="flex-1 p-2.5 flex justify-center hover:text-[#ddb7ff] border-l border-white/10 cursor-pointer transition-colors">
-          <span className="material-symbols-outlined text-sm">analytics</span>
-        </div>
+      <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden flex mt-1">
+        <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${variantAPct}%` }} />
+        <div className="bg-slate-500 h-full transition-all duration-300" style={{ width: `${variantBPct}%` }} />
       </div>
 
       <Handle
         type="source"
         position={Position.Bottom}
         id="variant_a"
-        style={{ left: '35%' }}
-        className="!w-8 !h-8 !bg-[#ddb7ff] !border-3 !border-[#0B0F19] !-bottom-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        style={{ left: '30%' }}
+        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="variant_b"
-        style={{ left: '65%' }}
-        className="!w-8 !h-8 !bg-slate-400 !border-3 !border-[#0B0F19] !-bottom-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        style={{ left: '70%' }}
+        className="!w-8 !h-8 !bg-indigo-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
     </div>
   );

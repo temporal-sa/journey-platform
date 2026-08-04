@@ -13,10 +13,20 @@ export function DelayNode({ data, selected }: NodeProps<CustomNode>) {
       role="group"
       aria-label={`Node: ${displayName}, Category: Decision, Type: Delay`}
       data-node-type="Delay"
-      className={`relative px-5 py-4 glass-panel rounded-[2px_16px_2px_16px] border-2 transition-all min-w-[190px] ${
+      style={{
+        width: '346px',
+        minWidth: '346px',
+        maxWidth: '346px',
+        height: '112px',
+        minHeight: '112px',
+        maxHeight: '112px',
+        boxSizing: 'border-box',
+        ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
+      }}
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex items-center gap-5 shadow-xl transition-all text-left ${
         selected
-          ? 'border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.6)] scale-105'
-          : 'border-amber-500/40 hover:border-amber-400/80 shadow-lg shadow-black/40'
+          ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#f59e0b]/10 scale-[1.02]'
+          : 'border-[#f59e0b]/60 hover:border-[#f59e0b]'
       }`}
     >
       {hasBadge && (
@@ -37,40 +47,37 @@ export function DelayNode({ data, selected }: NodeProps<CustomNode>) {
         type="target"
         position={Position.Top}
         id="target"
-        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] !-top-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
-      {/* Header with Icon and Title */}
-      <div className="flex items-center gap-2.5 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-inner overflow-hidden">
-          <span className="material-symbols-outlined text-lg">schedule</span>
-        </div>
-        <div className="min-w-0 ml-3">
-          <div className="flex items-center gap-1.5">
-            <span
-              data-testid="node-type-badge"
-              className="text-[9px] font-mono font-bold px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase"
-            >
-              Decision
-            </span>
-          </div>
-          <h3 className="font-['Outfit'] font-bold text-xs text-[#dfe2f1] truncate leading-tight mt-0.5">
-            {displayName}
-          </h3>
+      {/* Primary Delay Icon Badge */}
+      <div className="w-10 h-10 rounded-none bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shrink-0 overflow-hidden">
+        <span className="material-symbols-outlined text-lg">schedule</span>
+      </div>
+
+      {/* Main Text Content */}
+      <div className="flex-grow min-w-0 text-left">
+        <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
+        <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
+        <div className="flex items-center gap-2 mt-1.5 text-left">
+          <span
+            data-testid="node-type-badge"
+            className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase"
+          >
+            Wait: {duration}
+          </span>
         </div>
       </div>
 
-      {/* Duration Badge */}
-      <div className="flex items-center justify-between text-[10px] font-mono bg-amber-500/5 px-3 py-1.5 rounded border border-amber-500/15 text-amber-200 mt-1">
-        <span className="text-amber-400/70 uppercase text-[9px] font-bold tracking-wider">Duration</span>
-        <span className="font-bold text-amber-300">Wait: {duration}</span>
+      <div className="pr-1 text-amber-400 opacity-80 shrink-0">
+        <span className="material-symbols-outlined text-lg">drag_indicator</span>
       </div>
 
       <Handle
         type="source"
         position={Position.Bottom}
         id="source"
-        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] !-bottom-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
     </div>
   );

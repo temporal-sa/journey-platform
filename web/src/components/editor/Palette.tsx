@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEditorStore } from '../../stores/editorStore';
 
 export interface PaletteItem {
   type: string;
@@ -16,7 +17,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     type: 'EventStart',
     name: 'Event Start',
     category: 'Triggers',
-    icon: 'electric_bolt',
+    icon: 'bolt',
     description: 'Triggers workflow on incoming domain event',
     accentColor: '#4cd7f6',
     badgeBg: 'bg-[#4cd7f6]/10 border-[#4cd7f6]/30 text-[#4cd7f6]',
@@ -26,7 +27,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     type: 'Condition',
     name: 'Condition',
     category: 'Decisions',
-    icon: 'call_split',
+    icon: 'filter_alt',
     description: 'Branch flow based on boolean expression',
     accentColor: '#f59e0b',
     badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
@@ -44,7 +45,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     type: 'WaitForEvent',
     name: 'Wait For Event',
     category: 'Decisions',
-    icon: 'pending',
+    icon: 'hourglass_empty',
     description: 'Pause until event occurs or times out',
     accentColor: '#f59e0b',
     badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
@@ -55,8 +56,8 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     category: 'Decisions',
     icon: 'science',
     description: 'Split traffic into experiment variants',
-    accentColor: '#ddb7ff',
-    badgeBg: 'bg-[#b76dff]/10 border-[#b76dff]/30 text-[#ddb7ff]',
+    accentColor: '#f59e0b',
+    badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
   },
   // Actions
   {
@@ -128,6 +129,7 @@ interface PaletteProps {
 }
 
 export function Palette({ onAddNode }: PaletteProps) {
+  const isCanvasLocked = useEditorStore((s) => s.isCanvasLocked);
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
@@ -258,20 +260,34 @@ export function Palette({ onAddNode }: PaletteProps) {
                   {items.map((item) => (
                     <div
                       key={item.type}
-                      draggable
-                      tabIndex={0}
+                      draggable={!isCanvasLocked}
+                      tabIndex={isCanvasLocked ? -1 : 0}
                       role="button"
                       aria-label={`Add ${item.name} (${item.category}) node`}
-                      onDragStart={(e) => handleDragStart(e, item)}
-                      onClick={() => onAddNode?.(item.type, item.name)}
+                      onDragStart={(e) => {
+                        if (isCanvasLocked) {
+                          e.preventDefault();
+                          return;
+                        }
+                        handleDragStart(e, item);
+                      }}
+                      onClick={() => {
+                        if (isCanvasLocked) return;
+                        onAddNode?.(item.type, item.name);
+                      }}
                       onKeyDown={(e) => {
+                        if (isCanvasLocked) return;
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           onAddNode?.(item.type, item.name);
                         }
                       }}
-                      title={item.description}
-                      className="group flex items-center gap-4 py-3 px-3.5 rounded-none bg-[#1c1f2a] border border-[#464554] hover:border-[#c0c1ff] hover:bg-[#262a35] hover:shadow-lg transition-all cursor-grab active:cursor-grabbing"
+                      title={isCanvasLocked ? 'Canvas is locked (Read Only)' : item.description}
+                      className={`group flex items-center gap-4 py-3 px-3.5 rounded-none bg-[#1c1f2a] border transition-all ${
+                        isCanvasLocked
+                          ? 'opacity-40 border-[#464554] cursor-not-allowed pointer-events-none'
+                          : 'border-[#464554] hover:border-[#c0c1ff] hover:bg-[#262a35] hover:shadow-lg cursor-grab active:cursor-grabbing'
+                      }`}
                       data-testid={`palette-item-${item.type}`}
                     >
                       {/* Node Icon Badge */}

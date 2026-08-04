@@ -12,10 +12,20 @@ export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
       role="group"
       aria-label={`Node: ${displayName}, Category: Decision, Type: WaitForEvent`}
       data-node-type="WaitForEvent"
-      className={`relative px-5 py-4 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border-2 transition-all min-w-[200px] ${
+      style={{
+        width: '346px',
+        minWidth: '346px',
+        maxWidth: '346px',
+        height: '112px',
+        minHeight: '112px',
+        maxHeight: '112px',
+        boxSizing: 'border-box',
+        ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
+      }}
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex flex-col justify-between shadow-xl transition-all text-left ${
         selected
-          ? 'border-blue-400 node-glow-cyan scale-105'
-          : 'border-blue-500/40 hover:border-blue-400/80 shadow-lg shadow-black/40'
+          ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#f59e0b]/10 scale-[1.02]'
+          : 'border-[#f59e0b]/60 hover:border-[#f59e0b]'
       }`}
     >
       {hasBadge && (
@@ -24,7 +34,7 @@ export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
           role="status"
           aria-label={`${data?.errorCount || 0} error(s), ${data?.warningCount || 0} warning(s)`}
           title={`${data?.errorCount || 0} error(s), ${data?.warningCount || 0} warning(s)`}
-          className={`absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-[#0B0F19] shadow-lg ${
+          className={`absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-[#0B0F19] shadow-lg ${
             (data?.errorCount ?? 0) > 0 ? 'bg-rose-500 animate-bounce' : 'bg-amber-500'
           }`}
         >
@@ -36,28 +46,32 @@ export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
         type="target"
         position={Position.Top}
         id="target"
-        className="!w-8 !h-8 !bg-blue-400 !border-3 !border-[#0B0F19] !-top-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
-      {/* Node Header */}
-      <div className="flex items-center gap-2.5 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 shadow-inner overflow-hidden">
-          <span className="material-symbols-outlined text-lg">hourglass_top</span>
+      <div className="flex items-center gap-5 w-full text-left">
+        {/* Primary Wait Icon Badge */}
+        <div className="w-10 h-10 rounded-none bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shrink-0 overflow-hidden">
+          <span className="material-symbols-outlined text-lg">hourglass_empty</span>
         </div>
-        <div className="min-w-0 ml-3">
-          <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-blue-400 block">WAIT / SIGNAL</span>
-          <h3 className="font-['Outfit'] font-semibold text-xs text-white truncate leading-tight">{displayName}</h3>
-        </div>
-      </div>
 
-      {/* Timeout Badge */}
-      <div className="mt-1 flex items-center justify-between text-[10px] font-mono bg-blue-500/5 px-3 py-1.5 rounded border border-blue-500/10 text-blue-300">
-        <span>event: order_delivered</span>
-        <span className="text-blue-400 font-sans">10s max</span>
+        {/* Main Text Content */}
+        <div className="flex-grow min-w-0 text-left">
+          <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
+          <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
+          <div className="flex items-center gap-2 mt-1.5 text-[10px] font-mono text-amber-300 text-left">
+            <span>order_delivered</span>
+            <span className="text-slate-400">(10s max)</span>
+          </div>
+        </div>
+
+        <div className="pr-1 text-amber-400 opacity-80 shrink-0">
+          <span className="material-symbols-outlined text-lg">drag_indicator</span>
+        </div>
       </div>
 
       {/* Branches */}
-      <div className="flex justify-between items-center mt-3.5 pt-2.5 border-t border-blue-500/20 text-[10px] font-mono font-semibold px-1">
+      <div className="flex justify-between items-center w-full px-2 mt-1 font-mono text-[9px] font-bold">
         <span className="text-cyan-400">Event</span>
         <span className="text-amber-400">Timeout</span>
       </div>
@@ -67,14 +81,14 @@ export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
         position={Position.Bottom}
         id="event"
         style={{ left: '30%' }}
-        className="!w-8 !h-8 !bg-cyan-400 !border-3 !border-[#0B0F19] !-bottom-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-cyan-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="timeout"
         style={{ left: '70%' }}
-        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] !-bottom-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
     </div>
   );

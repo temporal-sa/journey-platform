@@ -12,7 +12,21 @@ export function ExitNode({ data, selected }: NodeProps<CustomNode>) {
       role="group"
       aria-label={`Node: ${displayName}, Category: Utility, Type: Exit`}
       data-node-type="Exit"
-      className="relative flex items-center gap-3.5 group"
+      style={{
+        width: '346px',
+        minWidth: '346px',
+        maxWidth: '346px',
+        height: '112px',
+        minHeight: '112px',
+        maxHeight: '112px',
+        boxSizing: 'border-box',
+        ...(selected ? { borderColor: '#fb7185', backgroundColor: 'rgba(251, 113, 133, 0.15)' } : {})
+      }}
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex items-center gap-5 shadow-xl transition-all text-left ${
+        selected
+          ? 'border-[#fb7185] ring-2 ring-[#fb7185]/50 bg-[#fb7185]/10 scale-[1.02]'
+          : 'border-[#fb7185]/60 hover:border-[#fb7185]'
+      }`}
     >
       {hasBadge && (
         <div
@@ -32,24 +46,23 @@ export function ExitNode({ data, selected }: NodeProps<CustomNode>) {
         type="target"
         position={Position.Top}
         id="target"
-        className="!w-8 !h-8 !bg-rose-400 !border-3 !border-[#0B0F19] !-top-4 hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
+        className="!w-8 !h-8 !bg-rose-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
-      {/* Circle Icon Button */}
-      <div
-        className={`w-12 h-12 rounded-full glass-panel border flex items-center justify-center transition-colors shadow-lg p-2.5 shrink-0 overflow-hidden ${
-          selected
-            ? 'border-rose-400 bg-rose-500/20 scale-105 shadow-[0_0_20px_rgba(244,63,94,0.5)]'
-            : 'border-rose-500/50 hover:bg-rose-500/10'
-        }`}
-      >
-        <span className="material-symbols-outlined text-rose-400 text-xl">flag</span>
+      {/* Primary Exit Icon Badge */}
+      <div className="w-10 h-10 rounded-none bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shadow-lg shrink-0 overflow-hidden">
+        <span className="material-symbols-outlined text-lg">flag</span>
       </div>
 
-      {/* Text Card */}
-      <div className="glass-panel px-4 py-2 rounded-lg border border-rose-500/20 text-left min-w-[130px] ml-3.5">
-        <div className="text-[10px] font-bold text-rose-400 uppercase font-['Outfit'] tracking-wider">Utility / Exit</div>
-        <div className="text-xs font-semibold text-[#dfe2f1] font-['Outfit'] truncate">{displayName}</div>
+      {/* Main Text Content */}
+      <div className="flex-grow min-w-0 text-left">
+        <div className="text-[10px] font-bold text-rose-400 uppercase tracking-widest font-['Outfit'] text-left">EXIT</div>
+        <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
+        <div className="text-[10px] text-rose-400 font-bold uppercase tracking-tighter font-mono mt-1.5 text-left">Utility / Terminal</div>
+      </div>
+
+      <div className="pr-1 text-rose-400 opacity-80 shrink-0">
+        <span className="material-symbols-outlined text-lg">drag_indicator</span>
       </div>
     </div>
   );
