@@ -11,13 +11,13 @@ import type {
 } from './types';
 
 const apiClient = new JourneyApiClient();
+
 export interface ExperimentInspectorProps {
   initialExperiment?: Partial<ExperimentFormState>;
   onSave?: (experiment: ExperimentFormState) => void;
   onCancel?: () => void;
   readOnly?: boolean;
 }
-
 
 const DEFAULT_INITIAL_EXPERIMENT: ExperimentFormState = {
   schema_version: '1.0',
@@ -163,11 +163,9 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
       const targetVariant = { ...newVariants[index] };
 
       if (field === 'weight_basis_points') {
-        // Percentage input to basis points conversion
         const percentageVal = Number(value);
         targetVariant.weight_basis_points = Math.round(percentageVal * 100);
       } else if (field === 'is_control' && Boolean(value) === true) {
-        // Only 1 variant can be control - unset control for all others
         newVariants.forEach((v, i) => {
           newVariants[i] = { ...v, is_control: i === index };
         });
@@ -183,7 +181,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
 
   const handleAddVariant = () => {
     if (readOnly || formState.variants.length >= 5) return;
-    const nextChar = String.fromCharCode(97 + formState.variants.length); // 'c', 'd', 'e'
+    const nextChar = String.fromCharCode(97 + formState.variants.length);
     const newKey = `variant_${nextChar}`;
     const newName = `Variant ${nextChar.toUpperCase()}`;
 
@@ -207,7 +205,6 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
       const removedVariant = prev.variants[index];
       const newVariants = prev.variants.filter((_, i) => i !== index);
 
-      // If removed variant was control, make the first remaining variant control
       if (removedVariant.is_control && newVariants.length > 0) {
         newVariants[0] = { ...newVariants[0], is_control: true };
       }
@@ -284,7 +281,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
       console.warn('API sync notice:', err);
     }
   };
-  // Attribution window display helper
+
   const getAttributionValue = () => {
     const secs = formState.attribution_window_seconds;
     if (attributionUnit === 'days') return Math.round(secs / 86400);
@@ -299,50 +296,40 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
     handleFieldChange('attribution_window_seconds', secs);
   };
 
+  const isAllocationValid = totalBasisPoints === 10000;
+
   return (
     <div
       data-testid="experiment-inspector"
-      style={{
-        padding: '24px',
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-        maxWidth: '800px',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: '#0f172a',
-      }}
+      className="glass-panel p-6 lg:p-8 bg-[#0F131D]/95 backdrop-blur-xl rounded-2xl border border-[#1F2937] text-[#DFE2F1] font-['Outfit',sans-serif] shadow-2xl space-y-6 max-w-4xl mx-auto"
     >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="flex justify-between items-center border-b border-[#1F2937] pb-5">
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-            🧪 Experiment Authoring & Configuration
+          <h2 className="text-xl font-['Outfit'] font-bold text-white flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[#ddb7ff]">science</span>
+            <span>Experiment Authoring & Configuration</span>
           </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+          <p className="text-xs text-[#908fa0] mt-1 font-['Inter']">
             Define variant allocations, randomization unit, metrics, and attribution rules.
           </p>
         </div>
         <span
-          style={{
-            padding: '4px 10px',
-            borderRadius: '9999px',
-            fontSize: '12px',
-            fontWeight: 600,
-            backgroundColor: formState.status === 'active' ? '#dcfce7' : '#f1f5f9',
-            color: formState.status === 'active' ? '#15803d' : '#475569',
-            textTransform: 'uppercase',
-          }}
+          className={`px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-wider shadow-sm border ${
+            formState.status === 'active'
+              ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
+              : 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/40'
+          }`}
         >
           {formState.status}
         </span>
       </div>
 
-      <form onSubmit={handleSave}>
+      <form onSubmit={handleSave} className="space-y-6">
         {/* Experiment Basic Details */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="exp-id" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+            <label htmlFor="exp-id" className="block text-xs font-semibold text-[#c7c4d7] mb-1.5 uppercase tracking-wider font-['Inter']">
               Experiment ID
             </label>
             <input
@@ -351,19 +338,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               value={formState.experiment_id}
               onChange={(e) => handleFieldChange('experiment_id', e.target.value)}
               disabled={readOnly}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
             />
           </div>
 
           <div>
-            <label htmlFor="exp-name" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+            <label htmlFor="exp-name" className="block text-xs font-semibold text-[#c7c4d7] mb-1.5 uppercase tracking-wider font-['Inter']">
               Experiment Name
             </label>
             <input
@@ -372,22 +352,15 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               value={formState.name}
               onChange={(e) => handleFieldChange('name', e.target.value)}
               disabled={readOnly}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
             />
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Randomization Unit Selector */}
           <div>
-            <label htmlFor="randomization-unit-select" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+            <label htmlFor="randomization-unit-select" className="block text-xs font-semibold text-[#c7c4d7] mb-1.5 uppercase tracking-wider font-['Inter']">
               Randomization Unit
             </label>
             <select
@@ -395,18 +368,10 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               value={formState.randomization_unit}
               onChange={(e) => handleFieldChange('randomization_unit', e.target.value as RandomizationUnit)}
               disabled={readOnly}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                boxSizing: 'border-box',
-              }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer box-border"
             >
               {randomizationUnits.map((unit) => (
-                <option key={unit} value={unit}>
+                <option key={unit} value={unit} className="bg-[#090D14] text-[#DFE2F1]">
                   {unit}
                 </option>
               ))}
@@ -415,10 +380,10 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
 
           {/* Attribution Window */}
           <div>
-            <label htmlFor="attribution-window-input" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+            <label htmlFor="attribution-window-input" className="block text-xs font-semibold text-[#c7c4d7] mb-1.5 uppercase tracking-wider font-['Inter']">
               Attribution Window
             </label>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div className="flex gap-2">
               <input
                 id="attribution-window-input"
                 type="number"
@@ -426,14 +391,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                 value={getAttributionValue()}
                 onChange={(e) => handleAttributionChange(Number(e.target.value), attributionUnit)}
                 disabled={readOnly}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '14px',
-                  boxSizing: 'border-box',
-                }}
+                className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
               />
               <select
                 aria-label="Attribution Unit"
@@ -444,24 +402,18 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                   handleAttributionChange(getAttributionValue(), newUnit);
                 }}
                 disabled={readOnly}
-                style={{
-                  padding: '8px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '13px',
-                  backgroundColor: '#ffffff',
-                }}
+                className="px-3 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-xs focus:outline-none focus:border-[#6366F1] disabled:opacity-50 cursor-pointer"
               >
-                <option value="days">Days</option>
-                <option value="hours">Hours</option>
-                <option value="seconds">Secs</option>
+                <option value="days" className="bg-[#090D14] text-[#DFE2F1]">Days</option>
+                <option value="hours" className="bg-[#090D14] text-[#DFE2F1]">Hours</option>
+                <option value="seconds" className="bg-[#090D14] text-[#DFE2F1]">Secs</option>
               </select>
             </div>
           </div>
 
           {/* Salt */}
           <div>
-            <label htmlFor="exp-salt" style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+            <label htmlFor="exp-salt" className="block text-xs font-semibold text-[#c7c4d7] mb-1.5 uppercase tracking-wider font-['Inter']">
               Experiment Salt
             </label>
             <input
@@ -471,14 +423,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
               onChange={(e) => handleFieldChange('salt', e.target.value)}
               disabled={readOnly}
               placeholder="e.g. salt-welcome-v1"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090D14] border border-[#313540] text-[#DFE2F1] font-mono text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all disabled:opacity-50 disabled:cursor-not-allowed box-border"
             />
           </div>
         </div>
@@ -486,74 +431,52 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         {/* Allocation Summary & Validator Banner */}
         <div
           data-testid="allocation-total"
-          style={{
-            padding: '14px 18px',
-            borderRadius: '8px',
-            backgroundColor: totalBasisPoints === 10000 ? '#f0fdf4' : '#fef2f2',
-            border: totalBasisPoints === 10000 ? '1px solid #bbf7d0' : '1px solid #fecaca',
-            marginBottom: '24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
+          className={`glass-panel p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all ${
+            isAllocationValid
+              ? 'border-[#10b981]/40 bg-[#10b981]/10 status-strip-emerald'
+              : 'border-[#f43f5e]/40 bg-[#f43f5e]/10 status-strip-rose'
+          }`}
         >
           <div>
-            <div
-              style={{
-                fontSize: '14px',
-                fontWeight: 700,
-                color: totalBasisPoints === 10000 ? '#15803d' : '#b91c1c',
-              }}
-            >
+            <div className={`text-sm font-bold font-['Outfit'] ${isAllocationValid ? 'text-[#10b981]' : 'text-[#ffb4ab]'}`}>
               Total Traffic Allocation: {totalPercentage}% ({totalBasisPoints.toLocaleString()} / 10,000 bps)
             </div>
-            <div style={{ fontSize: '12px', color: totalBasisPoints === 10000 ? '#166534' : '#991b1b', marginTop: '2px' }}>
-              {totalBasisPoints === 10000
+            <div className={`text-xs mt-1 font-['Inter'] ${isAllocationValid ? 'text-[#c7c4d7]' : 'text-[#ffb4ab]'}`}>
+              {isAllocationValid
                 ? '✅ Allocation is valid and fully sums to 100% (10,000 basis points).'
                 : '⚠️ Save is blocked until total allocation equals exactly 100% (10,000 basis points).'}
             </div>
           </div>
           <div
-            style={{
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontWeight: 700,
-              fontSize: '13px',
-              backgroundColor: totalBasisPoints === 10000 ? '#dcfce7' : '#fee2e2',
-              color: totalBasisPoints === 10000 ? '#166534' : '#991b1b',
-            }}
+            className={`px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-wider border shadow-sm shrink-0 ${
+              isAllocationValid
+                ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
+                : 'bg-[#f43f5e]/20 text-[#ffb4ab] border-[#f43f5e]/40 animate-pulse'
+            }`}
           >
-            {totalBasisPoints === 10000 ? 'VALID ALLOCATION' : 'INVALID ALLOCATION'}
+            {isAllocationValid ? 'VALID ALLOCATION' : 'INVALID ALLOCATION'}
           </div>
         </div>
 
         {/* 2-to-5 Variant Editor Section */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#1e293b' }}>
-              Variants Configuration (2 - 5 Variants)
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-['Outfit'] font-bold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#ddb7ff] text-base">tune</span>
+              <span>Variants Configuration (2 - 5 Variants)</span>
             </h3>
             <button
               type="button"
               data-testid="add-variant-btn"
               onClick={handleAddVariant}
               disabled={readOnly || formState.variants.length >= 5}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: formState.variants.length >= 5 || readOnly ? '#f1f5f9' : '#ffffff',
-                color: formState.variants.length >= 5 || readOnly ? '#94a3b8' : '#0284c7',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: formState.variants.length >= 5 || readOnly ? 'not-allowed' : 'pointer',
-              }}
+              className="px-3.5 py-1.5 rounded-xl border border-[#313540] hover:border-[#6366F1] bg-[#171b26] hover:bg-[#262a35] text-[#c0c1ff] font-semibold text-xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             >
               + Add Variant
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="flex flex-col gap-3">
             {formState.variants.map((variant, index) => {
               const weightPercentage = (variant.weight_basis_points / 100).toString();
 
@@ -561,20 +484,15 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                 <div
                   key={variant.key || `var-idx-${index}`}
                   data-testid={`variant-row-${variant.key}`}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1.2fr 1.8fr 1fr 1fr auto',
-                    gap: '12px',
-                    alignItems: 'center',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    backgroundColor: variant.is_control ? '#f8fafc' : '#ffffff',
-                  }}
+                  className={`glass-panel p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-12 gap-3 items-center shadow-md transition-all ${
+                    variant.is_control
+                      ? 'border-[#ddb7ff]/40 bg-[#ddb7ff]/10'
+                      : 'border-[#1F2937] bg-[#171b26] hover:border-[#313540]'
+                  }`}
                 >
                   {/* Variant Key (Stable Key) */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '2px' }}>
+                  <div className="sm:col-span-3">
+                    <label className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                       Variant Key (Stable)
                     </label>
                     <input
@@ -583,23 +501,13 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       value={variant.key}
                       onChange={(e) => handleVariantChange(index, 'key', e.target.value)}
                       disabled={readOnly}
-                      style={{
-                        width: '100%',
-                        padding: '6px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '13px',
-                        fontFamily: 'monospace',
-                        fontWeight: 600,
-                        backgroundColor: '#f8fafc',
-                        boxSizing: 'border-box',
-                      }}
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#ddb7ff] font-mono text-xs font-semibold focus:outline-none focus:border-[#6366F1] box-border"
                     />
                   </div>
 
                   {/* Display Name */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '2px' }}>
+                  <div className="sm:col-span-4">
+                    <label className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                       Display Name
                     </label>
                     <input
@@ -608,23 +516,16 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       value={variant.name}
                       onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
                       disabled={readOnly}
-                      style={{
-                        width: '100%',
-                        padding: '6px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '13px',
-                        boxSizing: 'border-box',
-                      }}
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                     />
                   </div>
 
-                  {/* Weight Basis Points / Whole-Number Percentage Input */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '2px' }}>
+                  {/* Weight Basis Points / Percentage Input */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                       Allocation (%)
                     </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div className="flex items-center gap-1.5">
                       <input
                         type="number"
                         min="0"
@@ -634,61 +535,45 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                         value={weightPercentage}
                         onChange={(e) => handleVariantChange(index, 'weight_basis_points', e.target.value)}
                         disabled={readOnly}
-                        style={{
-                          width: '100%',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '13px',
-                          fontWeight: 600,
-                          boxSizing: 'border-box',
-                        }}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs font-bold focus:outline-none focus:border-[#6366F1] box-border"
                       />
-                      <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>%</span>
+                      <span className="text-xs text-[#908fa0] font-mono font-bold">%</span>
                     </div>
-                    <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
+                    <span className="text-[10px] text-[#908fa0] font-mono block mt-0.5">
                       {variant.weight_basis_points} bps
                     </span>
                   </div>
 
                   {/* Control Toggle */}
-                  <div style={{ textAlign: 'center' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>
+                  <div className="sm:col-span-2 text-center">
+                    <label className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                       Control?
                     </label>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', cursor: readOnly ? 'default' : 'pointer', gap: '6px' }}>
+                    <label className="inline-flex items-center cursor-pointer gap-1.5">
                       <input
                         type="radio"
                         name="controlVariant"
                         checked={variant.is_control}
                         onChange={() => handleVariantChange(index, 'is_control', true)}
                         disabled={readOnly}
-                        style={{ width: '16px', height: '16px', accentColor: '#0284c7' }}
+                        className="w-4 h-4 accent-[#6366F1] cursor-pointer"
                       />
-                      <span style={{ fontSize: '12px', fontWeight: variant.is_control ? 700 : 400, color: variant.is_control ? '#0369a1' : '#475569' }}>
+                      <span className={`text-xs font-mono font-semibold ${variant.is_control ? 'text-[#ddb7ff]' : 'text-[#908fa0]'}`}>
                         {variant.is_control ? 'Control' : 'Treatment'}
                       </span>
                     </label>
                   </div>
 
                   {/* Delete Button */}
-                  <div>
+                  <div className="sm:col-span-1 flex justify-end">
                     <button
                       type="button"
                       aria-label={`Remove Variant ${variant.key}`}
                       onClick={() => handleRemoveVariant(index)}
                       disabled={readOnly || formState.variants.length <= 2}
-                      style={{
-                        padding: '6px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #fecaca',
-                        backgroundColor: formState.variants.length <= 2 || readOnly ? '#f1f5f9' : '#fff5f5',
-                        color: formState.variants.length <= 2 || readOnly ? '#94a3b8' : '#e11d48',
-                        cursor: formState.variants.length <= 2 || readOnly ? 'not-allowed' : 'pointer',
-                        fontSize: '13px',
-                      }}
+                      className="p-1.5 rounded-lg border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      🗑️
+                      <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </div>
                 </div>
@@ -698,47 +583,30 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         </div>
 
         {/* Metric Picker Section */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#1e293b' }}>
-              Metric Definitions & Pickers
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-['Outfit'] font-bold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#4cd7f6] text-base">analytics</span>
+              <span>Metric Definitions & Pickers</span>
             </h3>
             <button
               type="button"
               onClick={handleAddMetric}
               disabled={readOnly}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#0284c7',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: readOnly ? 'not-allowed' : 'pointer',
-              }}
+              className="px-3.5 py-1.5 rounded-xl border border-[#313540] hover:border-[#6366F1] bg-[#171b26] hover:bg-[#262a35] text-[#c0c1ff] font-semibold text-xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             >
               + Add Metric
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-2.5">
             {formState.metrics.map((metric, index) => (
               <div
                 key={metric.key || `metric-${index}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1.2fr 1.5fr 1fr auto',
-                  gap: '10px',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  backgroundColor: '#f8fafc',
-                }}
+                className="glass-panel p-3.5 rounded-xl border border-[#1F2937] bg-[#171b26] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center shadow-md"
               >
-                <div>
-                  <label htmlFor={`metric-key-${index}`} style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                <div className="sm:col-span-3">
+                  <label htmlFor={`metric-key-${index}`} className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                     Metric Key
                   </label>
                   <input
@@ -748,19 +616,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     value={metric.key}
                     onChange={(e) => handleMetricChange(index, 'key', e.target.value)}
                     disabled={readOnly}
-                    style={{
-                      width: '100%',
-                      padding: '6px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '13px',
-                      boxSizing: 'border-box',
-                    }}
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                   />
                 </div>
 
-                <div>
-                  <label htmlFor={`metric-name-${index}`} style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                <div className="sm:col-span-3">
+                  <label htmlFor={`metric-name-${index}`} className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                     Metric Name
                   </label>
                   <input
@@ -770,19 +631,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     value={metric.name}
                     onChange={(e) => handleMetricChange(index, 'name', e.target.value)}
                     disabled={readOnly}
-                    style={{
-                      width: '100%',
-                      padding: '6px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '13px',
-                      boxSizing: 'border-box',
-                    }}
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                   />
                 </div>
 
-                <div>
-                  <label htmlFor={`metric-event-${index}`} style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                <div className="sm:col-span-3">
+                  <label htmlFor={`metric-event-${index}`} className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                     Event Type
                   </label>
                   <input
@@ -792,19 +646,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                     value={metric.event_type}
                     onChange={(e) => handleMetricChange(index, 'event_type', e.target.value)}
                     disabled={readOnly}
-                    style={{
-                      width: '100%',
-                      padding: '6px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '13px',
-                      boxSizing: 'border-box',
-                    }}
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] box-border"
                   />
                 </div>
 
-                <div>
-                  <label htmlFor={`metric-type-${index}`} style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+                <div className="sm:col-span-2">
+                  <label htmlFor={`metric-type-${index}`} className="block text-[11px] font-semibold text-[#908fa0] mb-1 font-['Inter']">
                     Aggregation Type
                   </label>
                   <select
@@ -815,38 +662,23 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                       handleMetricChange(index, 'type', e.target.value as 'conversion' | 'sum' | 'mean')
                     }
                     disabled={readOnly}
-                    style={{
-                      width: '100%',
-                      padding: '6px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '13px',
-                      backgroundColor: '#ffffff',
-                      boxSizing: 'border-box',
-                    }}
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#090D14] border border-[#313540] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#6366F1] cursor-pointer"
                   >
-                    <option value="conversion">conversion</option>
-                    <option value="sum">sum</option>
-                    <option value="mean">mean</option>
+                    <option value="conversion" className="bg-[#090D14] text-[#dfe2f1]">conversion</option>
+                    <option value="sum" className="bg-[#090D14] text-[#dfe2f1]">sum</option>
+                    <option value="mean" className="bg-[#090D14] text-[#dfe2f1]">mean</option>
                   </select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-1 flex justify-end">
                   <button
                     type="button"
                     aria-label={`Remove Metric ${metric.key}`}
                     onClick={() => handleRemoveMetric(index)}
                     disabled={readOnly || formState.metrics.length <= 1}
-                    style={{
-                      padding: '6px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #fecaca',
-                      backgroundColor: formState.metrics.length <= 1 || readOnly ? '#f1f5f9' : '#fff5f5',
-                      color: formState.metrics.length <= 1 || readOnly ? '#94a3b8' : '#e11d48',
-                      cursor: formState.metrics.length <= 1 || readOnly ? 'not-allowed' : 'pointer',
-                    }}
+                    className="p-1.5 rounded-lg border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    ✕
+                    <span className="material-symbols-outlined text-sm">close</span>
                   </button>
                 </div>
               </div>
@@ -858,18 +690,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         {!isValid && (
           <div
             data-testid="allocation-error"
-            style={{
-              padding: '12px 16px',
-              borderRadius: '8px',
-              backgroundColor: '#fff1f2',
-              border: '1px solid #fda4af',
-              marginBottom: '20px',
-            }}
+            className="glass-panel p-4 rounded-xl border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] text-xs space-y-1.5 status-strip-rose shadow-md"
           >
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#9f1239', marginBottom: '4px' }}>
+            <div className="font-bold text-white font-['Outfit']">
               Validation Issues (Save Blocked):
             </div>
-            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#be123c' }}>
+            <ul className="list-disc list-inside space-y-1 font-['Inter'] text-[#ffb4ab]">
               {validationErrors.map((err, i) => (
                 <li key={i}>{err}</li>
               ))}
@@ -878,21 +704,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+        <div className="flex justify-end gap-3 pt-2">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
-                fontWeight: 600,
-                fontSize: '14px',
-                cursor: 'pointer',
-              }}
+              className="px-5 py-2.5 rounded-xl border border-[#464554] hover:bg-[#262a35] text-[#c7c4d7] hover:text-white font-medium text-sm transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -902,17 +719,7 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
             type="submit"
             data-testid="save-experiment-btn"
             disabled={!isValid || readOnly}
-            style={{
-              padding: '8px 20px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: isValid && !readOnly ? '#0284c7' : '#94a3b8',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: isValid && !readOnly ? 'pointer' : 'not-allowed',
-              boxShadow: isValid && !readOnly ? '0 2px 4px rgba(2, 132, 199, 0.2)' : 'none',
-            }}
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8b5cf6] hover:opacity-90 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 border border-[#8083ff]/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
             Save Experiment
           </button>
