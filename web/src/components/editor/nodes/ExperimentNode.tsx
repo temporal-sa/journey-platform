@@ -15,8 +15,10 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
 
   return (
     <div
+      role="group"
+      aria-label={`Node: ${displayName}, Category: Decision, Type: Experiment`}
       data-node-type="Experiment"
-      className={`relative w-60 glass-panel rounded-xl border overflow-hidden transition-all ${
+      className={`relative w-60 glass-panel rounded-xl border transition-all ${
         selected
           ? 'border-[#ddb7ff] shadow-[0_0_25px_-5px_rgba(221,183,255,0.6)] scale-105'
           : 'border-[#ddb7ff]/60 shadow-[0_0_25px_-5px_rgba(221,183,255,0.2)]'
@@ -44,7 +46,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
       />
 
       {/* Header Bar */}
-      <div className="px-4 py-3.5 bg-[#ddb7ff]/10 border-b border-[#ddb7ff]/20 flex items-center justify-between">
+      <div className="px-4 py-3.5 bg-[#ddb7ff]/10 border-b border-[#ddb7ff]/20 flex items-center justify-between rounded-t-xl">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[#ddb7ff] text-lg">call_split</span>
           <span className="text-[10px] font-bold text-[#ddb7ff] uppercase font-['Outfit'] tracking-wider">A/B TEST</span>
@@ -75,7 +77,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
       </div>
 
       {/* Footer Controls */}
-      <div className="flex border-t border-white/10 text-slate-400">
+      <div className="flex border-t border-white/10 text-slate-400 rounded-b-xl overflow-hidden">
         <div className="flex-1 p-2.5 flex justify-center hover:text-[#ddb7ff] cursor-pointer transition-colors">
           <span className="material-symbols-outlined text-sm">settings</span>
         </div>
