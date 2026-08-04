@@ -91,7 +91,7 @@ export function InlineJourneyName() {
           onKeyDown={handleKeyDown}
           autoFocus
           data-testid="inline-journey-name-input"
-          className="bg-[#11141d] border border-[#c0c1ff] focus:border-[#4cd7f6] focus:ring-2 focus:ring-[#4cd7f6]/30 rounded-xl px-3 py-1 text-sm font-bold text-white outline-none transition-all font-['Outfit'] shadow-inner min-w-[220px]"
+          className="bg-[#11141d] border border-[#c0c1ff] focus:border-[#4cd7f6] focus:ring-2 focus:ring-[#4cd7f6]/30 rounded-none px-3 py-1 text-sm font-bold text-white outline-none transition-all font-['Outfit'] shadow-inner min-w-[220px]"
         />
         <span className="text-[10px] font-mono text-[#908fa0] animate-pulse">Press Enter to save</span>
       </div>
@@ -105,7 +105,7 @@ export function InlineJourneyName() {
         data-testid="inline-journey-name-button"
         title="Click to edit journey name inline"
         aria-label={`Journey name: ${currentDraft?.name || 'Onboarding Flow'}. Click to edit name.`}
-        className="px-3 py-1 rounded-xl bg-[#c0c1ff]/10 hover:bg-[#c0c1ff]/20 text-[#c0c1ff] hover:text-white border border-[#c0c1ff]/30 hover:border-[#c0c1ff]/60 font-['Outfit'] font-bold text-sm transition-all cursor-pointer inline-flex items-center gap-2 group shadow-sm backdrop-blur-md"
+        className="px-3 py-1 rounded-none bg-[#c0c1ff]/10 hover:bg-[#c0c1ff]/20 text-[#c0c1ff] hover:text-white border border-[#c0c1ff]/30 hover:border-[#c0c1ff]/60 font-['Outfit'] font-bold text-sm transition-all cursor-pointer inline-flex items-center gap-2 group shadow-sm backdrop-blur-md"
       >
         <span>{currentDraft?.name || 'Onboarding Flow'}</span>
         <span className="material-symbols-outlined text-xs text-[#c0c1ff] opacity-60 group-hover:opacity-100 transition-opacity">
@@ -115,7 +115,7 @@ export function InlineJourneyName() {
       {hasUnsavedChanges && (
         <span
           title="Unsaved changes in journey graph"
-          className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono text-[9px] font-bold uppercase tracking-wider"
+          className="px-2 py-0.5 rounded-none bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono text-[9px] font-bold uppercase tracking-wider"
         >
           UNSAVED
         </span>
@@ -569,7 +569,7 @@ export function DashboardContent() {
           <div className="p-4 space-y-4">
             {/* Header Logo */}
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#c0c1ff] to-[#ddb7ff] flex items-center justify-center text-[#1000a9] shadow-lg">
+              <div className="w-10 h-10 rounded-none bg-gradient-to-br from-[#c0c1ff] to-[#ddb7ff] flex items-center justify-center text-[#1000a9] shadow-lg">
                 <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>electric_bolt</span>
               </div>
               <div>
@@ -582,7 +582,7 @@ export function DashboardContent() {
             <button
               onClick={handleCreateJourneyTop}
               data-testid="sidebar-create-journey-btn"
-              className="w-full mb-2 flex items-center justify-center gap-2 sidebar-top-action bg-[#b76dff] text-[#400071] py-3 px-4 rounded-xl font-bold hover:opacity-90 transition-all text-sm font-['Outfit'] cursor-pointer shadow-none"
+              className="w-full mb-2 flex items-center justify-center gap-2 sidebar-top-action bg-[#b76dff] text-[#400071] py-3 px-4 rounded-none font-bold hover:opacity-90 transition-all text-sm font-['Outfit'] cursor-pointer shadow-none"
               style={{ backgroundColor: '#b76dff', color: '#400071', boxShadow: 'none' }}
             >
               <span className="material-symbols-outlined text-xl">add</span>
@@ -644,7 +644,7 @@ export function DashboardContent() {
           <div className="mt-auto p-4 border-t border-[#464554] space-y-1 text-xs font-['Outfit',sans-serif]">
             <div className="flex items-center justify-between text-[#908fa0] px-2 py-1">
               <span>Environment</span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-semibold">PRODUCTION</span>
+              <span className="px-2 py-0.5 rounded-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-semibold">PRODUCTION</span>
             </div>
           </div>
         </aside>
@@ -661,7 +661,7 @@ export function DashboardContent() {
           <div className="flex items-center gap-4 min-w-0 overflow-x-auto">
             {/* Breadcrumb Navigation */}
             <div className="flex items-center gap-2 text-sm font-['Outfit']">
-              <span className="text-[#c7c4d7] font-medium hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer">Acme Corp</span>
+              <span className="text-[#c7c4d7] font-medium hover:bg-white/5 px-2 py-1 rounded-none transition-colors cursor-pointer">Acme Corp</span>
               <span className="text-[#908fa0]">/</span>
               {activeRoute === 'canvas' ? (
                 <InlineJourneyName />
@@ -678,12 +678,12 @@ export function DashboardContent() {
               <input
                 type="text"
                 placeholder="Search engine..."
-                className="bg-[#171b26] border border-[#464554] rounded-full px-4 py-1.5 text-xs text-white w-64 focus:ring-2 focus:ring-[#c0c1ff] outline-none transition-all"
+                className="bg-[#171b26] border border-[#464554] rounded-none px-4 py-1.5 text-xs text-white w-64 focus:ring-2 focus:ring-[#c0c1ff] outline-none transition-all"
               />
             </div>
 
 
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-[#464554] shadow-md shrink-0" title="User Profile">
+            <div className="w-8 h-8 rounded-none overflow-hidden border border-[#464554] shadow-md shrink-0" title="User Profile">
               <div className="w-full h-full bg-[#171b26] flex items-center justify-center text-[#c0c1ff] hover:text-white hover:bg-[#262a35] transition-colors cursor-pointer">
                 <span className="material-symbols-outlined text-lg">person</span>
               </div>
@@ -871,7 +871,7 @@ export function DashboardContent() {
               zIndex: 1000,
             }}
           >
-          <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '0.5rem', width: '360px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+          <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '0px', width: '360px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <h3
               style={{
                 marginTop: 0,
@@ -908,7 +908,7 @@ export function DashboardContent() {
                   closeModal();
                   setSaveStatus('idle');
                 }}
-                style={{ padding: '0.4rem 0.8rem', cursor: 'pointer', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '0.375rem' }}
+                style={{ padding: '0.4rem 0.8rem', cursor: 'pointer', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '0px' }}
               >
                 Close
               </button>

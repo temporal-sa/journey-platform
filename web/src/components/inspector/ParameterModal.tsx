@@ -143,7 +143,7 @@ function ParameterModalInner({
       }}
     >
       <div
-        className="bg-[#0F131D] border border-[#464554] rounded-2xl w-full max-w-3xl max-h-[75vh] flex flex-col shadow-2xl overflow-hidden glass-modal shrink-0 relative"
+        className="bg-[#0F131D] border border-[#464554] rounded-none w-full max-w-3xl max-h-[75vh] flex flex-col shadow-2xl overflow-hidden glass-modal shrink-0 relative"
         style={{ zIndex: 1000000 }}
       >
         {/* Header */}
@@ -169,7 +169,7 @@ function ParameterModalInner({
             onClick={onClose}
             aria-label="Close parameter library modal"
             data-testid="close-parameter-modal-btn"
-            className="w-8 h-8 rounded-xl bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -185,7 +185,7 @@ function ParameterModalInner({
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="parameter-search-input"
               autoFocus
-              className="w-full px-4 pr-8 py-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1] placeholder-[#64748b] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6] font-['Outfit',sans-serif]"
+              className="w-full px-4 pr-8 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] placeholder-[#64748b] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6] font-['Outfit',sans-serif]"
             />
             {searchQuery && (
               <button
@@ -210,7 +210,7 @@ function ParameterModalInner({
                 aria-selected={selectedCategory === cat.id}
                 data-testid={`param-category-tab-${cat.id}`}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-none text-xs font-semibold transition-all cursor-pointer ${
                   selectedCategory === cat.id
                     ? 'bg-[#262a35] text-[#c0c1ff] border border-[#c0c1ff]/40 font-bold shadow-sm'
                     : 'bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-[#262a35] border border-[#464554]'
@@ -241,23 +241,23 @@ function ParameterModalInner({
                 <div
                   key={param.key}
                   data-testid={`param-item-${param.key}`}
-                  className="flex items-center justify-between p-4 rounded-xl border border-[#464554] bg-[#11141d] hover:border-[#4cd7f6]/40 hover:bg-[#171b26] transition-all group"
+                  className="flex items-center justify-between p-4 rounded-none border border-[#464554] bg-[#11141d] hover:border-[#4cd7f6]/40 hover:bg-[#171b26] transition-all group"
                 >
                   <div className="flex-1 pr-4">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm text-white font-['Outfit']">
                         {param.name}
                       </span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1c1f2a] text-[#c7c4d7] border border-[#464554]">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-none bg-[#1c1f2a] text-[#c7c4d7] border border-[#464554]">
                         {param.categoryLabel}
                       </span>
                       {param.dataClassification === 'PII' && (
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
                           PII
                         </span>
                       )}
                       {param.dataClassification === 'Sensitive' && (
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase">
                           Sensitive
                         </span>
                       )}
@@ -268,7 +268,7 @@ function ParameterModalInner({
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 font-mono">
-                      <code className="text-xs px-2 py-0.5 rounded bg-[#4cd7f6]/10 text-[#4cd7f6] border border-[#4cd7f6]/30 font-bold">
+                      <code className="text-xs px-2 py-0.5 rounded-none bg-[#4cd7f6]/10 text-[#4cd7f6] border border-[#4cd7f6]/30 font-bold">
                         {param.token}
                       </code>
                       {param.exampleValue && (
@@ -285,7 +285,7 @@ function ParameterModalInner({
                       onClose();
                     }}
                     data-testid={`insert-token-btn-${param.key}`}
-                    className="px-3.5 py-2 rounded-xl bg-[#1c1f2a] hover:bg-[#262a35] text-[#c0c1ff] hover:text-white font-semibold text-xs border border-[#464554] hover:border-[#c0c1ff]/40 shadow-sm transition-all cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#c0c1ff] hover:text-white font-semibold text-xs border border-[#464554] hover:border-[#c0c1ff]/40 shadow-sm transition-all cursor-pointer shrink-0 inline-flex items-center gap-1.5"
                   >
                     <span className="material-symbols-outlined text-sm text-[#c0c1ff]">add_circle</span>
                     <span>Insert Token</span>
@@ -303,7 +303,7 @@ function ParameterModalInner({
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
           >
             Close
           </button>

@@ -104,7 +104,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
           {onBackToList && (
             <button
               onClick={onBackToList}
-              className="px-4 py-2 rounded-xl bg-[#171b26] border border-[#464554] text-white hover:border-[#c0c1ff] text-xs font-semibold transition-all cursor-pointer"
+              className="px-4 py-2 rounded-none bg-[#171b26] border border-[#464554] text-white hover:border-[#c0c1ff] text-xs font-semibold transition-all cursor-pointer"
             >
               ← Back to Run List
             </button>
@@ -119,21 +119,21 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
         <button
           onClick={() => replayMutation.mutate()}
           disabled={replayMutation.isPending}
-          className="px-4 py-2 rounded-xl bg-[#10b981]/20 hover:bg-[#10b981]/30 border border-[#10b981]/40 text-[#6ee7b7] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-none bg-[#10b981]/20 hover:bg-[#10b981]/30 border border-[#10b981]/40 text-[#6ee7b7] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {replayMutation.isPending ? 'Replaying Run...' : '↻ Trigger Replay / Retry'}
         </button>
       </div>
 
       {replayMutation.isSuccess && (
-        <div role="status" className="p-4 rounded-xl bg-[#10b981]/15 border border-[#10b981]/40 text-[#6ee7b7] text-xs">
+        <div role="status" className="p-4 rounded-none bg-[#10b981]/15 border border-[#10b981]/40 text-[#6ee7b7] text-xs">
           Successfully triggered event emission replay for run <strong className="font-mono">{activeRunId}</strong>! (Event ID:{' '}
           <code className="font-mono">{replayMutation.data?.event_id}</code>)
         </div>
       )}
 
       {/* Summary Parameter Header Card */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl shrink-0">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl shrink-0">
         <div>
           <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">Tenant ID</span>
           <strong className="text-xs font-mono text-white">{parameters.tenant_id}</strong>
@@ -145,7 +145,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
         <div>
           <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">Execution Mode</span>
           <span
-            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider border ${
+            className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase tracking-wider border ${
               parameters.execution_mode === 'production'
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
@@ -155,7 +155,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
           </span>
         </div>
         <div>
-          <span className="px-2 py-0.5 rounded bg-[#ef4444]/20 text-[#fca5a5] border border-[#ef4444]/30 text-[10px] font-mono font-bold">
+          <span className="px-2 py-0.5 rounded-none bg-[#ef4444]/20 text-[#fca5a5] border border-[#ef4444]/30 text-[10px] font-mono font-bold">
             {parameters.data_classification}
           </span>
         </div>
@@ -177,7 +177,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
 
       {/* Main Content Layout */}
       {isLoading ? (
-        <div className="p-6 rounded-2xl bg-[#0F131D]/90 border border-[#464554] shadow-xl">
+        <div className="p-6 rounded-none bg-[#0F131D]/90 border border-[#464554] shadow-xl">
           <Skeleton count={4} height="3rem" />
         </div>
       ) : timelineEvents.length === 0 ? (
@@ -189,7 +189,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full items-start">
           {/* Left Column: Sequential Timeline of Node Visits */}
-          <div className="lg:col-span-2 p-5 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
+          <div className="lg:col-span-2 p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#464554] pb-3">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#c0c1ff] text-lg">schema</span>
@@ -201,10 +201,10 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
               {timelineEvents.map((evt, index) => (
                 <div
                   key={evt.event_id}
-                  className="flex gap-4 p-4 rounded-xl bg-[#171b26] border border-[#464554] shadow-md"
+                  className="flex gap-4 p-4 rounded-none bg-[#171b26] border border-[#464554] shadow-md"
                 >
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-mono text-xs font-bold">
+                    <div className="w-7 h-7 rounded-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-mono text-xs font-bold">
                       {index + 1}
                     </div>
                   </div>
@@ -213,13 +213,13 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         {evt.event_type && (
-                          <span className="px-2 py-0.5 rounded bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20 text-[10px] font-mono font-bold uppercase tracking-wider">
+                          <span className="px-2 py-0.5 rounded-none bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20 text-[10px] font-mono font-bold uppercase tracking-wider">
                             {evt.event_type}
                           </span>
                         )}
                         <strong className="text-sm font-bold text-white font-mono">{evt.node_id || 'workflow_root'}</strong>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase border tracking-wider ${
+                      <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
                         evt.status === 'completed' || evt.status === 'success' || evt.status === 'succeeded'
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                           : evt.status === 'running'
@@ -239,7 +239,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                     {evt.payload && (
                       <div className="space-y-1 pt-1">
                         <span className="text-xs font-semibold text-[#dfe2f1] block">Step Payload:</span>
-                        <pre className="p-3 rounded-xl bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] text-xs font-mono overflow-x-auto">
+                        <pre className="p-3 rounded-none bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] text-xs font-mono overflow-x-auto">
                           {JSON.stringify(evt.payload, null, 2)}
                         </pre>
                       </div>
@@ -253,7 +253,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
           {/* Right Column: Actions & Suppressions */}
           <div className="lg:col-span-1 space-y-6">
             {/* Actions Executed Panel */}
-            <div className="p-5 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
+            <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-[#464554] pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#6ee7b7] text-lg">bolt</span>
@@ -265,10 +265,10 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                   <p className="text-xs text-[#908fa0] italic">No actions executed for this run step.</p>
                 ) : (
                   actions.map((act) => (
-                    <div key={act.action_id} className="p-4 sm:p-5 rounded-xl bg-[#171b26] border border-[#464554] space-y-2.5 min-w-0 break-words shadow-sm">
+                    <div key={act.action_id} className="p-4 sm:p-5 rounded-none bg-[#171b26] border border-[#464554] space-y-2.5 min-w-0 break-words shadow-sm">
                       <div className="flex items-center justify-between text-xs gap-3 min-w-0">
                         <strong className="text-white font-mono truncate min-w-0 flex-1">{act.activity_type}</strong>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider border shrink-0 ${
+                        <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase tracking-wider border shrink-0 ${
                           act.status === 'success'
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             : act.status === 'retrying'
@@ -288,7 +288,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
             </div>
 
             {/* Suppressions & Safeguards Panel */}
-            <div className="p-5 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
+            <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-[#464554] pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-400 text-lg">gavel</span>
@@ -300,7 +300,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                   <p className="text-xs text-[#908fa0] italic">No policy suppressions or caps triggered.</p>
                 ) : (
                   suppressions.map((sup) => (
-                    <div key={sup.suppression_id} className="p-4 sm:p-5 rounded-xl bg-[#f59e0b]/10 border border-[#f59e0b]/30 space-y-2 min-w-0 break-words shadow-sm">
+                    <div key={sup.suppression_id} className="p-4 sm:p-5 rounded-none bg-[#f59e0b]/10 border border-[#f59e0b]/30 space-y-2 min-w-0 break-words shadow-sm">
                       <strong className="text-xs text-amber-300 font-semibold block leading-snug tracking-wide">{sup.rule_name}</strong>
                       <p className="text-xs text-amber-200/80 leading-relaxed px-0.5">
                         {sup.reason}

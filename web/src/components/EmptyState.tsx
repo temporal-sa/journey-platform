@@ -26,7 +26,7 @@ export const EmptyState: FC<EmptyStateProps> = ({
         textAlign: 'center',
         backgroundColor: '#f8fafc',
         border: '1px dashed #cbd5e1',
-        borderRadius: '0.75rem',
+        borderRadius: '0px',
         color: '#475569',
         fontFamily: 'system-ui, sans-serif',
       }}

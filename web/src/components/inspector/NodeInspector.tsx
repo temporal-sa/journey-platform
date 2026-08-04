@@ -84,7 +84,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
         data-testid="node-inspector-empty"
         className="p-6 text-center text-[#908fa0] text-sm font-['Outfit',sans-serif] h-full flex flex-col items-center justify-center bg-[#171b26] border-l border-[#464554]"
       >
-        <div className="w-12 h-12 rounded-2xl bg-[#c0c1ff]/10 border border-[#c0c1ff]/20 flex items-center justify-center text-[#c0c1ff] mb-3 shadow-lg">
+        <div className="w-12 h-12 rounded-none bg-[#c0c1ff]/10 border border-[#c0c1ff]/20 flex items-center justify-center text-[#c0c1ff] mb-3 shadow-lg">
           <span className="material-symbols-outlined text-2xl">edit_note</span>
         </div>
         <div className="font-semibold text-[#dfe2f1] font-['Outfit'] text-base">No Node Selected</div>
@@ -212,10 +212,10 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
         data-testid={`field-error-${fieldPath}`}
         role="alert"
         aria-live="polite"
-        className="mt-1.5 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between"
+        className="mt-1.5 p-2 rounded-none bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between"
       >
         <span>{issue.message}</span>
-        <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 uppercase">
+        <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-none bg-rose-500/20 text-rose-300 uppercase">
           {formatIssueCode(issue.code)}
         </span>
       </div>
@@ -234,13 +234,13 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       <div className="p-4 border-b border-[#464554] bg-[#1c1f2a] flex items-center justify-between shrink-0">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/30">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-none bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/30">
               {nodeType}
             </span>
             {isDirty && (
               <span
                 data-testid="unsaved-inspector-badge"
-                className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse"
+                className="text-[10px] font-semibold px-2 py-0.5 rounded-none bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse"
               >
                 Unsaved Edits
               </span>
@@ -256,7 +256,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
             onClick={onClose}
             aria-label="Close Node Inspector"
             data-testid="close-inspector-btn"
-            className="w-8 h-8 rounded-lg bg-[#262a35] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-white/5 cursor-pointer shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-none bg-[#262a35] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-white/5 cursor-pointer shrink-0 shadow-sm"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -268,7 +268,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       {nodeIssues.length > 0 && (
         <div
           data-testid="node-validation-alert"
-          className={`mx-4 mt-3 p-3 rounded-xl border text-xs font-['Outfit',sans-serif] shrink-0 ${
+          className={`mx-4 mt-3 p-3 rounded-none border text-xs font-['Outfit',sans-serif] shrink-0 ${
             hasErrors
               ? 'bg-rose-500/10 border-rose-500/30 text-rose-200'
               : 'bg-amber-500/10 border-amber-500/30 text-amber-200'
@@ -310,7 +310,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               type="text"
               value={targetNode.id}
               disabled
-              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] rounded-lg text-[#908fa0] text-xs font-mono outline-none cursor-not-allowed"
+              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] rounded-none text-[#908fa0] text-xs font-mono outline-none cursor-not-allowed"
             />
           </div>
 
@@ -323,7 +323,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 type="button"
                 onClick={() => handleOpenParamModal('name')}
                 data-testid="param-btn-name"
-                className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
               >
                 <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                 <span>+ Insert Token</span>
@@ -339,7 +339,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               data-testid="inspector-input-name"
               className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                 getFieldError('name', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-              } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+              } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
             />
             {renderFieldError('name')}
           </div>
@@ -363,7 +363,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     type="button"
                     onClick={() => handleOpenParamModal('event_name')}
                     data-testid="param-btn-event_name"
-                    className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
                   >
                     <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                     <span>+ Token</span>
@@ -380,7 +380,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-event_name"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('event_name', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('event_name')}
               </div>
@@ -394,7 +394,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     type="button"
                     onClick={() => handleOpenParamModal('event_filter')}
                     data-testid="param-btn-event_filter"
-                    className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
                   >
                     <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                     <span>+ Token</span>
@@ -411,7 +411,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-event_filter"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('event_filter', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs font-mono outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs font-mono outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('event_filter')}
               </div>
@@ -430,7 +430,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     type="button"
                     onClick={() => handleOpenParamModal('recipient')}
                     data-testid="param-btn-recipient"
-                    className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
                   >
                     <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                     <span>+ Token</span>
@@ -447,7 +447,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-recipient"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('recipient', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('recipient')}
               </div>
@@ -461,7 +461,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     type="button"
                     onClick={() => handleOpenParamModal('subject')}
                     data-testid="param-btn-subject"
-                    className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
                   >
                     <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                     <span>+ Token</span>
@@ -478,7 +478,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-subject"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('subject', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('subject')}
               </div>
@@ -495,7 +495,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-template_id"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('template_id', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('template_id')}
               </div>
@@ -513,7 +513,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   type="button"
                   onClick={() => handleOpenParamModal('condition_expression')}
                   data-testid="param-btn-condition_expression"
-                  className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                  className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
                 >
                   <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                   <span>+ Token</span>
@@ -530,7 +530,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 data-testid="inspector-input-condition_expression"
                 className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                   getFieldError('condition_expression', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                } rounded-lg text-[#dfe2f1] text-xs font-mono outline-none transition-all placeholder-[#64748b]`}
+                } rounded-none text-[#dfe2f1] text-xs font-mono outline-none transition-all placeholder-[#64748b]`}
               />
               {renderFieldError('condition_expression')}
             </div>
@@ -550,7 +550,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-duration"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('duration', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('duration')}
               </div>
@@ -562,7 +562,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 <select
                   value={(localDraft.config.unit as string) ?? catalogDefaultUnit ?? ''}
                   data-testid="inspector-input-unit"
-                  className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-lg text-[#dfe2f1] text-xs outline-none transition-all"
+                  className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all"
                 >
                   <option value="seconds">Seconds</option>
                   <option value="minutes">Minutes</option>
@@ -585,7 +585,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     type="button"
                     onClick={() => handleOpenParamModal('url')}
                     data-testid="param-btn-url"
-                    className="px-2 py-0.5 rounded-md bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
                   >
                     <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
                     <span>+ Token</span>
@@ -602,7 +602,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-url"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('url', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('url')}
               </div>
@@ -615,7 +615,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   value={(localDraft.config.method as string) || 'POST'}
                   onChange={(e) => handleConfigChange('method', e.target.value)}
                   data-testid="inspector-input-method"
-                  className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-lg text-[#dfe2f1] text-xs outline-none transition-all"
+                  className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all"
                 >
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
@@ -641,13 +641,13 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="inspector-input-experiment_id"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('experiment_id', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
                 {renderFieldError('experiment_id')}
               </div>
 
               {/* Traffic Flow Split Percentage Controls */}
-              <div className="mb-4 p-3.5 rounded-xl bg-[#1c1f2a] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
+              <div className="mb-4 p-3.5 rounded-none bg-[#1c1f2a] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#ddb7ff] uppercase tracking-wider font-mono">
                     Traffic Split Allocation
@@ -667,7 +667,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                         handleConfigChange('variant_a_weight', pct);
                         handleConfigChange('variant_b_weight', 100 - pct);
                       }}
-                      className={`flex-1 py-1 rounded-md text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                      className={`flex-1 py-1 rounded-none text-[10px] font-mono font-bold border transition-all cursor-pointer ${
                         ((localDraft.config.variant_a_weight as number) ?? 50) === pct
                           ? 'bg-[#ddb7ff]/20 text-[#ddb7ff] border-[#ddb7ff]'
                           : 'bg-[#11141d] text-[#908fa0] border-[#464554] hover:text-white'
@@ -696,7 +696,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                       handleConfigChange('variant_b_weight', 100 - val);
                     }}
                     data-testid="inspector-slider-variant_split"
-                    className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-800 accent-[#ddb7ff]"
+                    className="w-full h-2 rounded-none appearance-none cursor-pointer bg-slate-800 accent-[#ddb7ff]"
                   />
                 </div>
               </div>
@@ -717,7 +717,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               }}
               placeholder="Internal documentation note..."
               data-testid="inspector-input-description"
-              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-lg text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]"
+              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]"
             />
           </div>
 
@@ -728,7 +728,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               onClick={handleDryRun}
               disabled={isSimulating || !currentDraft?.draft_id}
               data-testid="dry-run-node-btn"
-              className="w-full py-2.5 bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20 rounded-xl font-bold hover:bg-[#c0c1ff]/20 transition-all flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md disabled:opacity-50"
+              className="w-full py-2.5 bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20 rounded-none font-bold hover:bg-[#c0c1ff]/20 transition-all flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-base">
                 {isSimulating ? 'sync' : 'play_arrow'}
@@ -736,7 +736,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               <span>{isSimulating ? 'Simulating...' : 'Dry Run This Node'}</span>
             </button>
             {simulationStatus && (
-              <div className="text-[11px] font-mono text-[#c0c1ff] p-2 rounded-lg bg-[#11141d] border border-[#464554]">
+              <div className="text-[11px] font-mono text-[#c0c1ff] p-2 rounded-none bg-[#11141d] border border-[#464554]">
                 {simulationStatus}
               </div>
             )}
@@ -751,7 +751,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           onClick={handleCancel}
           disabled={!isDirty}
           data-testid="inspector-cancel-btn"
-          className={`flex-1 py-2.5 rounded-xl font-semibold text-xs border transition-all ${
+          className={`flex-1 py-2.5 rounded-none font-semibold text-xs border transition-all ${
             !isDirty
               ? 'bg-[#171b26] text-[#908fa0] border-[#464554] cursor-not-allowed opacity-50'
               : 'bg-transparent text-[#c7c4d7] border-[#464554] hover:bg-[#262a35] cursor-pointer'
@@ -765,7 +765,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           onClick={handleSave}
           disabled={!isDirty}
           data-testid="inspector-save-btn"
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all ${
+          className={`flex-1 py-2.5 rounded-none font-bold text-xs shadow-lg transition-all ${
             !isDirty
               ? 'bg-[#c0c1ff]/30 text-[#1000a9]/50 cursor-not-allowed'
               : 'bg-[#c0c1ff] text-[#1000a9] hover:brightness-110 cursor-pointer'

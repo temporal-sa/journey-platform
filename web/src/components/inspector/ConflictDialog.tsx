@@ -56,11 +56,11 @@ function ConflictDialogInner({
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-2xl w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal">
+      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-none w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal">
         {/* Header */}
         <div className="bg-[#171b26] p-4 sm:p-5 border-b border-[#464554] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-10 h-10 rounded-none bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
               <span className="material-symbols-outlined text-xl">difference</span>
             </div>
             <div>
@@ -80,7 +80,7 @@ function ConflictDialogInner({
             onClick={onCancel}
             aria-label="Close conflict resolution modal"
             data-testid="close-conflict-dialog-btn"
-            className="w-8 h-8 rounded-xl bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -92,7 +92,7 @@ function ConflictDialogInner({
             {/* Local Version Box */}
             <div
               data-testid="local-edits-card"
-              className="rounded-2xl border border-[#c0c1ff]/30 bg-[#c0c1ff]/5 p-5 flex flex-col shadow-inner"
+              className="rounded-none border border-[#c0c1ff]/30 bg-[#c0c1ff]/5 p-5 flex flex-col shadow-inner"
             >
               <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#c0c1ff] mb-1">
                 Your Local Unsaved Edits
@@ -117,7 +117,7 @@ function ConflictDialogInner({
                   {localNodes.map((n) => (
                     <div
                       key={n.id}
-                      className="p-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1]"
+                      className="p-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1]"
                     >
                       <span className="font-semibold text-[#c0c1ff]">{n.name}</span> ({n.type})
                     </div>
@@ -129,7 +129,7 @@ function ConflictDialogInner({
             {/* Server Version Box */}
             <div
               data-testid="server-revision-card"
-              className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 flex flex-col shadow-inner"
+              className="rounded-none border border-emerald-500/30 bg-emerald-500/5 p-5 flex flex-col shadow-inner"
             >
               <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 mb-1">
                 Server Revision (Remote)
@@ -154,7 +154,7 @@ function ConflictDialogInner({
                   {serverNodes.map((n) => (
                     <div
                       key={n.id}
-                      className="p-2.5 rounded-xl bg-[#11141d] border border-[#464554] text-[#dfe2f1]"
+                      className="p-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1]"
                     >
                       <span className="font-semibold text-emerald-300">{n.name}</span> ({n.type})
                     </div>
@@ -170,7 +170,7 @@ function ConflictDialogInner({
           <button
             onClick={onCancel}
             data-testid="cancel-conflict-btn"
-            className="px-4 py-2.5 rounded-xl bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
           >
             Cancel
           </button>
@@ -180,7 +180,7 @@ function ConflictDialogInner({
               <button
                 onClick={onMerge}
                 data-testid="merge-conflict-btn"
-                className="px-4 py-2.5 rounded-xl bg-[#b76dff]/20 hover:bg-[#b76dff]/30 text-[#ddb7ff] hover:text-white font-semibold text-xs border border-[#ddb7ff]/30 transition-all cursor-pointer shadow-sm"
+                className="px-4 py-2.5 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/30 text-[#ddb7ff] hover:text-white font-semibold text-xs border border-[#ddb7ff]/30 transition-all cursor-pointer shadow-sm"
               >
                 Merge Local & Server
               </button>
@@ -189,7 +189,7 @@ function ConflictDialogInner({
             <button
               onClick={onAcceptServer}
               data-testid="accept-server-btn"
-              className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white font-semibold text-xs border border-emerald-500/40 transition-all cursor-pointer shadow-sm"
+              className="px-4 py-2.5 rounded-none bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white font-semibold text-xs border border-emerald-500/40 transition-all cursor-pointer shadow-sm"
             >
               Accept Server Revision
             </button>
@@ -197,7 +197,7 @@ function ConflictDialogInner({
             <button
               onClick={onKeepLocal}
               data-testid="keep-local-btn"
-              className="px-5 py-2.5 rounded-xl bg-[#c0c1ff] hover:bg-[#a0a3ff] text-[#1000a9] font-bold text-xs shadow-lg shadow-[#c0c1ff]/20 border border-[#c0c1ff]/40 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-none bg-[#c0c1ff] hover:bg-[#a0a3ff] text-[#1000a9] font-bold text-xs shadow-lg shadow-[#c0c1ff]/20 border border-[#c0c1ff]/40 transition-all cursor-pointer"
             >
               Overwrite Server with Local Edits
             </button>

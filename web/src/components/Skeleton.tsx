@@ -10,7 +10,7 @@ interface SkeletonProps {
 export const Skeleton: FC<SkeletonProps> = ({
   height = '1.25rem',
   width = '100%',
-  borderRadius = '0.375rem',
+  borderRadius = '0px',
   count = 1,
 }) => {
   return (

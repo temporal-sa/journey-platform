@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             padding: '2rem',
             margin: '1rem',
             border: '1px solid #ef4444',
-            borderRadius: '0.5rem',
+            borderRadius: '0px',
             backgroundColor: '#fef2f2',
             color: '#991b1b',
             fontFamily: 'system-ui, sans-serif',
@@ -79,7 +79,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               backgroundColor: '#dc2626',
               color: '#ffffff',
               border: 'none',
-              borderRadius: '0.375rem',
+              borderRadius: '0px',
               cursor: 'pointer',
               fontWeight: 500,
             }}

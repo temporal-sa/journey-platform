@@ -106,13 +106,13 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="w-full p-4 rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-end gap-4 shrink-0">
+      <div className="w-full p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-end gap-4 shrink-0">
         {/* Execution Mode Selector */}
         <div>
           <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
             Execution Mode Filter
           </label>
-          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-xl border border-[#464554]" role="group" aria-label="Execution Mode Filter">
+          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Execution Mode Filter">
             {[
               { mode: 'all', label: 'All Modes' },
               { mode: 'production', label: 'Production' },
@@ -124,7 +124,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
                   key={item.mode}
                   type="button"
                   onClick={() => setParams({ mode: item.mode, page: '1' })}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getModeStyles(item.mode)} ${
+                  className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getModeStyles(item.mode)} ${
                     isActive
                       ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
                       : 'opacity-70 hover:opacity-100 hover:brightness-125'
@@ -142,7 +142,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
           <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
             Run Status Filter
           </label>
-          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-xl border border-[#464554]" role="group" aria-label="Run Status Filter">
+          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Run Status Filter">
             {[
               { status: 'all', label: 'All Statuses' },
               { status: 'running', label: 'Running' },
@@ -156,7 +156,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
                   key={item.status}
                   type="button"
                   onClick={() => setParams({ status: item.status, page: '1' })}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getStatusStyles(item.status)} ${
+                  className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getStatusStyles(item.status)} ${
                     isActive
                       ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
                       : 'opacity-70 hover:opacity-100 hover:brightness-125'
@@ -180,7 +180,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
               aria-label="Start Date"
               value={params.startDate}
               onChange={(e) => setParams({ startDate: e.target.value, page: '1' })}
-              className="h-[34px] px-3 rounded-xl bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
+              className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
             />
           </div>
           <div>
@@ -192,7 +192,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
               aria-label="End Date"
               value={params.endDate}
               onChange={(e) => setParams({ endDate: e.target.value, page: '1' })}
-              className="h-[34px] px-3 rounded-xl bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
+              className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
             />
           </div>
         </div>
@@ -207,7 +207,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
             placeholder="Run ID, Workflow ID, or Tenant..."
             value={params.search}
             onChange={(e) => setParams({ search: e.target.value, page: '1' })}
-            className="w-full h-[34px] px-4 rounded-xl bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
+            className="w-full h-[34px] px-4 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
           />
         </div>
       </div>
@@ -225,7 +225,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
 
       {/* Main Content State */}
       {isLoading ? (
-        <div className="p-6 rounded-2xl bg-[#0F131D]/90 border border-[#464554] shadow-xl">
+        <div className="p-6 rounded-none bg-[#0F131D]/90 border border-[#464554] shadow-xl">
           <Skeleton count={5} height="2.5rem" />
         </div>
       ) : filteredRuns.length === 0 ? (
@@ -238,7 +238,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
         />
       ) : (
         /* Obsidian Styled Runs Table */
-        <div className="w-full rounded-2xl bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl overflow-hidden">
+        <div className="w-full rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#171b26] text-[#908fa0] border-b border-[#464554] font-mono uppercase text-[10px] tracking-wider">
@@ -258,14 +258,14 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
                 return (
                   <tr key={run.run_id} className="hover:bg-[#171b26]/50 transition-colors">
                     <td className="p-4 font-mono">
-                      <code className="px-2 py-1 rounded bg-[#171b26] border border-[#464554] text-[#dfe2f1] font-mono text-xs">
+                      <code className="px-2 py-1 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] font-mono text-xs">
                         {run.run_id}
                       </code>
                     </td>
                     <td className="p-4 text-white font-medium">{run.workflow_id}</td>
                     <td className="p-4 font-mono">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase border tracking-wider ${
+                        className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
                           isProd
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
@@ -275,7 +275,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
                       </span>
                     </td>
                     <td className="p-4 font-mono">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusStyles(run.status)}`}>
+                      <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusStyles(run.status)}`}>
                         {run.status}
                       </span>
                     </td>
@@ -288,7 +288,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
                     <td className="p-4 text-right">
                       <button
                         onClick={() => onSelectRun?.(run.run_id)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#b76dff]/20 hover:bg-[#b76dff]/40 hover:brightness-125 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        className="px-3.5 py-1.5 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/40 hover:brightness-125 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                       >
                         <span>Inspect Detail</span>
                         <span className="material-symbols-outlined text-sm">arrow_forward</span>
