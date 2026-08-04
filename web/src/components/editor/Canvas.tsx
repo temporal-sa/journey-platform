@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
   MiniMap,
   Connection,
   Edge,
@@ -398,6 +399,11 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
   const redo = useEditorStore((s) => s.redo);
   const canUndo = useEditorStore((s) => s.canUndo);
   const canRedo = useEditorStore((s) => s.canRedo);
+  const snapToGridEnabled = useEditorStore((s) => s.snapToGridEnabled);
+  const setSnapToGridEnabled = useEditorStore((s) => s.setSnapToGridEnabled);
+  const snapAllNodesToGrid = useEditorStore((s) => s.snapAllNodesToGrid);
+  const autoArrangeHorizontal = useEditorStore((s) => s.autoArrangeHorizontal);
+  const autoArrangeVertical = useEditorStore((s) => s.autoArrangeVertical);
   const validationResult = useEditorStore((s) => s.validationResult);
 
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -547,18 +553,21 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
   const onNodeDragStop = useCallback(
     (_: unknown, node: Node) => {
       if (!currentDraft) return;
+      const GRID_SIZE = 16;
       const updatedNodes = currentDraft.nodes.map((n) => {
         if (n.id === node.id) {
+          const finalX = snapToGridEnabled ? Math.round(node.position.x / GRID_SIZE) * GRID_SIZE : node.position.x;
+          const finalY = snapToGridEnabled ? Math.round(node.position.y / GRID_SIZE) * GRID_SIZE : node.position.y;
           return {
             ...n,
-            position: { x: node.position.x, y: node.position.y },
+            position: { x: finalX, y: finalY },
           };
         }
         return n;
       });
       updateNodes(updatedNodes);
     },
-    [currentDraft, updateNodes]
+    [currentDraft, updateNodes, snapToGridEnabled]
   );
 
   const onSelectionChange = useCallback(
@@ -731,35 +740,52 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
         y: event.clientY,
       });
 
+      const GRID_SIZE = 16;
+      const finalPosition = snapToGridEnabled
+        ? {
+            x: Math.round(position.x / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(position.y / GRID_SIZE) * GRID_SIZE,
+          }
+        : position;
+
       const newNode: GraphNode = {
         id: `node-${Date.now()}`,
         type,
         name: name || type,
-        position,
+        position: finalPosition,
         config: {},
       };
 
       addNode(newNode);
       setSelectedNodeId(newNode.id);
     },
-    [screenToFlowPosition, addNode, setSelectedNodeId]
+    [screenToFlowPosition, addNode, setSelectedNodeId, snapToGridEnabled]
   );
 
   // Handle Direct Node Creation from Palette Click
   const handleAddNodeFromPalette = useCallback(
     (type: string, name: string) => {
+      const GRID_SIZE = 16;
+      const initialPos = { x: 300 + Math.random() * 50, y: 200 + Math.random() * 50 };
+      const finalPosition = snapToGridEnabled
+        ? {
+            x: Math.round(initialPos.x / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(initialPos.y / GRID_SIZE) * GRID_SIZE,
+          }
+        : initialPos;
+
       const newNode: GraphNode = {
         id: `node-${Date.now()}`,
         type,
         name,
-        position: { x: 300 + Math.random() * 50, y: 200 + Math.random() * 50 },
+        position: finalPosition,
         config: {},
       };
 
       addNode(newNode);
       setSelectedNodeId(newNode.id);
     },
-    [addNode, setSelectedNodeId]
+    [addNode, setSelectedNodeId, snapToGridEnabled]
   );
 
   // Delete Selected Elements
@@ -847,6 +873,11 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           onPublish={onPublish}
           onTestMode={onTestMode}
           onKeyboardShortcuts={onKeyboardShortcuts}
+          snapToGridEnabled={snapToGridEnabled}
+          onToggleSnapToGrid={() => setSnapToGridEnabled(!snapToGridEnabled)}
+          onSnapAllNodesToGrid={snapAllNodesToGrid}
+          onAutoArrangeHorizontal={autoArrangeHorizontal}
+          onAutoArrangeVertical={autoArrangeVertical}
         />
 
         {validationError && (
@@ -883,7 +914,8 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           onNodesDelete={onNodesDelete}
           onEdgesDelete={onEdgesDelete}
           onNodeDragStop={onNodeDragStop}
-          selectionOnDrag={false}
+          selectionOnDrag={!isPanMode}
+          panOnDrag={isPanMode}
           multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
           nodesDraggable={!isLocked}
           nodesConnectable={!isLocked}
@@ -892,8 +924,10 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           maxZoom={4}
           defaultViewport={DEFAULT_VIEWPORT}
           fitViewOptions={{ padding: 0.2, maxZoom: 1.5 }}
+          snapToGrid={snapToGridEnabled}
+          snapGrid={[16, 16]}
         >
-          <Background color="#1f2937" gap={32} size={1} />
+          <Background variant={BackgroundVariant.Lines} color="#1f2937" gap={16} size={1} />
           <MiniMap
             position="bottom-right"
             style={{ width: 320, height: 200 }}

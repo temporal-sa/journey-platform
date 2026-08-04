@@ -26,6 +26,7 @@ export interface EditorPresentationState {
   activeTab: EditorTab;
   isSidebarOpen: boolean;
   isInspectorOpen: boolean;
+  snapToGridEnabled: boolean;
 }
 
 export interface HistoryState {
@@ -71,6 +72,10 @@ export interface EditorActions {
   setActiveTab: (tab: EditorTab) => void;
   toggleSidebar: () => void;
   toggleInspector: () => void;
+  setSnapToGridEnabled: (enabled: boolean) => void;
+  snapAllNodesToGrid: () => void;
+  autoArrangeHorizontal: () => void;
+  autoArrangeVertical: () => void;
 
   // Server Draft Actions
   setDraft: (draft: GraphDraft | null) => void;
@@ -125,6 +130,7 @@ const initialPresentationState: EditorPresentationState = {
   activeTab: 'canvas',
   isSidebarOpen: true,
   isInspectorOpen: false,
+  snapToGridEnabled: true,
 };
 
 const initialHistoryState: HistoryState = {
@@ -161,6 +167,73 @@ const initialInspectorEditsState: InspectorEditsState = {
 };
 
 const MAX_HISTORY_LENGTH = 50;
+
+function computeNodeLevels(nodes: GraphNode[], edges: GraphEdge[]) {
+  const inDegree: Record<string, number> = {};
+  const adjList: Record<string, string[]> = {};
+  nodes.forEach(n => {
+    inDegree[n.id] = 0;
+    adjList[n.id] = [];
+  });
+  edges.forEach(e => {
+    if (adjList[e.source]) {
+      adjList[e.source].push(e.target);
+    }
+    if (inDegree[e.target] !== undefined) {
+      inDegree[e.target]++;
+    }
+  });
+
+  const levels: Record<string, number> = {};
+  nodes.forEach(n => {
+    levels[n.id] = -1;
+  });
+
+  let queue: string[] = [];
+
+  nodes.forEach(n => {
+    if (inDegree[n.id] === 0) {
+      levels[n.id] = 0;
+      queue.push(n.id);
+    }
+  });
+
+  while (queue.length > 0) {
+    const currId = queue.shift()!;
+    const currLevel = levels[currId];
+    const neighbors = adjList[currId] || [];
+    for (const neighbor of neighbors) {
+      if (levels[neighbor] < currLevel + 1) {
+        levels[neighbor] = currLevel + 1;
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  let hasUnvisited = nodes.some(n => levels[n.id] === -1);
+  while (hasUnvisited) {
+    const firstUnvisited = nodes.find(n => levels[n.id] === -1);
+    if (!firstUnvisited) break;
+
+    levels[firstUnvisited.id] = 0;
+    queue.push(firstUnvisited.id);
+
+    while (queue.length > 0) {
+      const currId = queue.shift()!;
+      const currLevel = levels[currId];
+      const neighbors = adjList[currId] || [];
+      for (const neighbor of neighbors) {
+        if (levels[neighbor] < currLevel + 1) {
+          levels[neighbor] = currLevel + 1;
+          queue.push(neighbor);
+        }
+      }
+    }
+    hasUnvisited = nodes.some(n => levels[n.id] === -1);
+  }
+
+  return levels;
+}
 
 export const useEditorStore = create<EditorStore>()((set, get) => ({
   ...initialPresentationState,
@@ -228,6 +301,166 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 
   toggleInspector: () => set((state) => ({ isInspectorOpen: !state.isInspectorOpen })),
+
+  setSnapToGridEnabled: (snapToGridEnabled) => set({ snapToGridEnabled }),
+
+  snapAllNodesToGrid: () => {
+    const { currentDraft, past } = get();
+    if (!currentDraft || !currentDraft.nodes) return;
+
+    const GRID_SIZE = 16;
+    const snappedNodes = currentDraft.nodes.map((node) => {
+      const x = node.position?.x ?? 0;
+      const y = node.position?.y ?? 0;
+      return {
+        ...node,
+        position: {
+          x: Math.round(x / GRID_SIZE) * GRID_SIZE,
+          y: Math.round(y / GRID_SIZE) * GRID_SIZE,
+        },
+      };
+    });
+
+    const anyChanged = snappedNodes.some((node, i) => {
+      const original = currentDraft.nodes[i];
+      const origX = original.position?.x ?? 0;
+      const origY = original.position?.y ?? 0;
+      return node.position.x !== origX || node.position.y !== origY;
+    });
+
+    if (!anyChanged) return;
+
+    const newPast = [...past, currentDraft].slice(-MAX_HISTORY_LENGTH);
+    set({
+      currentDraft: {
+        ...currentDraft,
+        nodes: snappedNodes,
+      },
+      past: newPast,
+      future: [],
+      canUndo: true,
+      canRedo: false,
+      hasUnsavedChanges: true,
+    });
+  },
+
+  autoArrangeHorizontal: () => {
+    const { currentDraft, past } = get();
+    if (!currentDraft || !currentDraft.nodes) return;
+
+    const nodes = currentDraft.nodes;
+    const edges = currentDraft.edges || [];
+    const levels = computeNodeLevels(nodes, edges);
+
+    const nodesByLevel: Record<number, string[]> = {};
+    nodes.forEach(n => {
+      const lvl = levels[n.id];
+      if (!nodesByLevel[lvl]) {
+        nodesByLevel[lvl] = [];
+      }
+      nodesByLevel[lvl].push(n.id);
+    });
+
+    const HORIZONTAL_SPACING = 384;
+    const VERTICAL_SPACING = 224;
+    const START_X = 112;
+    const START_Y = 160;
+
+    const arrangedNodes = nodes.map(node => {
+      const lvl = levels[node.id];
+      const levelNodes = nodesByLevel[lvl] || [];
+      const indexInLevel = levelNodes.indexOf(node.id);
+
+      const x = START_X + lvl * HORIZONTAL_SPACING;
+      const y = START_Y + indexInLevel * VERTICAL_SPACING;
+
+      return {
+        ...node,
+        position: { x, y }
+      };
+    });
+
+    const anyChanged = arrangedNodes.some((node, i) => {
+      const original = currentDraft.nodes[i];
+      const origX = original.position?.x ?? 0;
+      const origY = original.position?.y ?? 0;
+      return node.position.x !== origX || node.position.y !== origY;
+    });
+
+    if (!anyChanged) return;
+
+    const newPast = [...past, currentDraft].slice(-MAX_HISTORY_LENGTH);
+    set({
+      currentDraft: {
+        ...currentDraft,
+        nodes: arrangedNodes,
+      },
+      past: newPast,
+      future: [],
+      canUndo: true,
+      canRedo: false,
+      hasUnsavedChanges: true,
+    });
+  },
+
+  autoArrangeVertical: () => {
+    const { currentDraft, past } = get();
+    if (!currentDraft || !currentDraft.nodes) return;
+
+    const nodes = currentDraft.nodes;
+    const edges = currentDraft.edges || [];
+    const levels = computeNodeLevels(nodes, edges);
+
+    const nodesByLevel: Record<number, string[]> = {};
+    nodes.forEach(n => {
+      const lvl = levels[n.id];
+      if (!nodesByLevel[lvl]) {
+        nodesByLevel[lvl] = [];
+      }
+      nodesByLevel[lvl].push(n.id);
+    });
+
+    const HORIZONTAL_SPACING = 384;
+    const VERTICAL_SPACING = 224;
+    const START_X = 112;
+    const START_Y = 160;
+
+    const arrangedNodes = nodes.map(node => {
+      const lvl = levels[node.id];
+      const levelNodes = nodesByLevel[lvl] || [];
+      const indexInLevel = levelNodes.indexOf(node.id);
+
+      const x = START_X + indexInLevel * HORIZONTAL_SPACING;
+      const y = START_Y + lvl * VERTICAL_SPACING;
+
+      return {
+        ...node,
+        position: { x, y }
+      };
+    });
+
+    const anyChanged = arrangedNodes.some((node, i) => {
+      const original = currentDraft.nodes[i];
+      const origX = original.position?.x ?? 0;
+      const origY = original.position?.y ?? 0;
+      return node.position.x !== origX || node.position.y !== origY;
+    });
+
+    if (!anyChanged) return;
+
+    const newPast = [...past, currentDraft].slice(-MAX_HISTORY_LENGTH);
+    set({
+      currentDraft: {
+        ...currentDraft,
+        nodes: arrangedNodes,
+      },
+      past: newPast,
+      future: [],
+      canUndo: true,
+      canRedo: false,
+      hasUnsavedChanges: true,
+    });
+  },
 
   // Server Draft Actions
   setDraft: (currentDraft) =>

@@ -210,6 +210,10 @@ describe('Canvas Editor Components', () => {
       const handleRedo = vi.fn();
       const handleDelete = vi.fn();
       const handleTogglePan = vi.fn();
+      const handleToggleSnap = vi.fn();
+      const handleSnapAll = vi.fn();
+      const handleArrangeHorizontal = vi.fn();
+      const handleArrangeVertical = vi.fn();
 
       render(
         <CanvasToolbar
@@ -224,6 +228,11 @@ describe('Canvas Editor Components', () => {
           hasSelection={true}
           isPanMode={false}
           onTogglePanMode={handleTogglePan}
+          snapToGridEnabled={true}
+          onToggleSnapToGrid={handleToggleSnap}
+          onSnapAllNodesToGrid={handleSnapAll}
+          onAutoArrangeHorizontal={handleArrangeHorizontal}
+          onAutoArrangeVertical={handleArrangeVertical}
         />
       );
 
@@ -245,6 +254,22 @@ describe('Canvas Editor Components', () => {
       const panBtn = screen.getByTestId('toolbar-pan-mode');
       fireEvent.click(panBtn);
       expect(handleTogglePan).toHaveBeenCalledTimes(1);
+
+      const snapToggleBtn = screen.getByTestId('toolbar-snap-toggle');
+      fireEvent.click(snapToggleBtn);
+      expect(handleToggleSnap).toHaveBeenCalledTimes(1);
+
+      const snapAllBtn = screen.getByTestId('toolbar-snap-all');
+      fireEvent.click(snapAllBtn);
+      expect(handleSnapAll).toHaveBeenCalledTimes(1);
+
+      const arrangeHBtn = screen.getByTestId('toolbar-auto-arrange-horizontal');
+      fireEvent.click(arrangeHBtn);
+      expect(handleArrangeHorizontal).toHaveBeenCalledTimes(1);
+
+      const arrangeVBtn = screen.getByTestId('toolbar-auto-arrange-vertical');
+      fireEvent.click(arrangeVBtn);
+      expect(handleArrangeVertical).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -358,6 +383,54 @@ describe('Canvas Editor Components', () => {
       const draft = useEditorStore.getState().currentDraft;
       expect(draft?.nodes).toHaveLength(1);
       expect(draft?.nodes[0].type).toBe('Condition');
+    });
+
+    it('snaps new nodes to grid if enabled, otherwise does not snap', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5); // x initial will be 325, y initial will be 225
+
+      useEditorStore.getState().setDraft({
+        schema_version: '1.0',
+        draft_id: 'draft-test-3',
+        tenant_id: 'tenant-1',
+        name: 'Test Journey',
+        version: 1,
+        nodes: [],
+        edges: [],
+      });
+
+      // snapToGridEnabled is true by default
+      const { rerender } = render(<Canvas />);
+      const conditionItem = screen.getByTestId('palette-item-Condition');
+      fireEvent.click(conditionItem);
+
+      let draft = useEditorStore.getState().currentDraft;
+      expect(draft?.nodes).toHaveLength(1);
+      // Snapped: 325 rounds to 320, 225 rounds to 224 (multiples of 16)
+      expect(draft?.nodes[0].position).toEqual({ x: 320, y: 224 });
+
+      // Disable snap to grid and verify
+      useEditorStore.getState().resetStore();
+      useEditorStore.getState().setSnapToGridEnabled(false);
+      useEditorStore.getState().setDraft({
+        schema_version: '1.0',
+        draft_id: 'draft-test-4',
+        tenant_id: 'tenant-1',
+        name: 'Test Journey',
+        version: 1,
+        nodes: [],
+        edges: [],
+      });
+
+      rerender(<Canvas />);
+      const eventStartItem = screen.getByTestId('palette-item-EventStart');
+      fireEvent.click(eventStartItem);
+
+      draft = useEditorStore.getState().currentDraft;
+      expect(draft?.nodes).toHaveLength(1);
+      // Not Snapped: remains 325, 225
+      expect(draft?.nodes[0].position).toEqual({ x: 325, y: 225 });
+
+      vi.restoreAllMocks();
     });
   });
 });

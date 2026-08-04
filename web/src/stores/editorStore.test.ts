@@ -251,4 +251,134 @@ describe('editorStore', () => {
     useEditorStore.getState().undo();
     expect(useEditorStore.getState().currentDraft?.name).toBe('Original Journey Name');
   });
+
+  it('manages snap to grid state and bulk snap action', () => {
+    const store = useEditorStore.getState();
+    expect(store.snapToGridEnabled).toBe(true);
+
+    store.setSnapToGridEnabled(false);
+    expect(useEditorStore.getState().snapToGridEnabled).toBe(false);
+
+    store.setSnapToGridEnabled(true);
+    expect(useEditorStore.getState().snapToGridEnabled).toBe(true);
+
+    const mockDraft: GraphDraft = {
+      schema_version: '1.0',
+      draft_id: 'draft-1',
+      tenant_id: 'tenant-1',
+      name: 'Test Journey',
+      version: 1,
+      nodes: [
+        { id: 'node-1', type: 'trigger', name: 'Start', position: { x: 10, y: 20 } },
+        { id: 'node-2', type: 'action', name: 'Email', position: { x: 32, y: 64 } },
+        { id: 'node-3', type: 'action', name: 'SMS', position: { x: 105, y: 198 } },
+      ],
+      edges: [],
+    };
+
+    useEditorStore.getState().setDraft(mockDraft);
+    expect(useEditorStore.getState().currentDraft?.nodes[0].position?.x).toBe(10);
+
+    // Bulk snap nodes to 16px grid
+    useEditorStore.getState().snapAllNodesToGrid();
+
+    const snappedNodes = useEditorStore.getState().currentDraft?.nodes;
+    expect(snappedNodes).toBeDefined();
+    // node-1: x=10 -> 16, y=20 -> 16
+    expect(snappedNodes![0].position).toEqual({ x: 16, y: 16 });
+    // node-2: x=32 -> 32, y=64 -> 64
+    expect(snappedNodes![1].position).toEqual({ x: 32, y: 64 });
+    // node-3: x=105 -> 112, y=198 -> 192
+    expect(snappedNodes![2].position).toEqual({ x: 112, y: 192 });
+
+    // Verify undo/redo support for bulk snap
+    useEditorStore.getState().undo();
+    expect(useEditorStore.getState().currentDraft?.nodes[0].position).toEqual({ x: 10, y: 20 });
+
+    useEditorStore.getState().redo();
+    expect(useEditorStore.getState().currentDraft?.nodes[0].position).toEqual({ x: 16, y: 16 });
+  });
+
+  it('automatically arranges nodes horizontally', () => {
+    const mockDraft: GraphDraft = {
+      schema_version: '1.0',
+      draft_id: 'draft-1',
+      tenant_id: 'tenant-1',
+      name: 'Test Journey',
+      version: 1,
+      nodes: [
+        { id: 'node-start', type: 'trigger', name: 'Start', position: { x: 0, y: 0 } },
+        { id: 'node-action-1', type: 'action', name: 'Email', position: { x: 0, y: 0 } },
+        { id: 'node-action-2', type: 'action', name: 'SMS', position: { x: 0, y: 0 } },
+      ],
+      edges: [
+        { id: 'e1', source: 'node-start', target: 'node-action-1' },
+        { id: 'e2', source: 'node-action-1', target: 'node-action-2' },
+      ],
+    };
+
+    useEditorStore.getState().setDraft(mockDraft);
+    useEditorStore.getState().autoArrangeHorizontal();
+
+    const arrangedNodes = useEditorStore.getState().currentDraft?.nodes;
+    expect(arrangedNodes).toBeDefined();
+
+    // Horizontal Level layout positions: START_X=112, spacing=384, START_Y=160
+    // node-start (level 0) -> x = 112
+    // node-action-1 (level 1) -> x = 496
+    // node-action-2 (level 2) -> x = 880
+    expect(arrangedNodes![0].id).toBe('node-start');
+    expect(arrangedNodes![0].position).toEqual({ x: 112, y: 160 });
+
+    expect(arrangedNodes![1].id).toBe('node-action-1');
+    expect(arrangedNodes![1].position).toEqual({ x: 496, y: 160 });
+
+    expect(arrangedNodes![2].id).toBe('node-action-2');
+    expect(arrangedNodes![2].position).toEqual({ x: 880, y: 160 });
+
+    // Verify undo/redo
+    useEditorStore.getState().undo();
+    expect(useEditorStore.getState().currentDraft?.nodes[0].position).toEqual({ x: 0, y: 0 });
+
+    useEditorStore.getState().redo();
+    expect(useEditorStore.getState().currentDraft?.nodes[0].position).toEqual({ x: 112, y: 160 });
+  });
+
+  it('automatically arranges nodes vertically', () => {
+    const mockDraft: GraphDraft = {
+      schema_version: '1.0',
+      draft_id: 'draft-1',
+      tenant_id: 'tenant-1',
+      name: 'Test Journey',
+      version: 1,
+      nodes: [
+        { id: 'node-start', type: 'trigger', name: 'Start', position: { x: 0, y: 0 } },
+        { id: 'node-action-1', type: 'action', name: 'Email', position: { x: 0, y: 0 } },
+        { id: 'node-action-2', type: 'action', name: 'SMS', position: { x: 0, y: 0 } },
+      ],
+      edges: [
+        { id: 'e1', source: 'node-start', target: 'node-action-1' },
+        { id: 'e2', source: 'node-action-1', target: 'node-action-2' },
+      ],
+    };
+
+    useEditorStore.getState().setDraft(mockDraft);
+    useEditorStore.getState().autoArrangeVertical();
+
+    const arrangedNodes = useEditorStore.getState().currentDraft?.nodes;
+    expect(arrangedNodes).toBeDefined();
+
+    // Vertical Level layout positions: START_X=112, START_Y=160, vertical spacing=224
+    // node-start (level 0) -> y = 160
+    // node-action-1 (level 1) -> y = 384 (160 + 224)
+    // node-action-2 (level 2) -> y = 608 (384 + 224)
+    expect(arrangedNodes![0].id).toBe('node-start');
+    expect(arrangedNodes![0].position).toEqual({ x: 112, y: 160 });
+
+    expect(arrangedNodes![1].id).toBe('node-action-1');
+    expect(arrangedNodes![1].position).toEqual({ x: 112, y: 384 });
+
+    expect(arrangedNodes![2].id).toBe('node-action-2');
+    expect(arrangedNodes![2].position).toEqual({ x: 112, y: 608 });
+  });
 });

@@ -17,6 +17,11 @@ interface CanvasToolbarProps {
   onPublish?: () => void;
   onTestMode?: () => void;
   onKeyboardShortcuts?: () => void;
+  snapToGridEnabled: boolean;
+  onToggleSnapToGrid: () => void;
+  onSnapAllNodesToGrid: () => void;
+  onAutoArrangeHorizontal: () => void;
+  onAutoArrangeVertical: () => void;
 }
 
 export function CanvasToolbar({
@@ -38,6 +43,11 @@ export function CanvasToolbar({
   onPublish,
   onTestMode,
   onKeyboardShortcuts,
+  snapToGridEnabled,
+  onToggleSnapToGrid,
+  onSnapAllNodesToGrid,
+  onAutoArrangeHorizontal,
+  onAutoArrangeVertical,
 }: CanvasToolbarProps) {
   const baseBtnStyle: React.CSSProperties = {
     background: 'transparent',
@@ -148,6 +158,80 @@ export function CanvasToolbar({
         data-testid="toolbar-delete"
       >
         <span className="material-symbols-outlined text-xl">delete</span>
+      </button>
+
+      <div className="w-px h-5 bg-[#464554]/50 mx-0.5" />
+
+      {/* Toggle Snap to Grid Button */}
+      <button
+        onClick={onToggleSnapToGrid}
+        style={{
+          ...baseBtnStyle,
+          backgroundColor: snapToGridEnabled ? 'rgba(183, 109, 255, 0.2)' : 'transparent',
+        }}
+        className={`w-10 h-10 p-0 rounded-full flex items-center justify-center transition-all cursor-pointer flat-icon-btn ${
+          snapToGridEnabled
+            ? 'text-[#ddb7ff]'
+            : 'text-[#dfe2f1] hover:text-white hover:bg-white/10'
+        }`}
+        title={snapToGridEnabled ? 'Disable Snap to Grid' : 'Enable Snap to Grid'}
+        aria-label={snapToGridEnabled ? 'Disable Snap to Grid' : 'Enable Snap to Grid'}
+        data-testid="toolbar-snap-toggle"
+      >
+        <span className="material-symbols-outlined text-xl">
+          {snapToGridEnabled ? 'grid_on' : 'grid_off'}
+        </span>
+      </button>
+
+      {/* Snap All Nodes to Grid Button */}
+      <button
+        onClick={onSnapAllNodesToGrid}
+        disabled={isLocked}
+        style={baseBtnStyle}
+        className={`w-10 h-10 p-0 rounded-full flex items-center justify-center transition-all cursor-pointer flat-icon-btn ${
+          !isLocked
+            ? 'text-[#ddb7ff] hover:text-white hover:bg-[#b76dff]/20'
+            : 'text-[#908fa0] cursor-not-allowed'
+        }`}
+        title="Snap All Nodes to Grid"
+        aria-label="Snap All Nodes to Grid"
+        data-testid="toolbar-snap-all"
+      >
+        <span className="material-symbols-outlined text-xl">grid_view</span>
+      </button>
+
+      {/* Auto Arrange Horizontal Button */}
+      <button
+        onClick={onAutoArrangeHorizontal}
+        disabled={isLocked}
+        style={baseBtnStyle}
+        className={`w-10 h-10 p-0 rounded-full flex items-center justify-center transition-all cursor-pointer flat-icon-btn ${
+          !isLocked
+            ? 'text-[#ddb7ff] hover:text-white hover:bg-[#b76dff]/20'
+            : 'text-[#908fa0] cursor-not-allowed'
+        }`}
+        title="Auto Arrange Nodes (Horizontal)"
+        aria-label="Auto Arrange Horizontal"
+        data-testid="toolbar-auto-arrange-horizontal"
+      >
+        <span className="material-symbols-outlined text-xl">account_tree</span>
+      </button>
+
+      {/* Auto Arrange Vertical Button */}
+      <button
+        onClick={onAutoArrangeVertical}
+        disabled={isLocked}
+        style={baseBtnStyle}
+        className={`w-10 h-10 p-0 rounded-full flex items-center justify-center transition-all cursor-pointer flat-icon-btn ${
+          !isLocked
+            ? 'text-[#ddb7ff] hover:text-white hover:bg-[#b76dff]/20'
+            : 'text-[#908fa0] cursor-not-allowed'
+        }`}
+        title="Auto Arrange Nodes (Vertical)"
+        aria-label="Auto Arrange Vertical"
+        data-testid="toolbar-auto-arrange-vertical"
+      >
+        <span className="material-symbols-outlined text-xl" style={{ display: 'inline-block', transform: 'rotate(90deg)' }}>account_tree</span>
       </button>
 
       <div className="w-px h-5 bg-[#464554]/50 mx-0.5" />
