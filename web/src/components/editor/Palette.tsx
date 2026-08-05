@@ -202,6 +202,7 @@ export function Palette({ onAddNode }: PaletteProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter components..."
+            data-testid="palette-search-input"
             className="w-full bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none px-3 py-1.5 text-xs text-[#dfe2f1] placeholder-[#64748b] outline-none transition-all"
           />
           {searchQuery && (

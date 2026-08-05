@@ -164,6 +164,41 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
           <strong className="text-xs font-mono text-[#6ee7b7]">{(parameters.duration_ms || 5000).toLocaleString()} ms</strong>
         </div>
       </div>
+
+      {/* External Infrastructure Dev Tool Link Badges */}
+      <div className="flex items-center gap-3 flex-wrap p-3.5 rounded-none bg-[#171b26] border border-[#464554] text-xs font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#908fa0]">EXTERNAL DEV TOOLS:</span>
+        <a
+          href={`http://localhost:8233/namespaces/default/workflows/${parameters.workflow_id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="link-temporal-ui"
+          className="px-2.5 py-1 rounded-none bg-[#6366f1]/15 text-[#818cf8] hover:text-white hover:bg-[#6366f1]/30 border border-[#6366f1]/40 flex items-center gap-1.5 transition-all text-xs font-semibold"
+        >
+          <span className="material-symbols-outlined text-sm">schedule</span>
+          Temporal UI (:8233) ↗
+        </a>
+        <a
+          href="http://localhost:16686"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="link-jaeger-ui"
+          className="px-2.5 py-1 rounded-none bg-[#f59e0b]/15 text-[#fcd34d] hover:text-white hover:bg-[#f59e0b]/30 border border-[#f59e0b]/40 flex items-center gap-1.5 transition-all text-xs font-semibold"
+        >
+          <span className="material-symbols-outlined text-sm">analytics</span>
+          Jaeger Traces (:16686) ↗
+        </a>
+        <a
+          href="http://localhost:8025"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="link-mailpit-ui"
+          className="px-2.5 py-1 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] hover:text-white hover:bg-[#4cd7f6]/30 border border-[#4cd7f6]/40 flex items-center gap-1.5 transition-all text-xs font-semibold"
+        >
+          <span className="material-symbols-outlined text-sm">mail</span>
+          Mailpit Inbox (:8025) ↗
+        </a>
+      </div>
       {/* Error State with Retry Trigger */}
       {isError && (
         <DegradedStateView
@@ -252,6 +287,79 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
 
           {/* Right Column: Actions & Suppressions */}
           <div className="lg:col-span-1 space-y-6">
+            {/* Interactive Outcome Simulator Panel */}
+            <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#4cd7f6]/30 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-[#464554] pb-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#4cd7f6] text-lg">science</span>
+                  Interactive Outcome Injector
+                </h3>
+              </div>
+              <p className="text-xs text-[#908fa0]">
+                Inject simulated user interaction callbacks for active workflow execution testing.
+              </p>
+              <div className="grid grid-cols-1 gap-2.5">
+                <button
+                  onClick={() => {
+                    apiClient.emitKafkaTestEvent({
+                      schema_version: '1.0',
+                      event_id: `evt-open-${Date.now().toString().slice(-4)}`,
+                      trace_id: `trace-${activeRunId}`,
+                      event_type: 'email_opened',
+                      source: 'web_control_center',
+                      timestamp: new Date().toISOString(),
+                      data_classification: 'NonPII',
+                      data: { run_id: activeRunId },
+                    });
+                  }}
+                  data-testid="simulate-outcome-open"
+                  className="px-3 py-2 rounded-none bg-[#4cd7f6]/15 hover:bg-[#4cd7f6]/25 border border-[#4cd7f6]/40 text-[#4cd7f6] text-xs font-mono font-bold flex items-center justify-between transition-all cursor-pointer"
+                >
+                  <span>✉️ Simulate Email Open</span>
+                  <span className="text-[10px] font-mono text-white/60">→ /outcomes</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    apiClient.emitKafkaTestEvent({
+                      schema_version: '1.0',
+                      event_id: `evt-click-${Date.now().toString().slice(-4)}`,
+                      trace_id: `trace-${activeRunId}`,
+                      event_type: 'email_clicked',
+                      source: 'web_control_center',
+                      timestamp: new Date().toISOString(),
+                      data_classification: 'NonPII',
+                      data: { run_id: activeRunId },
+                    });
+                  }}
+                  data-testid="simulate-outcome-click"
+                  className="px-3 py-2 rounded-none bg-[#c0c1ff]/15 hover:bg-[#c0c1ff]/25 border border-[#c0c1ff]/40 text-[#c0c1ff] text-xs font-mono font-bold flex items-center justify-between transition-all cursor-pointer"
+                >
+                  <span>🖱️ Simulate Link Click</span>
+                  <span className="text-[10px] font-mono text-white/60">→ /outcomes</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    apiClient.emitKafkaTestEvent({
+                      schema_version: '1.0',
+                      event_id: `evt-conv-${Date.now().toString().slice(-4)}`,
+                      trace_id: `trace-${activeRunId}`,
+                      event_type: 'conversion',
+                      source: 'web_control_center',
+                      timestamp: new Date().toISOString(),
+                      data_classification: 'NonPII',
+                      data: { run_id: activeRunId },
+                    });
+                  }}
+                  data-testid="simulate-outcome-conversion"
+                  className="px-3 py-2 rounded-none bg-[#10b981]/15 hover:bg-[#10b981]/25 border border-[#10b981]/40 text-[#6ee7b7] text-xs font-mono font-bold flex items-center justify-between transition-all cursor-pointer"
+                >
+                  <span>🎯 Simulate Conversion</span>
+                  <span className="text-[10px] font-mono text-white/60">→ /outcomes</span>
+                </button>
+              </div>
+            </div>
             {/* Actions Executed Panel */}
             <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-[#464554] pb-3">

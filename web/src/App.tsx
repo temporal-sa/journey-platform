@@ -10,6 +10,7 @@ import {
   RunDetailPage,
 } from './pages';
 import { Canvas } from './components/editor/Canvas';
+import { AgyContextModal } from './components/editor/AgyContextModal';
 import { NodeInspector, ConflictDialog } from './components/inspector';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { StaticListUploadModal, TestRunModal } from './components/testlane';
@@ -172,6 +173,7 @@ export function DashboardContent() {
   const { announcement, announce } = useAnnouncer();
   // ETag Conflict Resolution State
   const [conflictServerDraft, setConflictServerDraft] = useState<GraphDraft | null>(null);
+  const [isAgyModalOpen, setIsAgyModalOpen] = useState(false);
 
 
   const navItems: { route: NavigationRoute; label: string }[] = [
@@ -429,6 +431,14 @@ export function DashboardContent() {
         return;
       }
 
+      // AGY Prompt Context Export Shortcut: Cmd+Shift+A
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setIsAgyModalOpen(true);
+        announce('Opened Antigravity AI prompt context exporter', 'polite');
+        return;
+      }
+
       // Save Shortcut: Cmd+S / Ctrl+S
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -683,6 +693,7 @@ export function DashboardContent() {
                   onPublish={handlePublishDraft}
                   onTestMode={() => openModal('staticListUpload')}
                   onKeyboardShortcuts={() => openModal('keyboardShortcuts')}
+                  onAgyContext={() => setIsAgyModalOpen(true)}
                 />
               </div>
               {/* Inspector Drawer for Canvas */}
@@ -701,6 +712,12 @@ export function DashboardContent() {
         isOpen={activeModal === 'keyboardShortcuts'}
         onClose={closeModal}
         invokingControlRef={shortcutsBtnRef}
+      />
+
+      {/* Antigravity AI Prompt Context Exporter Modal */}
+      <AgyContextModal
+        isOpen={isAgyModalOpen}
+        onClose={() => setIsAgyModalOpen(false)}
       />
 
       {/* ETag Conflict Modal */}

@@ -364,9 +364,10 @@ interface CanvasProps {
   onPublish?: () => void;
   onTestMode?: () => void;
   onKeyboardShortcuts?: () => void;
+  onAgyContext?: () => void;
 }
 
-export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTestMode, onKeyboardShortcuts }: CanvasProps) {
+export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTestMode, onKeyboardShortcuts, onAgyContext }: CanvasProps) {
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const currentDraft = useEditorStore((s) => s.currentDraft);
 
@@ -890,6 +891,7 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           onPublish={onPublish}
           onTestMode={onTestMode}
           onKeyboardShortcuts={onKeyboardShortcuts}
+          onAgyContext={onAgyContext}
           snapToGridEnabled={snapToGridEnabled}
           onToggleSnapToGrid={() => setSnapToGridEnabled(!snapToGridEnabled)}
           onSnapAllNodesToGrid={snapAllNodesToGrid}

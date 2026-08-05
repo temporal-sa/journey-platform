@@ -16,7 +16,7 @@ describe('TestRunModal Component', () => {
     expect(screen.getByTestId('test-mode-badge')).toHaveTextContent('TEST MODE');
     expect(screen.getByText('Realistic Mode')).toBeInTheDocument();
     expect(screen.getByText('Forced Variant Coverage')).toBeInTheDocument();
-    expect(screen.getByLabelText('Fixture Pack Picker')).toBeInTheDocument();
+    expect(screen.getByLabelText('Audience Source (Static List)')).toBeInTheDocument();
     expect(screen.getByText('Mock SendGrid (Email)')).toBeInTheDocument();
     expect(screen.getByText('Target Member Count')).toBeInTheDocument();
   });
