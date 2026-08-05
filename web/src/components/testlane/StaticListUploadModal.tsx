@@ -83,6 +83,7 @@ export function StaticListUploadModal({
     formulaRejections: number;
   } | null>(null);
   const [previews, setPreviews] = useState<MemberPreview[]>([]);
+  const [rawCsvContent, setRawCsvContent] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasUploadError, setHasUploadError] = useState(false);
   if (!isOpen) return null;
@@ -91,7 +92,6 @@ export function StaticListUploadModal({
     const file = e.target.files?.[0];
     if (!file) return;
     setSelectedFile(file);
-    setErrorMsg(null);
     setHasUploadError(false);
     setUploadComplete(false);
     setUploadProgress(0);
@@ -99,6 +99,7 @@ export function StaticListUploadModal({
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
+      setRawCsvContent(text || '');
       parseCSV(text);
     };
     reader.onerror = () => {
@@ -178,6 +179,7 @@ export function StaticListUploadModal({
       data_classification: 'PII',
       item_count: activeSummary.rowCount,
       items: previews.map((p) => p.recipient || p.maskedDisplayValue),
+      csv_content: rawCsvContent,
       created_at: now.toISOString(),
       expires_at: expiresAt,
     };

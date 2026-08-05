@@ -388,32 +388,61 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 			outgoing := findOutgoingEdges(ir.Edges, node.ID)
 			var chosenEdge *domain.IREdge
 
-			evalCtx := make(map[string]interface{})
-			if input.InputPayload != nil {
-				for k, v := range input.InputPayload {
-					evalCtx[k] = v
-				}
-			}
+			evalCtx := domain.FlattenPayloadContext(input.InputPayload)
 			for k, v := range state.NodeOutputs {
 				evalCtx[k] = v
 			}
 
-			for i := range outgoing {
-				edge := outgoing[i]
-				expr := strings.TrimSpace(edge.ConditionExpression)
-				if expr == "" || expr == "true" || expr == "default" {
-					chosenEdge = &edge
-					break
+			// Extract condition expression from node params/data
+			nodeExpr := ""
+			for _, k := range []string{"expression", "condition_expression", "condition", "name", "label"} {
+				if v, ok := node.Params[k].(string); ok && strings.TrimSpace(v) != "" {
+					strVal := strings.TrimSpace(v)
+					if strVal != "Condition" && strVal != "condition" {
+						nodeExpr = strVal
+						break
+					}
 				}
+			}
+
+			if nodeExpr != "" {
 				condInput := activities.EvaluateConditionInput{
-					ConditionExpression: expr,
+					ConditionExpression: nodeExpr,
 					Context:             evalCtx,
 				}
 				var condResult bool
-				err := workflow.ExecuteActivity(WithActivitySummary(ctx, fmt.Sprintf("Evaluate condition for edge on node %s", node.ID)), act.EvaluateCondition, condInput).Get(ctx, &condResult)
-				if err == nil && condResult {
-					chosenEdge = &edge
-					break
+				condAo := workflow.ActivityOptions{
+					Summary:             fmt.Sprintf("Evaluate condition '%s' on node %s", nodeExpr, node.ID),
+					StartToCloseTimeout: 10 * time.Second,
+					RetryPolicy: &temporal.RetryPolicy{
+						InitialInterval:    100 * time.Millisecond,
+						BackoffCoefficient: 2.0,
+						MaximumInterval:    1 * time.Second,
+						MaximumAttempts:    3,
+					},
+				}
+				condCtx := workflow.WithActivityOptions(ctx, condAo)
+				err := workflow.ExecuteActivity(condCtx, act.EvaluateCondition, condInput).Get(condCtx, &condResult)
+				if err == nil {
+					targetBranch := "false"
+					if condResult {
+						targetBranch = "true"
+					}
+					for i := range outgoing {
+						edge := outgoing[i]
+						edgeIDLower := strings.ToLower(edge.ID)
+						if strings.Contains(edgeIDLower, targetBranch) {
+							chosenEdge = &edge
+							break
+						}
+					}
+					if chosenEdge == nil && condResult && len(outgoing) > 0 {
+						chosenEdge = &outgoing[0]
+					} else if chosenEdge == nil && !condResult && len(outgoing) > 1 {
+						chosenEdge = &outgoing[1]
+					} else if chosenEdge == nil && len(outgoing) > 0 {
+						chosenEdge = &outgoing[0]
+					}
 				}
 			}
 

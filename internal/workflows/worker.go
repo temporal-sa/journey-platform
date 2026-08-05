@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/validated-pattern/journey-platform/internal/activities"
+	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )
@@ -52,7 +53,7 @@ func DefaultWorkerConfig() WorkerConfig {
 }
 
 // BootstrapWorker initializes the Temporal Client with data converter isolation and registers all workflows and activities.
-func BootstrapWorker(cfg WorkerConfig) (worker.Worker, client.Client, error) {
+func BootstrapWorker(cfg WorkerConfig, repos ...postgres.Repository) (worker.Worker, client.Client, error) {
 	isoConverter := NewIsolatedDataConverter(nil)
 
 	clientOpts := client.Options{
@@ -81,6 +82,10 @@ func BootstrapWorker(cfg WorkerConfig) (worker.Worker, client.Client, error) {
 
 	// Register Activities
 	act := activities.NewActivities()
+	if len(repos) > 0 && repos[0] != nil {
+		act.SetRepository(repos[0])
+	}
+
 	RegisterAllActivities(w, act)
 	return w, c, nil
 }
@@ -108,24 +113,31 @@ func RegisterAllActivities(r ActivityRegistrar, act *activities.Activities) {
 	r.RegisterActivity(act.CloseSubscription)
 	r.RegisterActivity(act.EvaluatePolicy)
 	r.RegisterActivity(act.ResolveAttributes)
-	r.RegisterActivity(act.ResolveParameters)
 }
 
-// RunWorkerWithGracefulDrain starts the worker and handles OS signals for graceful shutdown/drain.
+// RunWorkerWithGracefulDrain blocks until an OS signal is received, then initiates graceful worker shutdown.
 func RunWorkerWithGracefulDrain(ctx context.Context, w worker.Worker) error {
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- w.Run(worker.InterruptCh())
 	}()
 
-	sigCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
 	select {
-	case err := <-errCh:
-		return err
-	case <-sigCtx.Done():
+	case sig := <-sigCh:
+		fmt.Printf("\n[Worker] Received signal %v, starting graceful drain...\n", sig)
 		w.Stop()
 		return nil
+	case err := <-errCh:
+		if err != nil {
+			return fmt.Errorf("worker execution failed: %w", err)
+		}
+		return nil
+	case <-ctx.Done():
+		fmt.Println("\n[Worker] Context canceled, stopping worker...")
+		w.Stop()
+		return ctx.Err()
 	}
 }

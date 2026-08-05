@@ -1,0 +1,3 @@
+user_id,email,name,tier
+usr_true_001,taylor.gold@temporal.io,Taylor Gold,gold
+usr_false_002,taylor.silver@temporal.io,Taylor Silver,silver

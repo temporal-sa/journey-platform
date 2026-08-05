@@ -53,6 +53,10 @@ type Activities struct {
 	serviceMutex      sync.Mutex
 }
 
+func (a *Activities) SetRepository(repo postgres.Repository) {
+	a.repo = repo
+}
+
 // NewActivities returns a new Activities instance.
 func NewActivities(opts ...PolicyServiceOption) *Activities {
 	repo := postgres.NewMemoryRepository()
@@ -237,13 +241,12 @@ func (a *Activities) EvaluateCondition(ctx context.Context, input EvaluateCondit
 	}
 
 	evalCtx := expression.NewEvalContext()
-	if input.Context != nil {
-		for k, v := range input.Context {
-			evalCtx.Event[k] = v
-			evalCtx.Subject[k] = v
-			evalCtx.NodeOutput[k] = v
-			evalCtx.Parameter[k] = v
-		}
+	flattened := domain.FlattenPayloadContext(input.Context)
+	for k, v := range flattened {
+		evalCtx.Event[k] = v
+		evalCtx.Subject[k] = v
+		evalCtx.NodeOutput[k] = v
+		evalCtx.Parameter[k] = v
 	}
 
 	res, err := expression.EvaluateToBool(astNode, evalCtx)
@@ -314,6 +317,54 @@ func (a *Activities) LoadCompiledIR(ctx context.Context, input LoadCompiledIRInp
 	logger := activity.GetLogger(ctx)
 	logger.Info("Loading compiled IR", "contentHash", input.ContentHash, "irID", input.IRID)
 
+	if a.repo != nil {
+		tenantID := input.TenantID
+		if tenantID == "" {
+			tenantID = "default"
+		}
+		draftID := input.ContentHash
+		if draftID == "" {
+			draftID = input.IRID
+		}
+		if strings.HasPrefix(draftID, "ir-") {
+			draftID = strings.TrimPrefix(draftID, "ir-")
+		}
+
+		dbDraft, err := a.repo.GetJourneyDraft(ctx, tenantID, draftID)
+		if (err != nil || dbDraft == nil) && tenantID != "default" {
+			dbDraft, _ = a.repo.GetJourneyDraft(ctx, "default", draftID)
+		}
+
+		if dbDraft != nil {
+			var nodes []domain.GraphNode
+			var edges []domain.GraphEdge
+			if len(dbDraft.Nodes) > 0 {
+				_ = json.Unmarshal(dbDraft.Nodes, &nodes)
+			}
+			if len(dbDraft.Edges) > 0 {
+				_ = json.Unmarshal(dbDraft.Edges, &edges)
+			}
+
+			draft := &domain.GraphDraft{
+				DraftID:     dbDraft.DraftID,
+				TenantID:    dbDraft.TenantID,
+				Name:        dbDraft.Name,
+				Version:     int(dbDraft.Version),
+				Nodes:       nodes,
+				Edges:       edges,
+				ContentHash: dbDraft.ContentHash,
+			}
+
+			comp := compiler.New()
+			canonRes, err := comp.CanonicalizeDraft(draft)
+			if err == nil && canonRes != nil && canonRes.CompiledIR != nil {
+				ir := canonRes.CompiledIR
+				a.RegisterCompiledIR(ir)
+				return ir, nil
+			}
+		}
+	}
+
 	a.irMutex.RLock()
 	ir, ok := a.irStore[input.ContentHash]
 	if !ok && input.IRID != "" {
@@ -322,115 +373,7 @@ func (a *Activities) LoadCompiledIR(ctx context.Context, input LoadCompiledIRInp
 	a.irMutex.RUnlock()
 
 	if !ok || ir == nil {
-		if a.repo != nil {
-			tenantID := input.TenantID
-			if tenantID == "" {
-				tenantID = "default"
-			}
-			draftID := input.ContentHash
-			if draftID == "" {
-				draftID = input.IRID
-			}
-			if strings.HasPrefix(draftID, "ir-") {
-				draftID = strings.TrimPrefix(draftID, "ir-")
-			}
-
-			dbDraft, err := a.repo.GetJourneyDraft(ctx, tenantID, draftID)
-			if (err != nil || dbDraft == nil) && tenantID != "default" {
-				dbDraft, _ = a.repo.GetJourneyDraft(ctx, "default", draftID)
-			}
-
-			if dbDraft != nil {
-				var nodes []domain.GraphNode
-				var edges []domain.GraphEdge
-				if len(dbDraft.Nodes) > 0 {
-					_ = json.Unmarshal(dbDraft.Nodes, &nodes)
-				}
-				if len(dbDraft.Edges) > 0 {
-					_ = json.Unmarshal(dbDraft.Edges, &edges)
-				}
-
-				draft := &domain.GraphDraft{
-					DraftID:     dbDraft.DraftID,
-					TenantID:    dbDraft.TenantID,
-					Name:        dbDraft.Name,
-					Version:     int(dbDraft.Version),
-					Nodes:       nodes,
-					Edges:       edges,
-					ContentHash: dbDraft.ContentHash,
-				}
-
-				comp := compiler.New()
-				canonRes, err := comp.CanonicalizeDraft(draft)
-				if err == nil && canonRes != nil && canonRes.CompiledIR != nil {
-					ir = canonRes.CompiledIR
-					a.RegisterCompiledIR(ir)
-					ok = true
-				} else {
-					entryNodeID := ""
-					if len(nodes) > 0 {
-						entryNodeID = nodes[0].ID
-					}
-					ir = &domain.CompiledIR{
-						SchemaVersion: domain.DefaultSchemaVersion,
-						IRID:          "ir-" + dbDraft.DraftID,
-						DraftID:       dbDraft.DraftID,
-						TenantID:      dbDraft.TenantID,
-						Version:       int(dbDraft.Version),
-						EntryNodeID:   entryNodeID,
-						Nodes:         []domain.IRNode{},
-						Edges:         []domain.IREdge{},
-						ContentHash:   dbDraft.ContentHash,
-						CompiledAt:    time.Now().UTC(),
-					}
-					hash, _ := compiler.ComputeIRHash(ir)
-					ir.ContentHash = hash
-					a.RegisterCompiledIR(ir)
-					ok = true
-				}
-			} else if strings.HasPrefix(draftID, "draft-") || strings.HasPrefix(draftID, "wf-") || strings.HasPrefix(draftID, "tr-") || strings.HasPrefix(draftID, "run-") {
-				// Synthetic fallback for un-persisted or dynamic client draft IDs (Start -> Email -> Exit)
-				entryNodeID := "node-start"
-				emailNodeID := "node-email"
-				exitNodeID := "node-exit"
-				ir = &domain.CompiledIR{
-					SchemaVersion: domain.DefaultSchemaVersion,
-					IRID:          "ir-" + draftID,
-					DraftID:       draftID,
-					TenantID:      tenantID,
-					Version:       1,
-					EntryNodeID:   entryNodeID,
-					Nodes: []domain.IRNode{
-						{ID: entryNodeID, Type: "EventStart", ActivityName: "Start Event"},
-						{ID: emailNodeID, Type: "Email", ActivityName: "Send Welcome Email", Params: map[string]interface{}{"channel": "email", "template_name": "welcome_template"}},
-						{ID: exitNodeID, Type: "exit", ActivityName: "Exit Journey"},
-					},
-					Edges: []domain.IREdge{
-						{ID: "edge-start-email", SourceID: entryNodeID, TargetID: emailNodeID},
-						{ID: "edge-email-exit", SourceID: emailNodeID, TargetID: exitNodeID},
-					},
-					CompiledAt: time.Now().UTC(),
-				}
-				a.RegisterCompiledIR(ir)
-				a.irMutex.Lock()
-				a.irStore[draftID] = ir
-				a.irMutex.Unlock()
-				ok = true
-			}
-		}
-	}
-
-	if !ok || ir == nil {
-		return nil, fmt.Errorf("compiled IR not found for hash %s / irID %s", input.ContentHash, input.IRID)
-	}
-
-	// Verify hash integrity if ir.ContentHash is set to computed SHA256
-	if ir.ContentHash != "" && len(ir.ContentHash) == 64 {
-		valid, err := compiler.VerifyIRHash(ir)
-		if err == nil && !valid {
-			hash, _ := compiler.ComputeIRHash(ir)
-			ir.ContentHash = hash
-		}
+		return nil, fmt.Errorf("compiled IR graph not found for contentHash '%s' or irID '%s'", input.ContentHash, input.IRID)
 	}
 
 	return ir, nil

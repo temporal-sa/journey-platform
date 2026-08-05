@@ -153,6 +153,7 @@ export interface StaticList {
   item_count: number;
   data_classification: 'PII' | 'NonPII' | 'Sensitive';
   items: string[];
+  csv_content?: string;
   content_hash?: string;
   created_at?: string;
   updated_at?: string;
@@ -175,6 +176,7 @@ export interface TestRun {
   test_run_id: string;
   draft_id: string;
   ir_id: string;
+  static_list_id?: string;
   status: 'pending' | 'passed' | 'failed';
   mock_inputs?: Record<string, unknown>;
   expected_outcomes?: Record<string, unknown>;

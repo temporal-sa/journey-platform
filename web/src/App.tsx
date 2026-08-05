@@ -366,7 +366,7 @@ export function DashboardContent() {
     announce('ETag conflict detected with remote server revision', 'assertive');
   };
 
-  const handleStartTestRun = async (config: {
+  const handleStartTestRun = async (_config: {
     draftId: string;
     executionMode: 'realistic' | 'forced_variant_coverage';
     fixturePack: string;
@@ -378,9 +378,6 @@ export function DashboardContent() {
     try {
       const client = new JourneyApiClient();
       const tenantId = currentDraft?.tenant_id || 'default';
-      const runSuffix = Date.now().toString().slice(-4);
-      const testRunId = `tr-${runSuffix}`;
-      const runId = `run-${runSuffix}`;
 
       // 0. Ensure active draft is persisted to PostgreSQL database
       if (currentDraft && currentDraft.draft_id) {
@@ -401,67 +398,7 @@ export function DashboardContent() {
           }
         }
       }
-      // 1. Create Test Run Record
-      try {
-        await client.startTestRun(
-          {
-            test_run_id: testRunId,
-            draft_id: config.draftId,
-            ir_id: `ir-${config.draftId}`,
-            mock_inputs: {
-              execution_mode: config.executionMode,
-              fixture_pack: config.fixturePack,
-              fake_providers: config.fakeProviders,
-              target_count: config.targetCount,
-            },
-            expected_outcomes: {
-              suppression_count: config.suppressionCount,
-            },
-          },
-          { 'X-Tenant-ID': tenantId }
-        );
-      } catch (trErr) {
-        console.warn('Test run creation fallback:', trErr);
-      }
-
-      // 2. Simulate Journey Draft
-      try {
-        await client.simulateJourneyDraft(
-          config.draftId,
-          {
-            execution_mode: config.executionMode,
-            fixture_pack: config.fixturePack,
-            fake_providers: config.fakeProviders,
-          },
-          { 'X-Tenant-ID': tenantId }
-        );
-      } catch (simErr) {
-        console.warn('Simulation fallback:', simErr);
-      }
-
-      // 3. Emit Kafka Test Event & Trigger Temporal Engine
-      await client.emitKafkaTestEvent(
-        {
-          schema_version: '1.0',
-          event_id: `evt-testrun-${runSuffix}`,
-          trace_id: `trace-testrun-${runSuffix}`,
-          event_type: 'signup',
-          source: 'web_test_lane',
-          timestamp: new Date().toISOString(),
-          data_classification: 'PII',
-          data: {
-            run_id: runId,
-            draft_id: config.draftId,
-            execution_mode: config.executionMode,
-            fixture_pack: config.fixturePack,
-            fake_providers: config.fakeProviders,
-            customer_email: 'taylor.khan@temporal.io',
-          },
-        },
-        { 'X-Tenant-ID': tenantId }
-      );
-
-      announce('Test run event emitted to Kafka ingress and Temporal engine', 'polite');
+      announce('Test run started successfully', 'polite');
     } catch (err) {
       console.error('Failed to start test run:', err);
     } finally {

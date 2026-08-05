@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { JourneyApiClient } from '../../api/client';
-import type { TestRun } from '../../types/api';
+import type { TestRun, StaticList } from '../../types/api';
 
 const apiClient = new JourneyApiClient();
 
@@ -19,6 +19,7 @@ export interface TestRunConfig {
   expiryHours: number;
   targetCount: number;
   suppressionCount: number;
+  staticListId?: string;
 }
 
 export function TestRunModal({
@@ -31,7 +32,25 @@ export function TestRunModal({
   const [fixturePack, setFixturePack] = useState('Standard Fixture Pack (50 contacts)');
   const [fakeProviders, setFakeProviders] = useState<string[]>(['mock-sendgrid', 'mock-twilio']);
   const [expiryHours, setExpiryHours] = useState('24');
+  const [staticLists, setStaticLists] = useState<StaticList[]>([]);
+  const [selectedStaticListId, setSelectedStaticListId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      apiClient
+        .listStaticLists()
+        .then((lists) => {
+          if (Array.isArray(lists)) {
+            setStaticLists(lists);
+            if (lists.length > 0 && !selectedStaticListId) {
+              setSelectedStaticListId(lists[0].list_id);
+            }
+          }
+        })
+        .catch((err) => console.error('Failed to fetch static lists:', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -51,6 +70,7 @@ export function TestRunModal({
         schema_version: '1.0',
         test_run_id: `tr-${Date.now().toString().slice(-6)}`,
         draft_id: draftId,
+        static_list_id: selectedStaticListId || undefined,
         mock_inputs: {
           execution_mode: executionMode,
           fixture_pack: fixturePack,
@@ -165,10 +185,31 @@ export function TestRunModal({
             </div>
           </div>
 
+          {/* Static List Audience Selector */}
+          <div>
+            <label htmlFor="static-list-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+              Audience Source (Static List)
+            </label>
+            <select
+              id="static-list-select"
+              data-testid="static-list-select"
+              value={selectedStaticListId}
+              onChange={(e) => setSelectedStaticListId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#4cd7f6]/60 text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+            >
+              <option value="">Default Mock Fixture Pack (No Static List)</option>
+              {staticLists.map((list) => (
+                <option key={list.list_id} value={list.list_id}>
+                  {list.name || list.list_id} ({list.item_count || 0} members)
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Fixture Pack Picker */}
           <div>
             <label htmlFor="fixture-pack-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
-              Fixture Pack Picker
+              Fixture Pack Picker (Fallback Mode)
             </label>
             <select
               id="fixture-pack-select"

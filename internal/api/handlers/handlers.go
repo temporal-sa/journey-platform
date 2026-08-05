@@ -137,6 +137,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/api/v1/exports/csv", h.ExportExperimentReportCSV)
 
 	// Static-List Endpoints
+	r.Get("/api/v1/static-lists", h.ListStaticLists)
 	r.Post("/api/v1/static-lists/upload", h.UploadStaticList)
 	r.Get("/api/v1/static-lists/{id}/versions", h.ListStaticListVersions)
 	r.Post("/api/v1/static-lists/{id}/finalize", h.FinalizeStaticList)

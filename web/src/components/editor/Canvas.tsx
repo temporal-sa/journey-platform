@@ -462,15 +462,27 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
   const edges: Edge[] = useMemo(() => {
     if (!currentDraft?.edges) return [];
     return currentDraft.edges.map((e) => {
+      const resolvedSourceHandle =
+        e.sourceHandle ||
+        (e.condition === 'true' || e.id.includes('-true-')
+          ? 'true'
+          : e.condition === 'false' || e.id.includes('-false-')
+          ? 'false'
+          : e.condition === 'event' || e.id.includes('-event-')
+          ? 'event'
+          : e.condition === 'timeout' || e.id.includes('-timeout-')
+          ? 'timeout'
+          : e.condition || undefined);
+
       const isSelected = selectedEdgeIds.includes(e.id) || e.id === selectedEdgeId;
-      const edgeLabel = e.label || getBranchLabel(e.sourceHandle);
-      const edgeData = getMemoizedEdgeData(e.id, e.condition, edgeLabel);
+      const edgeLabel = e.label || getBranchLabel(resolvedSourceHandle);
+      const edgeData = getMemoizedEdgeData(e.id, e.condition || resolvedSourceHandle, edgeLabel);
 
       return getMemoizedEdgeObject(
         e.id,
         e.source,
         e.target,
-        e.sourceHandle,
+        resolvedSourceHandle,
         e.targetHandle,
         edgeLabel,
         'labeled',

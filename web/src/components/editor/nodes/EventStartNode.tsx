@@ -3,6 +3,8 @@ import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 export type CustomNodeData = {
   label?: string;
   name?: string;
+  expression?: string;
+  condition_expression?: string;
   config?: Record<string, unknown>;
   errorCount?: number;
   warningCount?: number;

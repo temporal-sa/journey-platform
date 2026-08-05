@@ -4,7 +4,14 @@ import type { CustomNodeData } from './EventStartNode';
 export type CustomNode = Node<CustomNodeData>;
 
 export function ConditionNode({ data, selected }: NodeProps<CustomNode>) {
-  const displayName = data?.name || data?.label || "plan == 'Pro'";
+  const conditionExpr =
+    (data?.config?.condition_expression as string) ||
+    (data?.expression as string) ||
+    (data?.condition_expression as string) ||
+    data?.name ||
+    data?.label ||
+    "tier == 'gold'";
+  const displayName = conditionExpr;
   const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
 
   return (

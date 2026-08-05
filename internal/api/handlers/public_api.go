@@ -18,6 +18,7 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/security"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/testaudience"
+	"github.com/validated-pattern/journey-platform/internal/workflows"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 )
@@ -611,59 +612,56 @@ func (h *Handlers) UploadStaticList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		middleware.WriteError(w, r, http.StatusBadRequest, "failed to read request body")
-		return
-	}
-	if len(bodyBytes) == 0 {
-		middleware.WriteError(w, r, http.StatusBadRequest, "empty CSV input payload")
-		return
-	}
-
 	listID := "list-" + uuid.New().String()
 	listName := "Uploaded Static List"
 	var csvContent string
 
-	// Check if body is JSON or raw CSV
-	if json.Valid(bodyBytes) {
-		var payload struct {
-			ListID      string   `json:"list_id"`
-			Name        string   `json:"name"`
-			Description string   `json:"description"`
-			CSVContent  string   `json:"csv_content"`
-			Items       []string `json:"items"`
+	if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
+		_ = r.ParseMultipartForm(10 << 20)
+		if f, _, err := r.FormFile("file"); err == nil && f != nil {
+			if fBytes, fErr := io.ReadAll(f); fErr == nil {
+				csvContent = string(fBytes)
+			}
+			f.Close()
 		}
-		if err := json.Unmarshal(bodyBytes, &payload); err == nil {
-			if payload.ListID != "" {
-				listID = payload.ListID
-			}
-			if payload.Name != "" {
-				listName = payload.Name
-			}
-			if payload.CSVContent != "" {
-				csvContent = payload.CSVContent
-			} else if len(payload.Items) > 0 {
-				var b strings.Builder
-				b.WriteString("member_id,recipient\n")
-				for idx, item := range payload.Items {
-					b.WriteString(fmt.Sprintf("MBR-%03d,%s\n", idx+1, item))
+		if name := r.FormValue("name"); name != "" {
+			listName = name
+		}
+		if id := r.FormValue("list_id"); id != "" {
+			listID = id
+		}
+	} else {
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err == nil && len(bodyBytes) > 0 {
+			if json.Valid(bodyBytes) {
+				var payload struct {
+					ListID      string   `json:"list_id"`
+					Name        string   `json:"name"`
+					Description string   `json:"description"`
+					CSVContent  string   `json:"csv_content"`
+					Items       []string `json:"items"`
 				}
-				csvContent = b.String()
+				if err := json.Unmarshal(bodyBytes, &payload); err == nil {
+					if payload.ListID != "" {
+						listID = payload.ListID
+					}
+					if payload.Name != "" {
+						listName = payload.Name
+					}
+					if payload.CSVContent != "" {
+						csvContent = payload.CSVContent
+					} else if len(payload.Items) > 0 {
+						var b strings.Builder
+						b.WriteString("member_id,recipient\n")
+						for idx, item := range payload.Items {
+							b.WriteString(fmt.Sprintf("MBR-%03d,%s\n", idx+1, item))
+						}
+						csvContent = b.String()
+					}
+				}
+			} else {
+				csvContent = string(bodyBytes)
 			}
-		}
-	}
-
-	if csvContent == "" {
-		if json.Valid(bodyBytes) {
-			var b strings.Builder
-			b.WriteString("member_id,recipient\n")
-			b.WriteString("MBR-001,user1@example.com\n")
-			b.WriteString("MBR-002,user2@example.com\n")
-			b.WriteString("MBR-003,user3@example.com\n")
-			csvContent = b.String()
-		} else {
-			csvContent = string(bodyBytes)
 		}
 	}
 
@@ -707,12 +705,23 @@ func (h *Handlers) UploadStaticList(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.repo.CreateStaticList(r.Context(), dbList)
 	if err != nil {
-		if errors.Is(err, postgres.ErrAlreadyExists) || errors.Is(err, postgres.ErrConflict) {
-			middleware.WriteError(w, r, http.StatusConflict, fmt.Sprintf("static list '%s' already exists", listID))
+		if errors.Is(err, postgres.ErrAlreadyExists) || errors.Is(err, postgres.ErrConflict) || strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
+			updated, errUp := h.repo.UpdateStaticList(r.Context(), dbList)
+			if errUp == nil && updated != nil {
+				created = updated
+			} else {
+				existing, errGet := h.repo.GetStaticList(r.Context(), tenantID, dbList.ListID)
+				if errGet == nil && existing != nil {
+					created = existing
+				} else {
+					middleware.WriteError(w, r, http.StatusConflict, fmt.Sprintf("static list '%s' already exists", listID))
+					return
+				}
+			}
+		} else {
+			middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to save static list: %v", err))
 			return
 		}
-		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to save static list: %v", err))
-		return
 	}
 
 	etag := middleware.GenerateETag([]byte(created.ContentHash))
@@ -731,6 +740,32 @@ func (h *Handlers) UploadStaticList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.WriteJSON(w, http.StatusCreated, resp)
+}
+
+// ListStaticLists handles GET /api/v1/static-lists
+func (h *Handlers) ListStaticLists(w http.ResponseWriter, r *http.Request) {
+	tenantID := getTenantID(r)
+	lists, err := h.repo.ListStaticLists(r.Context(), tenantID)
+	if err != nil {
+		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to list static lists: %v", err))
+		return
+	}
+
+	res := make([]domain.StaticList, len(lists))
+	for i, l := range lists {
+		res[i] = domain.StaticList{
+			SchemaVersion:      domain.DefaultSchemaVersion,
+			ListID:             l.ListID,
+			Name:               l.Name,
+			Description:        l.Description,
+			ItemCount:          int(l.ItemCount),
+			DataClassification: domain.DataClassificationNonPII,
+			ContentHash:        l.ContentHash,
+			CreatedAt:          l.CreatedAt,
+			UpdatedAt:          l.UpdatedAt,
+		}
+	}
+	middleware.WriteJSON(w, http.StatusOK, res)
 }
 
 // FinalizeStaticList handles POST /api/v1/static-lists/{id}/finalize
@@ -984,6 +1019,55 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 			CompletedAt:      &now,
 		}
 		_, _ = h.repo.CreateEnrollment(r.Context(), enr)
+	}
+
+	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
+	if tc := h.GetTemporalClient(); tc != nil {
+		var rows []map[string]interface{}
+
+		if trInput.StaticListID != "" {
+			dbList, err := h.repo.GetStaticList(r.Context(), tenantID, trInput.StaticListID)
+			if err == nil && dbList != nil && len(dbList.Items) > 0 {
+				var members []map[string]interface{}
+				if errUnm := json.Unmarshal(dbList.Items, &members); errUnm == nil && len(members) > 0 {
+					rows = members
+				}
+			}
+		}
+
+		if len(rows) == 0 {
+			if listArr, ok := trInput.MockInputs["rows"].([]interface{}); ok {
+				for _, r := range listArr {
+					if m, ok := r.(map[string]interface{}); ok {
+						rows = append(rows, m)
+					}
+				}
+			}
+		}
+
+		if len(rows) == 0 && len(trInput.MockInputs) > 0 {
+			rows = append(rows, trInput.MockInputs)
+		}
+
+		for idx, rowPayload := range rows {
+			subID := fmt.Sprintf("%s-row-%d", created.TestRunID, idx+1)
+			wfID := fmt.Sprintf("wf-%s-%s", draftID, subID)
+			opts := client.StartWorkflowOptions{
+				ID:        wfID,
+				TaskQueue: "journey-engine-task-queue",
+			}
+			input := workflows.CompiledJourneyInput{
+				SchemaVersion: domain.DefaultSchemaVersion,
+				WorkflowID:    wfID,
+				RunID:         subID,
+				TenantID:      tenantID,
+				IRID:          created.IRID,
+				ContentHash:   draftID,
+				ExecutionMode: workflows.ExecutionModeTest,
+				InputPayload:  rowPayload,
+			}
+			_, _ = tc.ExecuteWorkflow(r.Context(), opts, "CompiledJourneyWorkflow", input)
+		}
 	}
 
 	resp := domain.TestRun{

@@ -229,7 +229,8 @@ func JourneyWorkflow(ctx workflow.Context, input domain.WorkflowInput) (*domain.
 			ConditionExpression: "true",
 			Context:             projection.Variables,
 		}
-		err = workflow.ExecuteActivity(WithActivitySummary(ctx, "Evaluate step condition"), act.EvaluateCondition, condInput).Get(ctx, &conditionMet)
+		condSummary := fmt.Sprintf("Evaluate step condition '%s'", condInput.ConditionExpression)
+		err = workflow.ExecuteActivity(WithActivitySummary(ctx, condSummary), act.EvaluateCondition, condInput).Get(ctx, &conditionMet)
 		if err != nil {
 			logger.Error("Condition evaluation activity failed", "error", err)
 		}

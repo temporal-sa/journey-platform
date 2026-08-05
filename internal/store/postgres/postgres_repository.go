@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -864,6 +865,9 @@ func (r *PostgresRepository) CreateStaticList(ctx context.Context, l *StaticList
 	var res StaticList
 	err := row.Scan(&res.TenantID, &res.ListID, &res.Name, &res.Description, &res.ItemCount, &res.DataClassification, &res.Items, &res.ContentHash, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
+			return nil, ErrAlreadyExists
+		}
 		return nil, err
 	}
 	return &res, nil

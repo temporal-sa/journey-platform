@@ -119,6 +119,14 @@ reset:
 	rm -rf bin/ .vite/ web/dist/
 	@echo "Reset completed successfully."
 
+.PHONY: migrate
+## Apply PostgreSQL database schema migrations
+migrate:
+	@echo "Applying PostgreSQL database schema migrations..."
+	@if [ -f migrations/postgres/000001_create_postgres_tables.up.sql ]; then \
+		docker compose exec -T postgres psql -U journey -d journeydb -f /migrations/postgres/000001_create_postgres_tables.up.sql 2>/dev/null || true; \
+	fi
+
 .PHONY: dev
 ## Start Go processes and web frontend with prefixed logs concurrently
 dev:

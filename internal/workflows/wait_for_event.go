@@ -344,7 +344,7 @@ func matchesEvent(ctx workflow.Context, act *activities.Activities, evt EventSig
 		Context:             evalCtx,
 	}
 	var condResult bool
-	evalActCtx := WithActivitySummary(ctx, fmt.Sprintf("Evaluate event condition for %s on node %s", cfg.EventType, cfg.NodeID))
+	evalActCtx := WithActivitySummary(ctx, fmt.Sprintf("Evaluate event condition '%s' for %s on node %s", expr, cfg.EventType, cfg.NodeID))
 	err := workflow.ExecuteActivity(evalActCtx, act.EvaluateCondition, condInput).Get(evalActCtx, &condResult)
 	if err != nil {
 		return false
