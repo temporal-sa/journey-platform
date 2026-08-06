@@ -11,6 +11,7 @@ import type {
   TestRun,
   RunProjection,
   RunTimeline,
+  SubRunListResponse,
   EventEnvelope,
   ActionResult,
   EmitEventResponse,
@@ -21,6 +22,7 @@ import type {
   ErrorResponse,
   StandardHeaders,
 } from '../types/api';
+import { isSimulatedApiFailureEnabled } from './simulatedFailure';
 
 export class APIError extends Error {
   public code: string;
@@ -80,6 +82,14 @@ export class JourneyApiClient {
       url = `http://localhost${url.startsWith('/') ? '' : '/'}${url}`;
     }
     const reqHeaders = this.buildHeaders(headers, options.headers);
+
+    if (isSimulatedApiFailureEnabled()) {
+      throw new APIError(503, {
+        code: 'SIMULATED_API_FAILURE',
+        message: '[DEV SIMULATION] Service Unavailable: Simulated API failure mode is enabled.',
+        request_id: reqHeaders.get('Request-ID') || 'req-simulated-failure',
+      });
+    }
     let response: Response;
     try {
       response = await this.fetchFn(url, { ...options, headers: reqHeaders });
@@ -337,8 +347,24 @@ export class JourneyApiClient {
     return res.data;
   }
 
-  async getJourneyRunTimeline(runId: string, headers?: StandardHeaders): Promise<RunTimeline> {
-    const res = await this.request<RunTimeline>(`/journeys/runs/${runId}/timeline`, { method: 'GET' }, headers);
+  async getJourneyRunTimeline(runId: string, subRunId?: string, headers?: StandardHeaders): Promise<RunTimeline> {
+    const qs = subRunId ? `?sub_run_id=${encodeURIComponent(subRunId)}` : '';
+    const res = await this.request<RunTimeline>(`/journeys/runs/${runId}/timeline${qs}`, { method: 'GET' }, headers);
+    return res.data;
+  }
+
+  async listJourneyRunSubRuns(
+    runId: string,
+    params?: { page?: number; limit?: number; search?: string; status?: string },
+    headers?: StandardHeaders
+  ): Promise<SubRunListResponse> {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.search) query.set('search', params.search);
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await this.request<SubRunListResponse>(`/journeys/runs/${runId}/sub-runs${qs}`, { method: 'GET' }, headers);
     return res.data;
   }
   async getJourneyRun(runId: string, headers?: StandardHeaders): Promise<RunProjection & { actions?: ActionResult[]; suppressions?: Record<string, unknown>[] }> {

@@ -57,7 +57,21 @@ func Seed(ctx context.Context, repo postgres.Repository, opts ...SeedOptions) (*
 		res.CatalogsSeeded++
 	}
 
-	// 2. Verified Contacts Fixture List (5 contacts: user_1 to user_5)
+	// 2. VIP Customers Segment List (5 contacts with tier & ltv attributes)
+	vipList := getVipCustomersList(tenantID)
+	existingVip, err := repo.GetStaticList(ctx, tenantID, vipList.ListID)
+	if err == nil && existingVip != nil {
+		if _, updateErr := repo.UpdateStaticList(ctx, &vipList); updateErr != nil {
+			return nil, fmt.Errorf("failed to update VIP static list: %w", updateErr)
+		}
+	} else {
+		if _, createErr := repo.CreateStaticList(ctx, &vipList); createErr != nil {
+			return nil, fmt.Errorf("failed to create VIP static list: %w", createErr)
+		}
+	}
+	res.StaticListsSeeded++
+
+	// 3. Verified Contacts Fixture List (5 contacts: user_1 to user_5)
 	verifiedContactsList := getVerifiedContactsList(tenantID)
 	existingList, err := repo.GetStaticList(ctx, tenantID, verifiedContactsList.ListID)
 	if err == nil && existingList != nil {
@@ -480,6 +494,29 @@ func getSeedCatalogs(tenantID string) []postgres.Catalog {
 			CreatedAt:        now,
 			UpdatedAt:        now,
 		},
+	}
+}
+
+func getVipCustomersList(tenantID string) postgres.StaticList {
+	now := time.Now().UTC()
+	vipRecords := []map[string]interface{}{
+		{"id": "usr_101", "email": "alexander.smith@example.com", "name": "Alexander Smith", "tier": "VIP Platinum", "ltv": "$12,450", "status": "Active"},
+		{"id": "usr_102", "email": "sophia.martinez@enterprise.org", "name": "Sophia Martinez", "tier": "VIP Gold", "ltv": "$8,920", "status": "Active"},
+		{"id": "usr_103", "email": "liam.johnson@corporate.co", "name": "Liam Johnson", "tier": "VIP Platinum", "ltv": "$15,100", "status": "Active"},
+		{"id": "usr_104", "email": "emma.williams@techsolutions.io", "name": "Emma Williams", "tier": "VIP Gold", "ltv": "$9,400", "status": "Active"},
+		{"id": "usr_105", "email": "noah.brown@cloudops.net", "name": "Noah Brown", "tier": "VIP Silver", "ltv": "$6,800", "status": "Active"},
+	}
+	return postgres.StaticList{
+		TenantID:           tenantID,
+		ListID:             "list-vip-users",
+		Name:               "VIP Customers Segment",
+		Description:        "High LTV accounts eligible for priority loyalty rewards",
+		ItemCount:          int32(len(vipRecords)),
+		DataClassification: string(domain.DataClassificationPII),
+		Items:              mustJSON(vipRecords),
+		ContentHash:        calcHash("list-vip-users"),
+		CreatedAt:          now,
+		UpdatedAt:          now,
 	}
 }
 

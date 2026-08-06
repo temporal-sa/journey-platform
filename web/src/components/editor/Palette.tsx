@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
+import { CloseButton } from '../common/CloseButton';
 
 export interface PaletteItem {
   type: string;
@@ -20,7 +21,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'bolt',
     description: 'Triggers workflow on incoming domain event',
     accentColor: '#4cd7f6',
-    badgeBg: 'bg-[#4cd7f6]/10 border-[#4cd7f6]/30 text-[#4cd7f6]',
+    badgeBg: 'bg-[#4cd7f6]/20 border-[#4cd7f6]/40 text-[#4cd7f6]',
   },
   // Decisions
   {
@@ -30,7 +31,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'filter_alt',
     description: 'Branch flow based on boolean expression',
     accentColor: '#f59e0b',
-    badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
+    badgeBg: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]',
   },
   {
     type: 'Delay',
@@ -39,7 +40,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'schedule',
     description: 'Pause workflow execution for a duration',
     accentColor: '#f59e0b',
-    badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
+    badgeBg: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]',
   },
   {
     type: 'WaitForEvent',
@@ -48,7 +49,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'hourglass_empty',
     description: 'Pause until event occurs or times out',
     accentColor: '#f59e0b',
-    badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
+    badgeBg: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]',
   },
   {
     type: 'Experiment',
@@ -57,7 +58,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'science',
     description: 'Split traffic into experiment variants',
     accentColor: '#f59e0b',
-    badgeBg: 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]',
+    badgeBg: 'bg-[#f59e0b]/20 border-[#f59e0b]/40 text-[#f59e0b]',
   },
   // Actions
   {
@@ -67,7 +68,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'mail',
     description: 'Send transactional or journey email',
     accentColor: '#c0c1ff',
-    badgeBg: 'bg-[#c0c1ff]/10 border-[#c0c1ff]/30 text-[#c0c1ff]',
+    badgeBg: 'bg-[#c0c1ff]/20 border-[#c0c1ff]/40 text-[#c0c1ff]',
   },
   {
     type: 'SMS',
@@ -76,7 +77,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'sms',
     description: 'Send SMS message to user phone',
     accentColor: '#c0c1ff',
-    badgeBg: 'bg-[#c0c1ff]/10 border-[#c0c1ff]/30 text-[#c0c1ff]',
+    badgeBg: 'bg-[#c0c1ff]/20 border-[#c0c1ff]/40 text-[#c0c1ff]',
   },
   {
     type: 'Push',
@@ -85,7 +86,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'notifications_active',
     description: 'Send mobile push notification',
     accentColor: '#c0c1ff',
-    badgeBg: 'bg-[#c0c1ff]/10 border-[#c0c1ff]/30 text-[#c0c1ff]',
+    badgeBg: 'bg-[#c0c1ff]/20 border-[#c0c1ff]/40 text-[#c0c1ff]',
   },
   {
     type: 'InApp',
@@ -94,7 +95,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'smartphone',
     description: 'Display in-app message overlay',
     accentColor: '#c0c1ff',
-    badgeBg: 'bg-[#c0c1ff]/10 border-[#c0c1ff]/30 text-[#c0c1ff]',
+    badgeBg: 'bg-[#c0c1ff]/20 border-[#c0c1ff]/40 text-[#c0c1ff]',
   },
   {
     type: 'Webhook',
@@ -103,7 +104,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'webhook',
     description: 'Invoke external HTTP API endpoint',
     accentColor: '#c0c1ff',
-    badgeBg: 'bg-[#c0c1ff]/10 border-[#c0c1ff]/30 text-[#c0c1ff]',
+    badgeBg: 'bg-[#c0c1ff]/20 border-[#c0c1ff]/40 text-[#c0c1ff]',
   },
   // Utilities
   {
@@ -113,15 +114,15 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     icon: 'flag',
     description: 'Terminal node that completes journey',
     accentColor: '#ffb4ab',
-    badgeBg: 'bg-rose-500/10 border-rose-500/30 text-rose-300',
+    badgeBg: 'bg-rose-500/20 border-rose-500/40 text-rose-300',
   },
 ];
 
 const CATEGORY_HEADER_STYLES: Record<string, { labelBg: string; text: string }> = {
-  Triggers: { labelBg: 'bg-[#4cd7f6]/10 text-[#4cd7f6] border-[#4cd7f6]/30', text: 'text-[#4cd7f6]' },
-  Decisions: { labelBg: 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/30', text: 'text-[#f59e0b]' },
-  Actions: { labelBg: 'bg-[#c0c1ff]/10 text-[#c0c1ff] border-[#c0c1ff]/30', text: 'text-[#c0c1ff]' },
-  Utilities: { labelBg: 'bg-[#ddb7ff]/10 text-[#ddb7ff] border-[#ddb7ff]/30', text: 'text-[#ddb7ff]' },
+  Triggers: { labelBg: 'bg-[#4cd7f6]/25 text-[#4cd7f6] border-[#4cd7f6]/50 hover:bg-[#4cd7f6]/35', text: 'text-[#4cd7f6]' },
+  Decisions: { labelBg: 'bg-[#f59e0b]/25 text-[#f59e0b] border-[#f59e0b]/50 hover:bg-[#f59e0b]/35', text: 'text-[#f59e0b]' },
+  Actions: { labelBg: 'bg-[#c0c1ff]/25 text-[#c0c1ff] border-[#c0c1ff]/50 hover:bg-[#c0c1ff]/35', text: 'text-[#c0c1ff]' },
+  Utilities: { labelBg: 'bg-[#ddb7ff]/25 text-[#ddb7ff] border-[#ddb7ff]/50 hover:bg-[#ddb7ff]/35', text: 'text-[#ddb7ff]' },
 };
 
 interface PaletteProps {
@@ -183,7 +184,7 @@ export function Palette({ onAddNode }: PaletteProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#c0c1ff] text-lg">widgets</span>
-            <h3 className="font-['Outfit'] font-bold text-sm text-[#dfe2f1]">Node Palette</h3>
+            <h2 className="font-['Outfit'] font-bold text-sm text-[#dfe2f1]">Node Palette</h2>
           </div>
           <button
             onClick={toggleAll}
@@ -206,12 +207,12 @@ export function Palette({ onAddNode }: PaletteProps) {
             className="w-full bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none px-3 py-1.5 text-xs text-[#dfe2f1] placeholder-[#64748b] outline-none transition-all"
           />
           {searchQuery && (
-            <button
+            <CloseButton
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-2 text-[#908fa0] hover:text-white text-xs cursor-pointer"
-            >
-              ✕
-            </button>
+              ariaLabel="Clear palette search input"
+              size="sm"
+              className="absolute right-2 top-1.5"
+            />
           )}
         </div>
       </div>

@@ -24,7 +24,7 @@ The `Makefile` and `scripts/dev.sh` automatically source the `.env` file (with f
 - `EVENT_INGRESS_PORT=8084`
 - `OUTCOME_INGRESS_PORT=8085`
 - `FAKE_PROVIDER_PORT=8082`
-- `FRONTEND_PORT=3000`
+- `FRONTEND_PORT=3002`
 - `TEMPORAL_HOST_PORT=127.0.0.1:7233`
 - `TEMPORAL_NAMESPACE=default`
 - `POSTGRES_DSN=postgres://journey:journey_dev_pass@127.0.0.1:5432/journeydb?sslmode=disable`
@@ -53,7 +53,7 @@ When `make dev` executes `scripts/dev.sh`, it starts:
    - `[target-dispatcher]`: Dispatcher for Kafka/queue target lanes.
    - `[report-materializer]`: Analytics materializer service.
    - `[journey-worker]`: Temporal worker processing `CompiledJourneyWorkflow` on task queue `journey-engine-task-queue`.
-3. **Web Frontend**: Vite dev server on port 3000 / 3002 (`npm --prefix web run dev`).
+3. **Web Frontend**: Vite dev server on port 3002 (`npm --prefix web run dev`).
 
 ---
 

@@ -6,6 +6,7 @@ export interface CloseButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   testId?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  bgOpacity?: number;
 }
 
 export const CloseButton: React.FC<CloseButtonProps> = ({
@@ -14,19 +15,28 @@ export const CloseButton: React.FC<CloseButtonProps> = ({
   testId,
   className = '',
   size = 'md',
+  bgOpacity,
+  style,
   ...props
 }) => {
-  const sizeClasses = {
+  const sizeMap: Record<string, string> = {
     sm: 'w-6 h-6',
     md: 'w-8 h-8',
     lg: 'w-10 h-10',
-  }[size];
+  };
 
-  const iconSizeClasses = {
-    sm: 'text-sm',
+  const iconSizeMap: Record<string, string> = {
+    sm: 'text-base',
     md: 'text-lg',
     lg: 'text-xl',
-  }[size];
+  };
+
+  const sizeClasses = sizeMap[size] || sizeMap.md;
+  const iconSizeClasses = iconSizeMap[size] || iconSizeMap.md;
+
+  const bgStyle = bgOpacity !== undefined && bgOpacity > 0
+    ? { backgroundColor: `rgba(28, 31, 42, ${bgOpacity <= 1 ? bgOpacity : bgOpacity / 100})` }
+    : {};
 
   return (
     <button
@@ -34,7 +44,20 @@ export const CloseButton: React.FC<CloseButtonProps> = ({
       onClick={onClick}
       aria-label={ariaLabel}
       data-testid={testId}
-      className={`rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm ${sizeClasses} ${className}`}
+      style={{
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        background: 'transparent',
+        border: 'none',
+        outline: 'none',
+        boxShadow: 'none',
+        textShadow: 'none',
+        filter: 'none',
+        transform: 'none',
+        ...bgStyle,
+        ...style,
+      }}
+      className={`flat-icon-btn text-[#908fa0] hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 p-0 m-0 border-0 outline-none shadow-none ${sizeClasses} ${className}`}
       {...props}
     >
       <span className={`material-symbols-outlined ${iconSizeClasses}`}>close</span>

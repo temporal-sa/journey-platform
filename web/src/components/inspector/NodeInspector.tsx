@@ -4,6 +4,7 @@ import { JourneyApiClient } from '../../api/client';
 import { useEditorStore } from '../../stores/editorStore';
 import { Button } from '../common/Button';
 import { CloseButton } from '../common/CloseButton';
+import { Badge } from '../common/Badge';
 import type { CatalogRecord, GraphNode } from '../../types/api';
 import { getNodeIssues, getFieldError, formatIssueCode } from './validationMapping';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
@@ -236,16 +237,11 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       <div className="p-4 border-b border-[#464554] bg-[#1c1f2a] flex items-center justify-between shrink-0">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-none bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/30">
-              {nodeType}
-            </span>
+            <Badge variant="purple">{nodeType}</Badge>
             {isDirty && (
-              <span
-                data-testid="unsaved-inspector-badge"
-                className="text-[10px] font-semibold px-2 py-0.5 rounded-none bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse"
-              >
+              <Badge variant="amber" className="animate-pulse" testId="unsaved-inspector-badge">
                 Unsaved Edits
-              </span>
+              </Badge>
             )}
           </div>
           <h3 className="font-['Outfit'] font-semibold text-base text-[#dfe2f1] mt-1">

@@ -16,6 +16,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: string;
+  iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
   isLoading?: boolean;
   hoverColor?: string; // Configurable hover background color
@@ -45,8 +46,11 @@ const VARIANT_STYLES: Record<ButtonVariant, { className: string; style?: React.C
   'secondary-dark': {
     className: 'bg-[#1c1f2a] hover:brightness-110 text-[#dfe2f1] border border-[#464554] font-semibold',
   },
+  'secondary': {
+    className: 'bg-[#1c1f2a] hover:brightness-110 text-[#dfe2f1] border border-[#464554] font-semibold',
+  },
   'danger': {
-    className: 'bg-rose-600 hover:brightness-110 text-white border border-rose-500/40 font-bold shadow-md',
+    className: 'bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/50 shadow-md font-bold',
   },
   'ghost': {
     className: 'bg-transparent text-[#908fa0] hover:text-white hover:bg-white/10 border-none',
@@ -65,6 +69,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'secondary-dark',
       size = 'md',
       icon,
+      iconPosition = 'left',
       fullWidth = false,
       isLoading = false,
       hoverColor,
@@ -79,8 +84,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const [isHovered, setIsHovered] = React.useState(false);
-    const variantConfig = VARIANT_STYLES[variant];
-    const sizeClass = SIZE_STYLES[size];
+    const variantConfig = VARIANT_STYLES[variant] || VARIANT_STYLES['secondary-dark'];
+    const sizeClass = SIZE_STYLES[size] || SIZE_STYLES.md;
 
     const baseClasses = `rounded-none font-['Outfit'] transition-all cursor-pointer inline-flex items-center justify-center gap-2 select-none ${
       fullWidth ? 'w-full' : ''
@@ -116,10 +121,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <span className="material-symbols-outlined text-base animate-spin">sync</span>
-        ) : icon ? (
+        ) : icon && iconPosition === 'left' ? (
           <span className="material-symbols-outlined text-base">{icon}</span>
         ) : null}
         {children && <span>{children}</span>}
+        {!isLoading && icon && iconPosition === 'right' ? (
+          <span className="material-symbols-outlined text-base">{icon}</span>
+        ) : null}
       </button>
     );
   }

@@ -70,8 +70,12 @@ async function runConditionSMSE2ETest() {
     const journeyTitle = `Condition SMS E2E Journey ${runSuffix}`;
     const draftId = `draft-cond-sms-${runSuffix}`;
     console.log(` Setting journey name inline to "${journeyTitle}" (draftId: ${draftId})...`);
-    await page.click('[data-testid="inline-journey-name-button"]');
-    await page.waitForSelector('[data-testid="inline-journey-name-input"]');
+    await page.waitForSelector('[data-testid="inline-journey-name-button"]', { visible: true, timeout: 10000 });
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="inline-journey-name-button"]');
+      if (btn) btn.click();
+    });
+    await page.waitForSelector('[data-testid="inline-journey-name-input"]', { visible: true, timeout: 10000 });
     await page.keyboard.down('Meta');
     await page.keyboard.press('A');
     await page.keyboard.up('Meta');

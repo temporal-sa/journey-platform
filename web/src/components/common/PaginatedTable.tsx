@@ -90,30 +90,28 @@ export function PaginatedTable<T>({
         <div className="text-[#908fa0]">
           Showing {startItem} to {endItem} of {totalItems} {itemLabel}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Button
             variant="secondary-dark"
             size="sm"
-            icon="chevron_left"
+            icon="arrow_back"
             disabled={currentPage <= 1 || totalPages <= 1}
             onClick={() => onPageChange(currentPage - 1)}
             data-testid={`${testId}-prev-page`}
-          >
-            Previous
-          </Button>
-          <span className="text-xs text-[#908fa0] px-1 font-mono">
+            aria-label="Previous Page"
+          />
+          <span className="text-xs text-[#908fa0] mx-2 font-mono">
             Page {currentPage} of {totalPages}
           </span>
           <Button
             variant="secondary-dark"
             size="sm"
-            icon="chevron_right"
+            icon="arrow_forward"
             disabled={currentPage >= totalPages || totalPages <= 1}
             onClick={() => onPageChange(currentPage + 1)}
             data-testid={`${testId}-next-page`}
-          >
-            Next
-          </Button>
+            aria-label="Next Page"
+          />
         </div>
       </div>
     </div>

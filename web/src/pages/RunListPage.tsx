@@ -5,6 +5,8 @@ import { Skeleton } from '../components/Skeleton';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Button } from '../components/common/Button';
 import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
+import { DirectoryLayout } from '../components/common/DirectoryLayout';
+import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { RunProjection } from '../types/api';
 
@@ -154,17 +156,15 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
       {
         key: 'actions',
         header: 'Actions',
-        headerClassName: 'text-right',
-        cellClassName: 'text-right',
         cell: (run) => (
           <Button
             variant="secondary-dark"
             size="sm"
-            icon="arrow_forward"
+            icon="visibility"
             onClick={() => onSelectRun?.(run.run_id)}
             className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
           >
-            Inspect Detail
+            Inspect
           </Button>
         ),
       },
@@ -173,127 +173,125 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
   );
 
   return (
-    <div className="w-full h-full flex flex-col p-6 bg-[#0B0F19] overflow-y-auto space-y-6 text-[#dfe2f1] font-['Outfit',sans-serif]">
-      {/* Top Section Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <span className="material-symbols-outlined text-emerald-400 text-2xl">route</span>
-            Journey Execution Runs
-          </h1>
-          <p className="text-xs text-[#908fa0] mt-1">
-            Inspect active execution state machines, production traces, and test scenario runs.
-          </p>
-        </div>
-      </div>
-
-      {/* Filter Toolbar */}
-      <div className="w-full p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-end gap-4 shrink-0">
-        {/* Execution Mode Selector */}
-        <div>
-          <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-            Execution Mode Filter
-          </label>
-          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Execution Mode Filter">
-            {[
-              { mode: 'all', label: 'All Modes' },
-              { mode: 'production', label: 'Production' },
-              { mode: 'test', label: 'Test' },
-            ].map((item) => {
-              const isActive = params.mode === item.mode;
-              return (
-                <button
-                  key={item.mode}
-                  type="button"
-                  onClick={() => setParams({ mode: item.mode, page: '1' })}
-                  className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getModeStyles(item.mode)} ${
-                    isActive
-                      ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
-                      : 'opacity-70 hover:opacity-100 hover:brightness-125'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+    <DirectoryLayout
+      title="Journey Execution Runs"
+      subtitle="Inspect active execution state machines, production traces, and test scenario runs."
+      icon="route"
+      iconAccentColor="#34d399"
+      controls={
+        <>
+          {/* Execution Mode Selector */}
+          <div>
+            <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+              Execution Mode Filter
+            </label>
+            <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Execution Mode Filter">
+              {[
+                { mode: 'all', label: 'All Modes' },
+                { mode: 'production', label: 'Production' },
+                { mode: 'test', label: 'Test' },
+              ].map((item) => {
+                const isActive = params.mode === item.mode;
+                return (
+                  <button
+                    key={item.mode}
+                    type="button"
+                    onClick={() => setParams({ mode: item.mode, page: '1' })}
+                    className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getModeStyles(item.mode)} ${
+                      isActive
+                        ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
+                        : 'opacity-70 hover:opacity-100 hover:brightness-125'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Status Filter Selector */}
-        <div>
-          <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-            Run Status Filter
-          </label>
-          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Run Status Filter">
-            {[
+          {/* Status Filter Selector */}
+          <StatusFilterDropdown
+            label="Run Status Filter"
+            value={params.status}
+            onChange={(newStatus) => setParams({ status: newStatus, page: '1' })}
+            options={[
               { status: 'all', label: 'All Statuses' },
               { status: 'running', label: 'Running' },
               { status: 'completed', label: 'Completed' },
               { status: 'failed', label: 'Failed' },
               { status: 'terminated', label: 'Terminated' },
-            ].map((item) => {
-              const isActive = params.status === item.status;
-              return (
-                <button
-                  key={item.status}
-                  type="button"
-                  onClick={() => setParams({ status: item.status, page: '1' })}
-                  className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getStatusStyles(item.status)} ${
-                    isActive
-                      ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
-                      : 'opacity-70 hover:opacity-100 hover:brightness-125'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Date Range Inputs */}
-        <div className="flex gap-2 items-center">
-          <div>
-            <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              aria-label="Start Date"
-              value={params.startDate}
-              onChange={(e) => setParams({ startDate: e.target.value, page: '1' })}
-              className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-              End Date
-            </label>
-            <input
-              type="date"
-              aria-label="End Date"
-              value={params.endDate}
-              onChange={(e) => setParams({ endDate: e.target.value, page: '1' })}
-              className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {/* Search Bar Input */}
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-            Search Runs
-          </label>
-          <input
-            type="text"
-            placeholder="Run ID, Workflow ID, or Tenant..."
-            value={params.search}
-            onChange={(e) => setParams({ search: e.target.value, page: '1' })}
-            className="w-full h-[34px] px-4 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
+            ]}
+            getStatusStyles={getStatusStyles}
+            dataTestId="runs-status-filter-dropdown"
           />
-        </div>
-      </div>
 
+          {/* Date Range Inputs */}
+          <div className="flex gap-2 items-center">
+            <div>
+              <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+                Start Date
+              </label>
+              <input
+                type="date"
+                aria-label="Start Date"
+                value={params.startDate}
+                onChange={(e) => setParams({ startDate: e.target.value, page: '1' })}
+                className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                aria-label="End Date"
+                value={params.endDate}
+                onChange={(e) => setParams({ endDate: e.target.value, page: '1' })}
+                className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Search Bar Input */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+              Search Runs
+            </label>
+            <input
+              type="text"
+              placeholder="Run ID, Workflow ID, or Tenant..."
+              value={params.search}
+              onChange={(e) => setParams({ search: e.target.value, page: '1' })}
+              className="w-full h-[34px] px-4 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
+            />
+          </div>
+
+          {/* Always Present Clear Filters Button */}
+          <div className="self-end pb-0.5">
+            <Button
+              type="button"
+              onClick={() =>
+                setParams({
+                  mode: 'all',
+                  status: 'all',
+                  search: '',
+                  startDate: '',
+                  endDate: '',
+                  page: '1',
+                })
+              }
+              aria-label="Clear all active table filters"
+              title="Clear all active table filters"
+              variant="secondary-dark"
+              icon="filter_alt_off"
+              data-testid="runs-clear-filters-btn"
+            />
+          </div>
+        </>
+      }
+    >
       {/* Error State with Retry Trigger */}
       {isError && (
         <DegradedStateView
@@ -332,7 +330,7 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
           }
         />
       )}
-    </div>
+    </DirectoryLayout>
   );
 };
 

@@ -22,4 +22,11 @@ describe('CloseButton Component', () => {
     expect(button).toHaveAttribute('aria-label', 'Dismiss dialog');
     expect(button.className).toContain('w-6 h-6');
   });
+
+  it('applies custom background opacity when bgOpacity prop is supplied', () => {
+    render(<CloseButton bgOpacity={60} testId="opacity-close-btn" />);
+
+    const button = screen.getByTestId('opacity-close-btn');
+    expect(button.style.backgroundColor).toBe('rgba(28, 31, 42, 0.6)');
+  });
 });

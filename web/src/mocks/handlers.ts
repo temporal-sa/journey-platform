@@ -153,18 +153,83 @@ const sampleAggregateReport: AggregateReport = {
   generated_at: '2026-07-27T12:00:00Z',
 };
 
-const sampleStaticList: StaticList = {
-  schema_version: '1.0',
-  list_id: 'list-401',
-  name: 'Beta Testers',
-  description: 'List of beta test emails',
-  item_count: 2,
-  data_classification: 'PII',
-  items: ['user1@example.com', 'user2@example.com'],
-  content_hash: 'hash-list-401',
-  created_at: '2026-07-27T10:00:00Z',
-  updated_at: '2026-07-27T10:00:00Z',
-};
+const sampleStaticLists: StaticList[] = [
+  {
+    schema_version: '1.0',
+    list_id: 'list-vip-users',
+    name: 'VIP Customers Segment',
+    description: 'High LTV accounts eligible for priority loyalty rewards',
+    item_count: 5,
+    data_classification: 'PII',
+    records: [
+      { id: 'usr_101', email: 'alexander.smith@example.com', name: 'Alexander Smith', tier: 'VIP Platinum', ltv: '$12,450', status: 'Active' },
+      { id: 'usr_102', email: 'sophia.martinez@enterprise.org', name: 'Sophia Martinez', tier: 'VIP Gold', ltv: '$8,920', status: 'Active' },
+      { id: 'usr_103', email: 'liam.johnson@corporate.co', name: 'Liam Johnson', tier: 'VIP Platinum', ltv: '$15,100', status: 'Active' },
+      { id: 'usr_104', email: 'emma.williams@techsolutions.io', name: 'Emma Williams', tier: 'VIP Gold', ltv: '$9,400', status: 'Active' },
+      { id: 'usr_105', email: 'noah.brown@cloudops.net', name: 'Noah Brown', tier: 'VIP Silver', ltv: '$6,800', status: 'Active' },
+    ],
+    items: [
+      'alexander.smith@example.com',
+      'sophia.martinez@enterprise.org',
+      'liam.johnson@corporate.co',
+      'emma.williams@techsolutions.io',
+      'noah.brown@cloudops.net',
+    ],
+    content_hash: 'hash-vip-v1',
+    created_at: '2026-08-01T10:00:00Z',
+    updated_at: '2026-08-01T10:00:00Z',
+  },
+  {
+    schema_version: '1.0',
+    list_id: 'list-beta-testers',
+    name: 'Beta Feature Opt-Ins',
+    description: 'User cohort participating in new canvas UI testing',
+    item_count: 4,
+    data_classification: 'NonPII',
+    records: [
+      { id: 'usr_beta_89201', group: 'Cohort A', channel: 'In-App', feature_flag: 'canvas_v2_enabled', opt_in_date: '2026-08-01' },
+      { id: 'usr_beta_44102', group: 'Cohort B', channel: 'Email', feature_flag: 'canvas_v2_enabled', opt_in_date: '2026-08-01' },
+      { id: 'usr_beta_11093', group: 'Cohort A', channel: 'In-App', feature_flag: 'canvas_v2_enabled', opt_in_date: '2026-08-02' },
+      { id: 'usr_beta_77344', group: 'Cohort C', channel: 'Direct', feature_flag: 'canvas_v2_enabled', opt_in_date: '2026-08-02' },
+    ],
+    items: [
+      'usr_beta_89201',
+      'usr_beta_44102',
+      'usr_beta_11093',
+      'usr_beta_77344',
+    ],
+    content_hash: 'hash-beta-v1',
+    created_at: '2026-08-02T14:30:00Z',
+    updated_at: '2026-08-02T14:30:00Z',
+  },
+  {
+    schema_version: '1.0',
+    list_id: 'list-churn-risk',
+    name: 'At-Risk Churn Cohort',
+    description: 'Accounts with zero login activity in last 30 days',
+    item_count: 5,
+    data_classification: 'Sensitive',
+    records: [
+      { id: 'usr_churn_01', email: 'david.miller@acme.com', company: 'Acme Corp', inactivity_days: 34, risk_level: 'High', arr: '$45,000' },
+      { id: 'usr_churn_02', email: 'olivia.davis@globex.org', company: 'Globex Inc', inactivity_days: 41, risk_level: 'Critical', arr: '$62,000' },
+      { id: 'usr_churn_03', email: 'james.wilson@initech.co', company: 'Initech', inactivity_days: 30, risk_level: 'Medium', arr: '$28,000' },
+      { id: 'usr_churn_04', email: 'isabella.taylor@umbrella.corp', company: 'Umbrella Corp', inactivity_days: 52, risk_level: 'Critical', arr: '$95,000' },
+      { id: 'usr_churn_05', email: 'benjamin.anderson@stark.io', company: 'Stark Industries', inactivity_days: 38, risk_level: 'High', arr: '$72,000' },
+    ],
+    items: [
+      'david.miller@acme.com',
+      'olivia.davis@globex.org',
+      'james.wilson@initech.co',
+      'isabella.taylor@umbrella.corp',
+      'benjamin.anderson@stark.io',
+    ],
+    content_hash: 'hash-churn-v1',
+    created_at: '2026-08-03T09:15:00Z',
+    updated_at: '2026-08-03T09:15:00Z',
+  },
+];
+
+const sampleStaticList: StaticList = sampleStaticLists[0];
 
 const sampleTestRun: TestRun & Record<string, unknown> = {
   schema_version: '1.0',
@@ -466,6 +531,20 @@ export const handlers = [
   }),
 
   // Static Lists & Test Runs
+  http.get('*/api/v1/static-lists', ({ request }) => {
+    const reqId = request.headers.get('Request-ID') || 'req-mock';
+    return HttpResponse.json(sampleStaticLists, { headers: { 'Request-ID': reqId } });
+  }),
+
+  http.get('*/api/v1/static-lists/:listId', ({ params, request }) => {
+    const reqId = request.headers.get('Request-ID') || 'req-mock';
+    const found = sampleStaticLists.find((l) => l.list_id === params.listId) || {
+      ...sampleStaticList,
+      list_id: String(params.listId),
+    };
+    return HttpResponse.json(found, { headers: { 'Request-ID': reqId } });
+  }),
+
   http.post('*/api/v1/static-lists/upload', async ({ request }) => {
     const body = (await request.json()) as Partial<StaticList>;
     const reqId = request.headers.get('Request-ID') || 'req-mock';

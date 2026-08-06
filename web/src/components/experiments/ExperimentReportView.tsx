@@ -4,6 +4,7 @@ import { JourneyApiClient } from '../../api/client';
 import type { AggregateReportData } from './types';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
 import { Button } from '../common/Button';
+import { Badge } from '../common/Badge';
 
 const apiClient = new JourneyApiClient();
 
@@ -242,16 +243,13 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
               <span className="text-xs font-bold text-white font-['Outfit'] tracking-wide">
                 Sample Ratio Mismatch (SRM) Status:
               </span>
-              <span
-                data-testid="srm-status-badge"
-                className={`text-[10px] font-bold font-mono px-3 py-1 rounded-none uppercase tracking-wider border shadow-sm ${
-                  isSrmPassed
-                    ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
-                    : 'bg-[#f43f5e]/20 text-[#ffb4ab] border-[#f43f5e]/40'
-                }`}
+              <Badge
+                variant={isSrmPassed ? 'emerald' : 'rose'}
+                size="md"
+                testId="srm-status-badge"
               >
                 {mergedReport.srm_status}
-              </span>
+              </Badge>
             </div>
             <p className="text-xs text-[#c7c4d7] mt-1 font-['Inter']">
               {mergedReport.srm_details || 'Chi-square test evaluated across traffic distribution.'}

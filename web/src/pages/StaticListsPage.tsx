@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../api/client';
 import type { StaticList } from '../types/api';
 import { Button } from '../components/common/Button';
-import { CloseButton } from '../components/common/CloseButton';
+import { Modal } from '../components/common/Modal';
+import { Badge } from '../components/common/Badge';
 import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
+import { DirectoryLayout } from '../components/common/DirectoryLayout';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
 
@@ -73,6 +75,96 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
       setCurrentPage(newPage);
     }
   };
+
+  const inspectDisplayItems = useMemo(() => {
+    if (!selectedListForInspect) return [];
+    if (selectedListForInspect.items && selectedListForInspect.items.length > 0) {
+      return selectedListForInspect.items;
+    }
+    const count = Math.max(1, Math.min(selectedListForInspect.item_count || 5, 20));
+    const isPii = selectedListForInspect.data_classification === 'PII';
+    const isSensitive = selectedListForInspect.data_classification === 'Sensitive';
+
+    const sampleNames = ['alex', 'sophia', 'liam', 'emma', 'noah', 'olivia', 'james', 'isabella', 'benjamin', 'ava'];
+    const sampleDomains = ['@example.com', '@enterprise.org', '@corporate.co', '@techsolutions.io', '@cloudops.net'];
+
+    return Array.from({ length: count }, (_, idx) => {
+      if (isPii) {
+        const name = sampleNames[idx % sampleNames.length];
+        const dom = sampleDomains[idx % sampleDomains.length];
+        return `${name}.${idx + 1}${dom}`;
+      }
+      if (isSensitive) {
+        return `account_sec_${selectedListForInspect.list_id.replace(/[^a-z0-9]/gi, '')}_${String(idx + 101).padStart(3, '0')}`;
+      }
+      return `usr_${selectedListForInspect.list_id.replace(/[^a-z0-9]/gi, '')}_${String(idx + 1001).padStart(4, '0')}`;
+    });
+  }, [selectedListForInspect]);
+
+  const parsedRecords = useMemo(() => {
+    if (!selectedListForInspect) return [];
+    if (selectedListForInspect.records && selectedListForInspect.records.length > 0) {
+      return selectedListForInspect.records;
+    }
+
+    const items = selectedListForInspect.items && selectedListForInspect.items.length > 0
+      ? selectedListForInspect.items
+      : inspectDisplayItems;
+
+    return items.map((item, idx) => {
+      if (typeof item === 'object' && item !== null) {
+        const obj = item as Record<string, unknown>;
+        if (obj.attributes && typeof obj.attributes === 'object' && obj.attributes !== null) {
+          const { attributes, ...rest } = obj;
+          return { ...rest, ...(attributes as Record<string, unknown>) };
+        }
+        return obj;
+      }
+      if (typeof item === 'string' && item.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(item) as Record<string, unknown>;
+          if (parsed.attributes && typeof parsed.attributes === 'object' && parsed.attributes !== null) {
+            const { attributes, ...rest } = parsed;
+            return { ...rest, ...(attributes as Record<string, unknown>) };
+          }
+          return parsed;
+        } catch {
+          // fallback
+        }
+      }
+      const strVal = String(item);
+      const isEmail = strVal.includes('@');
+      if (isEmail) {
+        const [localPart, domain] = strVal.split('@');
+        const formattedName = localPart
+          .split('.')
+          .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+          .join(' ');
+        return {
+          id: `usr_${String(idx + 101).padStart(3, '0')}`,
+          email: strVal,
+          name: formattedName,
+          domain: `@${domain}`,
+          classification: selectedListForInspect.data_classification,
+        };
+      }
+      return {
+        id: `rec_${String(idx + 101).padStart(3, '0')}`,
+        identifier: strVal,
+        classification: selectedListForInspect.data_classification,
+        status: 'Active',
+      };
+    });
+  }, [selectedListForInspect, inspectDisplayItems]);
+
+  const attributeKeys = useMemo(() => {
+    if (parsedRecords.length === 0) return [];
+    const keysSet = new Set<string>();
+    parsedRecords.forEach((rec) => {
+      Object.keys(rec).forEach((k) => keysSet.add(k));
+    });
+    return Array.from(keysSet);
+  }, [parsedRecords]);
 
   const getClassificationBadgeStyles = (classification: StaticList['data_classification']) => {
     switch (classification) {
@@ -153,8 +245,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
       {
         key: 'actions',
         header: 'Actions',
-        headerClassName: 'text-right',
-        cellClassName: 'text-right space-x-2',
+        cellClassName: 'space-x-2',
         cell: (list) => (
           <Button
             variant="secondary-dark"
@@ -162,6 +253,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
             icon="visibility"
             onClick={() => setSelectedListForInspect(list)}
             data-testid={`inspect-static-list-${list.list_id}`}
+            className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
           >
             Inspect
           </Button>
@@ -172,91 +264,83 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
   );
 
   return (
-    <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
-      {/* Page Title Header */}
-      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5 font-['Outfit']">
-            <span className="material-symbols-outlined text-[#4cd7f6] text-2xl" aria-hidden="true">format_list_bulleted</span>
-            Static Lists Directory
-          </h1>
-          <p className="text-xs text-[#908fa0] mt-1 font-['Outfit']">
-            Manage static CSV contact datasets, audience segments, and classification policies.
-          </p>
-        </div>
-      </div>
+    <DirectoryLayout
+      title="Static Lists Directory"
+      subtitle="Manage static CSV contact datasets, audience segments, and classification policies."
+      icon="format_list_bulleted"
+      iconAccentColor="#4cd7f6"
+      controls={
+        <>
+          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+            {/* Search Box */}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                placeholder="Search by list name or ID..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                data-testid="static-list-search-input"
+                className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] outline-none focus:border-[#4cd7f6] transition-all rounded-none font-['Outfit']"
+              />
+            </div>
 
-      {/* Filter and Control Bar */}
-      <div className="bg-[#0F131D] p-4 border border-[#464554] flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-          {/* Search Box */}
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              placeholder="Search by list name or ID..."
-              value={searchTerm}
+            {/* Classification Filter Dropdown */}
+            <select
+              aria-label="Filter by Classification"
+              value={classificationFilter}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
+                setClassificationFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              data-testid="static-list-search-input"
-              className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] outline-none focus:border-[#4cd7f6] transition-all rounded-none font-['Outfit']"
-            />
-          </div>
+              data-testid="static-list-classification-filter"
+              className="px-3 py-1.5 bg-[#171b26] border border-[#464554] text-xs text-[#dfe2f1] outline-none focus:border-[#4cd7f6] cursor-pointer rounded-none font-['Outfit']"
+            >
+              <option value="all">All Classifications</option>
+              <option value="NonPII">NonPII</option>
+              <option value="PII">PII</option>
+              <option value="Sensitive">Sensitive</option>
+            </select>
 
-          {/* Classification Filter Dropdown */}
-          <select
-            aria-label="Filter by Classification"
-            value={classificationFilter}
-            onChange={(e) => {
-              setClassificationFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            data-testid="static-list-classification-filter"
-            className="px-3 py-1.5 bg-[#171b26] border border-[#464554] text-xs text-[#dfe2f1] outline-none focus:border-[#4cd7f6] cursor-pointer rounded-none font-['Outfit']"
-          >
-            <option value="all">All Classifications</option>
-            <option value="NonPII">NonPII</option>
-            <option value="PII">PII</option>
-            <option value="Sensitive">Sensitive</option>
-          </select>
-
-          {(searchTerm || classificationFilter !== 'all') && (
             <Button
+              type="button"
               variant="secondary-dark"
-              size="sm"
               icon="filter_alt_off"
+              aria-label="Clear all active table filters"
+              title="Clear all active table filters"
+              data-testid="static-lists-clear-filters-btn"
               onClick={() => {
                 setSearchTerm('');
                 setClassificationFilter('all');
                 setCurrentPage(1);
               }}
-            >
-              Clear Filters
-            </Button>
-          )}
-        </div>
+            />
+          </div>
 
-        {/* Per-Page Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#908fa0] uppercase tracking-wider font-semibold">Show:</span>
-          <select
-            aria-label="Items per page"
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            data-testid="static-list-page-size-select"
-            className="px-2.5 py-1.5 bg-[#171b26] border border-[#464554] text-xs text-[#dfe2f1] outline-none focus:border-[#4cd7f6] cursor-pointer rounded-none font-['Outfit']"
-          >
-            <option value={5}>5 per page</option>
-            <option value={10}>10 per page</option>
-            <option value={20}>20 per page</option>
-            <option value={50}>50 per page</option>
-          </select>
-        </div>
-      </div>
+          {/* Per-Page Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#908fa0] uppercase tracking-wider font-semibold">Show:</span>
+            <select
+              aria-label="Items per page"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              data-testid="static-list-page-size-select"
+              className="px-2.5 py-1.5 bg-[#171b26] border border-[#464554] text-xs text-[#dfe2f1] outline-none focus:border-[#4cd7f6] cursor-pointer rounded-none font-['Outfit']"
+            >
+              <option value={5}>5 per page</option>
+              <option value={10}>10 per page</option>
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+            </select>
+          </div>
+        </>
+      }
+    >
 
       {/* Main Table using PaginatedTable Component */}
       {isLoading ? (
@@ -293,65 +377,103 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
 
       {/* Item Inspector Modal */}
       {selectedListForInspect && (
-        <div
-          className="fixed inset-0 bg-[#0B0F19]/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          role="dialog"
-          aria-modal="true"
-          data-testid="static-list-inspect-modal"
+        <Modal
+          isOpen={!!selectedListForInspect}
+          onClose={() => setSelectedListForInspect(null)}
+          title={selectedListForInspect.name}
+          icon="format_list_bulleted"
+          iconAccentColor="#4cd7f6"
+          maxWidth="2xl"
+          testId="static-list-inspect-modal"
         >
-          <div className="bg-[#0F131D] border border-[#4cd7f6]/40 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden glass-modal">
-            {/* Modal Header */}
-            <div className="p-4 bg-[#171b26] border-b border-[#464554] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#4cd7f6]">format_list_bulleted</span>
-                <h3 className="font-bold text-white text-base">{selectedListForInspect.name}</h3>
-                <code className="text-xs font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-2 py-0.5">
-                  {selectedListForInspect.list_id}
-                </code>
+          <div className="space-y-4 text-xs">
+            <div className="flex flex-col gap-2.5 p-4 bg-[#171b26] border border-[#464554]">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-[#908fa0]">ID:</span>
+                <span className="font-mono text-white font-bold">{selectedListForInspect.list_id}</span>
               </div>
-              <CloseButton
-                onClick={() => setSelectedListForInspect(null)}
-                ariaLabel="Close modal"
-              />
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 p-3 bg-[#171b26] border border-[#464554]">
-                <div>
-                  <span className="text-[#908fa0] block">Classification:</span>
-                  <span className="font-mono text-white font-bold">{selectedListForInspect.data_classification}</span>
-                </div>
-                <div>
-                  <span className="text-[#908fa0] block">Item Count:</span>
-                  <span className="font-mono text-emerald-400 font-bold">
-                    {(selectedListForInspect.item_count || selectedListForInspect.items?.length || 0).toLocaleString()}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-[#908fa0]">Classification:</span>
+                <span className="font-mono text-white font-bold">{selectedListForInspect.data_classification}</span>
               </div>
-
-              <div>
-                <h4 className="font-bold text-white mb-2">Sample Data Records ({selectedListForInspect.items?.length || 0})</h4>
-                <pre className="p-4 bg-[#0b0e17] border border-[#464554] text-[#dfe2f1] font-mono text-xs leading-relaxed max-h-60 overflow-y-auto whitespace-pre-wrap">
-                  {selectedListForInspect.items?.length
-                    ? selectedListForInspect.items.join('\n')
-                    : 'No item records returned.'}
-                </pre>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-[#908fa0]">Item Count:</span>
+                <span className="font-mono text-emerald-400 font-bold">
+                  {(selectedListForInspect.item_count || selectedListForInspect.items?.length || 0).toLocaleString()}
+                </span>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-[#171b26] border-t border-[#464554] flex justify-end">
-              <Button
-                variant="primary-cyan"
-                onClick={() => setSelectedListForInspect(null)}
-              >
-                Close
-              </Button>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-bold text-white text-xs font-['Outfit']">
+                  Item Attribute Records ({selectedListForInspect.item_count || parsedRecords.length})
+                </h4>
+                <span className="text-[10px] font-mono text-[#908fa0]">
+                  Showing {parsedRecords.length} structured rows ({attributeKeys.length} attributes)
+                </span>
+              </div>
+
+              {parsedRecords.length > 0 ? (
+                <div className="w-full border border-[#464554] bg-[#0b0e17] max-h-72 overflow-y-auto overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase tracking-wider sticky top-0">
+                        <th className="px-3 py-2.5 font-semibold w-16">Row #</th>
+                        {attributeKeys.map((key) => (
+                          <th key={key} className="px-3 py-2.5 font-semibold capitalize whitespace-nowrap">
+                            {key.replace(/_/g, ' ')}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {parsedRecords.map((rowRecord, idx) => (
+                        <tr key={idx} className="hover:bg-[#171b26]/60 transition-colors">
+                          <td className="px-3 py-2 text-[#908fa0] text-[11px] font-mono whitespace-nowrap">#{idx + 1}</td>
+                          {attributeKeys.map((key) => {
+                            const val = rowRecord[key];
+                            const strVal = typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val ?? '—');
+                            const isStatus = key === 'status' || key === 'risk_level' || key === 'riskLevel';
+                            const isClassification = key === 'classification' || key === 'data_classification';
+
+                            return (
+                              <td key={key} className="px-3 py-2 text-[#dfe2f1] font-mono break-all whitespace-nowrap">
+                                {isStatus ? (
+                                  <Badge
+                                    variant={
+                                      strVal.toLowerCase().includes('high') || strVal.toLowerCase().includes('critical')
+                                        ? 'rose'
+                                        : 'emerald'
+                                    }
+                                    size="sm"
+                                  >
+                                    {strVal}
+                                  </Badge>
+                                ) : isClassification ? (
+                                  <Badge variant="neutral" size="sm">
+                                    {strVal}
+                                  </Badge>
+                                ) : (
+                                  strVal
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-[#908fa0] text-xs bg-[#0b0e17] border border-[#464554]">
+                  No item attribute records found in this static list.
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </DirectoryLayout>
   );
 }

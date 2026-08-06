@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
-import { generateAgyContextString } from '../../utils/agyContext';
 import { Button } from '../common/Button';
-import { CloseButton } from '../common/CloseButton';
+import { Modal } from '../common/Modal';
 
 interface AgyContextModalProps {
   isOpen: boolean;
@@ -15,8 +14,6 @@ export function AgyContextModal({ isOpen, onClose }: AgyContextModalProps) {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
 
   const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
 
   const nodeCount = currentDraft?.nodes?.length || 0;
   const edgeCount = currentDraft?.edges?.length || 0;
@@ -61,50 +58,30 @@ ${JSON.stringify(
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-[#0B0F19]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 sm:p-6 font-['Outfit',sans-serif]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="agy-context-modal-title"
-      data-testid="agy-context-modal"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Export Prompt Context"
+      icon="smart_toy"
+      iconAccentColor="#4cd7f6"
+      maxWidth="3xl"
+      testId="agy-context-modal"
+      ariaLabelledBy="agy-context-modal-title"
+      footer={
+        <Button
+          onClick={handleCopy}
+          data-testid="agy-copy-context-btn"
+          variant={copied ? 'secondary-dark' : 'primary-cyan'}
+          icon={copied ? 'check' : 'content_copy'}
+          className={copied ? 'bg-[#10b981]/20 text-[#6ee7b7] border-[#10b981]/60' : ''}
+        >
+          {copied ? 'Copied!' : 'Copy to clipboard'}
+        </Button>
+      }
     >
-      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#4cd7f6]/40 rounded-none w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl shadow-black/90 overflow-hidden glass-modal shrink-0">
-        {/* Header */}
-        <div className="bg-[#171b26] p-5 border-b border-[#464554] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-none bg-[#4cd7f6]/15 border border-[#4cd7f6]/40 flex items-center justify-center text-[#4cd7f6] shrink-0 shadow-[0_0_12px_rgba(76,215,246,0.2)]">
-              <span className="material-symbols-outlined text-xl">smart_toy</span>
-            </div>
-            <div>
-              <h2 id="agy-context-modal-title" className="font-['Outfit'] font-bold text-lg text-white tracking-wide">
-                Export Prompt Context
-              </h2>
-            </div>
-          </div>
-          <CloseButton onClick={onClose} ariaLabel="Close AGY context modal" />
-        </div>
-
-        {/* Content Body (Scrollable Container) */}
-        <div className="p-6 flex-1 min-h-0 flex flex-col overflow-hidden text-xs font-['Outfit',sans-serif]">
-          {/* Scrollable Preformatted Text Output */}
-          <pre className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-[#0b0e17] p-4 border border-[#464554] text-[#dfe2f1] font-mono text-[11px] leading-relaxed whitespace-pre-wrap selection:bg-[#4cd7f6]/30 shadow-inner rounded-none">
-            {formattedContext}
-          </pre>
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 bg-[#171b26] border-t border-[#464554] flex justify-end items-center gap-3 shrink-0">
-          <Button
-            onClick={handleCopy}
-            data-testid="agy-copy-context-btn"
-            variant={copied ? 'secondary-dark' : 'primary-cyan'}
-            icon={copied ? 'check' : 'content_copy'}
-            className={copied ? 'bg-[#10b981]/20 text-[#6ee7b7] border-[#10b981]/60' : ''}
-          >
-            {copied ? 'Copied!' : 'Copy to clipboard'}
-          </Button>
-        </div>
-      </div>
-    </div>
+      <pre className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-[#0b0e17] p-4 border border-[#464554] text-[#dfe2f1] font-mono text-[11px] leading-relaxed whitespace-pre-wrap selection:bg-[#4cd7f6]/30 shadow-inner rounded-none">
+        {formattedContext}
+      </pre>
+    </Modal>
   );
 }

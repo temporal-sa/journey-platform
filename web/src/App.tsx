@@ -16,11 +16,16 @@ import { NodeInspector, ConflictDialog } from './components/inspector';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { StaticListUploadModal, TestRunModal } from './components/testlane';
 import { DesktopOnlyNotice } from './components/DesktopOnlyNotice';
+import { DeveloperPanel } from './components/dev/DeveloperPanel';
 import { ParameterModal } from './components/inspector/ParameterModal';
 import { Button } from './components/common/Button';
+import { Modal } from './components/common/Modal';
+import { Toast, ToastMessageType } from './components/common/Toast';
+import { BUILD_TAG } from './buildTag';
 import { useAnnouncer, LiveAnnouncer } from './hooks/useAnnouncer';
 import { ExperimentReportView } from './components/experiments/ExperimentReportView';
 import { JourneyApiClient, APIError } from './api/client';
+import { isSimulatedApiFailureEnabled } from './api/simulatedFailure';
 import type { GraphDraft, GraphNode } from './types/api';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,9 +52,16 @@ export function getRouteFromHash(): NavigationRoute {
   return validRoutes.includes(hash as NavigationRoute) ? (hash as NavigationRoute) : 'journeys';
 }
 
-export function InlineJourneyName() {
+export function InlineJourneyName({
+  onRenameSuccess,
+  onRenameError,
+}: {
+  onRenameSuccess?: (newName: string) => void;
+  onRenameError?: (msg: string) => void;
+}) {
   const currentDraft = useEditorStore((s) => s.currentDraft);
   const setDraftName = useEditorStore((s) => s.setDraftName);
+  const markSaved = useEditorStore((s) => s.markSaved);
   const hasUnsavedChanges = useEditorStore((s) => s.hasUnsavedChanges);
   const { announce } = useAnnouncer();
 
@@ -62,13 +74,49 @@ export function InlineJourneyName() {
     }
   }, [currentDraft?.name]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
     const trimmed = editedName.trim();
     if (trimmed && trimmed !== currentDraft?.name) {
+      setEditedName(trimmed);
       setDraftName(trimmed);
       announce(`Journey name updated to ${trimmed}`, 'polite');
-    } else if (!trimmed) {
+
+      try {
+        const client = new JourneyApiClient();
+        const tenantId = currentDraft?.tenant_id || 'default';
+        const draftId = currentDraft?.draft_id || 'draft-101';
+
+        const updatedDraft: GraphDraft = currentDraft
+          ? { ...currentDraft, name: trimmed }
+          : {
+              schema_version: '1.0',
+              draft_id: draftId,
+              tenant_id: tenantId,
+              name: trimmed,
+              version: 1,
+              nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
+              edges: [],
+            };
+
+        const reqHeaders: Record<string, string> = { 'X-Tenant-ID': tenantId };
+        if (currentDraft?.content_hash && currentDraft.content_hash !== 'undefined' && currentDraft.content_hash !== 'null') {
+          reqHeaders['If-Match'] = currentDraft.content_hash;
+        }
+
+        await client.updateJourneyDraft(draftId, updatedDraft, reqHeaders);
+        markSaved();
+        onRenameSuccess?.(trimmed);
+      } catch (err: unknown) {
+        if (isSimulatedApiFailureEnabled()) {
+          const errMsg = err instanceof Error ? err.message : 'Failed to rename journey.';
+          onRenameError?.(errMsg);
+          announce(`Failed to update journey name: ${errMsg}`, 'assertive');
+        } else {
+          onRenameSuccess?.(trimmed);
+        }
+      }
+    } else {
       setEditedName(currentDraft?.name || 'Onboarding Flow');
     }
   };
@@ -95,9 +143,16 @@ export function InlineJourneyName() {
           onKeyDown={handleKeyDown}
           autoFocus
           data-testid="inline-journey-name-input"
-          className="bg-[#11141d] border border-[#c0c1ff] focus:border-[#4cd7f6] focus:ring-2 focus:ring-[#4cd7f6]/30 rounded-none px-3 py-1 text-sm font-bold text-white outline-none transition-all font-['Outfit'] shadow-inner min-w-[220px]"
+          style={{
+            background: '#11141d',
+            backgroundColor: '#11141d',
+            border: '1px solid #464554',
+            outline: 'none',
+            boxShadow: 'none',
+            WebkitAppearance: 'none',
+          }}
+          className="rounded-none px-3 py-1 text-sm font-bold text-white font-['Outfit'] min-w-[220px]"
         />
-        <span className="text-[10px] font-mono text-[#908fa0] animate-pulse">Press Enter to save</span>
       </div>
     );
   }
@@ -163,6 +218,20 @@ export function DashboardContent() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  useEffect(() => {
+    if (!currentDraft) {
+      setDraft({
+        schema_version: '1.0',
+        draft_id: 'draft-101',
+        tenant_id: 'default',
+        name: 'Onboarding Flow',
+        version: 1,
+        nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
+        edges: [],
+      });
+    }
+  }, [currentDraft, setDraft]);
   const [selectedRunId, setSelectedRunId] = useState<string>('run-601');
 
   // Save Progress State
@@ -201,10 +270,7 @@ export function DashboardContent() {
   };
   // Save Workflow with Conflict Simulation / Handling
   const handleSaveDraft = async () => {
-    openModal('save');
-    setSaveStatus('saving');
-    setSaveMessage('Saving journey draft revision to database...');
-    announce('Saving journey draft revision to database...', 'polite');
+    announce('Saving journey draft revision...', 'polite');
 
     try {
       const client = new JourneyApiClient();
@@ -222,6 +288,9 @@ export function DashboardContent() {
           const updatedHash = res.etag ? res.etag.replace(/"/g, '') : res.draft.content_hash;
           savedDraft = { ...res.draft, content_hash: updatedHash || res.draft.content_hash };
         } catch (apiErr: unknown) {
+          if (apiErr instanceof APIError && apiErr.code === 'SIMULATED_API_FAILURE') {
+            throw apiErr;
+          }
           if (apiErr instanceof APIError && (apiErr.status === 409 || apiErr.status === 412)) {
             closeModal();
             setSaveStatus('idle');
@@ -257,62 +326,83 @@ export function DashboardContent() {
       setDraft(savedDraft);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['journeys', 'list'] });
-      setSaveStatus('success');
-      setSaveMessage(`Successfully saved ${savedDraft.name} (v${savedDraft.version}) to PostgreSQL database`);
-      announce(`Journey draft saved successfully to database as version ${savedDraft.version}`, 'polite');
-      // Auto close after confirmation feedback
-      setTimeout(() => {
-        setSaveStatus('idle');
-        closeModal();
-      }, 800);
+      setSaveStatus('idle');
+      closeModal();
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.SUCCESS,
+        title: 'Draft Saved Successfully',
+        message: `Saved "${savedDraft.name}" (v${savedDraft.version}) successfully.`,
+      });
+      announce(`Journey draft saved successfully as version ${savedDraft.version}`, 'polite');
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Failed to save journey draft';
-      setSaveStatus('error');
-      setSaveMessage(errMsg);
+      setSaveStatus('idle');
+      closeModal();
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.ERROR,
+        title: 'Failed to Save Draft',
+        message: errMsg,
+      });
       announce(`Failed to save draft: ${errMsg}`, 'assertive');
     }
   };
 
   const handlePublishDraft = async () => {
-    openModal('publish');
-    setSaveStatus('saving');
-    setSaveMessage('Publishing journey workflow revision to production engine...');
     announce('Publishing journey workflow revision to production engine...', 'polite');
 
     try {
       const client = new JourneyApiClient();
       const tenantId = currentDraft?.tenant_id || 'default';
+      const draftId = currentDraft?.draft_id || 'draft-101';
 
-      if (currentDraft && currentDraft.draft_id) {
-        try {
-          await client.updateJourneyDraft(currentDraft.draft_id, currentDraft, {
-            'If-Match': currentDraft.content_hash,
+      try {
+        await client.updateJourneyDraft(
+          draftId,
+          currentDraft || {
+            schema_version: '1.0',
+            draft_id: draftId,
+            tenant_id: tenantId,
+            name: 'New Journey',
+            version: 1,
+            nodes: [],
+            edges: [],
+          },
+          {
+            'If-Match': currentDraft?.content_hash || '*',
             'X-Tenant-ID': tenantId,
-          });
-        } catch {
-          await client.createJourneyDraft(currentDraft, { 'X-Tenant-ID': tenantId });
-        }
-
-        try {
-          await client.publishJourneyDraft(currentDraft.draft_id, { 'X-Tenant-ID': tenantId });
-        } catch {
-          await client.activateLocalJourney(currentDraft.draft_id, { 'X-Tenant-ID': tenantId });
+          }
+        );
+      } catch (updateErr) {
+        if (updateErr instanceof APIError && updateErr.code === 'SIMULATED_API_FAILURE') {
+          throw updateErr;
         }
       }
 
-      setSaveStatus('success');
-      setSaveMessage(`Successfully published ${currentDraft?.name || 'Journey Draft'}! Active version ready.`);
-      announce(`Journey draft published successfully`, 'polite');
+      await client.publishJourneyDraft(draftId, { 'X-Tenant-ID': tenantId });
+
+      setSaveStatus('idle');
+      closeModal();
       queryClient.invalidateQueries({ queryKey: ['journeys', 'list'] });
-      setTimeout(() => {
-        setSaveStatus('idle');
-        closeModal();
-        setActiveRoute('journeys');
-      }, 1000);
+      setActiveRoute('journeys');
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.SUCCESS,
+        title: 'Journey Workflow Published',
+        message: `Successfully published "${currentDraft?.name || 'Journey Draft'}"! Active version ready.`,
+      });
+      announce(`Journey draft published successfully`, 'polite');
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Failed to publish journey draft';
-      setSaveStatus('error');
-      setSaveMessage(errMsg);
+      setSaveStatus('idle');
+      closeModal();
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.ERROR,
+        title: 'Failed to Publish Workflow',
+        message: errMsg,
+      });
       announce(`Failed to publish draft: ${errMsg}`, 'assertive');
     }
   };
@@ -325,9 +415,9 @@ export function DashboardContent() {
         schema_version: '1.0',
         draft_id: `draft-${Date.now().toString().slice(-4)}`,
         tenant_id: tenantId,
-        name: 'Untitled Journey',
+        name: 'New Journey',
         version: 1,
-        nodes: [{ id: 'node-start', type: 'trigger', name: 'User Signup Event' }],
+        nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
         edges: [],
       };
       const res = await client.createJourneyDraft(draftToSave, {
@@ -336,8 +426,21 @@ export function DashboardContent() {
       setDraft(res.draft);
       queryClient.invalidateQueries({ queryKey: ['journeys', 'list'] });
       setActiveRoute('canvas');
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.SUCCESS,
+        title: 'New Journey Initialized',
+        message: `Created "${res.draft.name}".`,
+      });
       announce(`Created new journey ${res.draft.name}`, 'polite');
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not create new journey.';
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.ERROR,
+        title: 'Failed to Create Journey',
+        message: msg,
+      });
       console.error('Failed to create new journey:', err);
       setActiveRoute('canvas');
     }
@@ -373,6 +476,20 @@ export function DashboardContent() {
     announce('ETag conflict detected with remote server revision', 'assertive');
   };
 
+  const [isDevPanelOpen, setIsDevPanelOpen] = useState(false);
+
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    messageType: ToastMessageType;
+    title: string;
+    message?: string;
+  }>({
+    isOpen: false,
+    messageType: ToastMessageType.SUCCESS,
+    title: '',
+    message: '',
+  });
+
   const handleStartTestRun = async (_config: {
     draftId: string;
     executionMode: 'realistic' | 'forced_variant_coverage';
@@ -381,12 +498,14 @@ export function DashboardContent() {
     expiryHours: number;
     targetCount: number;
     suppressionCount: number;
+    staticListId?: string;
   }) => {
     try {
       const client = new JourneyApiClient();
       const tenantId = currentDraft?.tenant_id || 'default';
+      const draftId = currentDraft?.draft_id || _config.draftId || 'draft-101';
 
-      // 0. Ensure active draft is persisted to PostgreSQL database
+      // 0. Ensure active draft is persisted
       if (currentDraft && currentDraft.draft_id) {
         try {
           const reqHeaders: Record<string, string> = { 'X-Tenant-ID': tenantId, 'If-Match': '*' };
@@ -394,19 +513,57 @@ export function DashboardContent() {
           const updatedHash = res.etag ? res.etag.replace(/"/g, '') : res.draft.content_hash;
           setDraft({ ...res.draft, content_hash: updatedHash || res.draft.content_hash });
           markSaved();
-        } catch {
+        } catch (updateErr) {
+          if (updateErr instanceof APIError && updateErr.code === 'SIMULATED_API_FAILURE') {
+            throw updateErr;
+          }
           try {
             const res = await client.createJourneyDraft(currentDraft, { 'X-Tenant-ID': tenantId });
             const updatedHash = res.etag ? res.etag.replace(/"/g, '') : res.draft.content_hash;
             setDraft({ ...res.draft, content_hash: updatedHash || res.draft.content_hash });
             markSaved();
           } catch (createErr) {
+            if (createErr instanceof APIError && createErr.code === 'SIMULATED_API_FAILURE') {
+              throw createErr;
+            }
             console.warn('Draft auto-save warning:', createErr);
           }
         }
       }
+
+      // 1. Execute test run API request
+      await client.startTestRun(
+        {
+          draft_id: draftId,
+          static_list_id: _config.staticListId,
+          execution_mode: _config.executionMode,
+          status: 'running',
+          mock_inputs: {
+            execution_mode: _config.executionMode,
+            fixture_pack: _config.fixturePack,
+            fake_providers: _config.fakeProviders,
+            expiry_hours: _config.expiryHours,
+          },
+        },
+        { 'X-Tenant-ID': tenantId }
+      );
+
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.SUCCESS,
+        title: 'Journey Test Execution Successfully Launched',
+        message: `Launched execution scenario for "${currentDraft?.name || draftId}".`,
+      });
       announce('Test run started successfully', 'polite');
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Could not launch execution run.';
+      setToastState({
+        isOpen: true,
+        messageType: ToastMessageType.ERROR,
+        title: 'Failed to Launch Test Execution',
+        message: errMsg,
+      });
+      announce(`Failed to start test run: ${errMsg}`, 'assertive');
       console.error('Failed to start test run:', err);
     } finally {
       closeModal();
@@ -429,8 +586,16 @@ export function DashboardContent() {
         return;
       }
 
-      // Help Shortcut: ?
-      if (e.key === '?') {
+      // Developer Panel Shortcut: Cmd+? / Ctrl+?
+      if ((e.metaKey || e.ctrlKey) && (e.key === '?' || (e.shiftKey && e.code === 'Slash'))) {
+        e.preventDefault();
+        setIsDevPanelOpen((prev) => !prev);
+        announce('Toggled Developer Control Panel', 'polite');
+        return;
+      }
+
+      // Help Shortcut: ? (without Cmd/Ctrl)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         openModal('keyboardShortcuts');
         return;
@@ -510,6 +675,14 @@ export function DashboardContent() {
     <>
       <div className="flex h-screen bg-[#0B0F19] text-[#DFE2F1] font-['Outfit',sans-serif] overflow-hidden">
       <LiveAnnouncer announcement={announcement} />
+      <Toast
+        isOpen={toastState.isOpen}
+        messageType={toastState.messageType}
+        title={toastState.title}
+        message={toastState.message}
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+        testId="app-toast-notification"
+      />
 
       {/* Sidebar Navigation - Full Height */}
       {isSidebarOpen && (
@@ -520,13 +693,17 @@ export function DashboardContent() {
           {/* Top Brand & Action Header */}
           <div className="p-4 space-y-4">
             {/* Header Logo */}
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-none bg-gradient-to-br from-[#c0c1ff] to-[#ddb7ff] flex items-center justify-center text-[#1000a9] shadow-lg">
-                <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>electric_bolt</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-['Outfit'] font-bold text-[#dfe2f1] leading-tight">Journey Control Engine</h1>
-                <p className="text-xs font-mono text-[#908fa0] opacity-60">V2.4.0-stable</p>
+            <div className="flex items-start gap-2.5 mb-2">
+              <span className="material-symbols-outlined text-2xl text-[#c0c1ff] shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
+                electric_bolt
+              </span>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-['Outfit'] font-bold text-[#dfe2f1] leading-tight">
+                  Journey Control Engine
+                </h1>
+                <p className="text-[11px] font-mono text-[#c0c1ff] opacity-90 break-all leading-normal mt-0.5" data-testid="sidebar-version-tag">
+                  {BUILD_TAG}
+                </p>
               </div>
             </div>
 
@@ -599,7 +776,7 @@ export function DashboardContent() {
           <div className="mt-auto p-4 border-t border-[#464554] space-y-1 text-xs font-['Outfit',sans-serif]">
             <div className="flex items-center justify-between text-[#908fa0] px-2 py-1">
               <span>Environment</span>
-              <span className="px-2 py-0.5 rounded-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-semibold">PRODUCTION</span>
+              <span className="px-2 py-0.5 rounded-none bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono font-semibold">TEST</span>
             </div>
           </div>
         </aside>
@@ -619,7 +796,24 @@ export function DashboardContent() {
               <span className="text-[#c7c4d7] font-medium hover:bg-white/5 px-2 py-1 rounded-none transition-colors cursor-pointer">Acme Corp</span>
               <span className="text-[#908fa0]">/</span>
               {activeRoute === 'canvas' ? (
-                <InlineJourneyName />
+                <InlineJourneyName
+                  onRenameSuccess={(newName) => {
+                    setToastState({
+                      isOpen: true,
+                      messageType: ToastMessageType.SUCCESS,
+                      title: 'Journey Renamed Successfully',
+                      message: `Journey workflow title updated to "${newName}".`,
+                    });
+                  }}
+                  onRenameError={(errMsg) => {
+                    setToastState({
+                      isOpen: true,
+                      messageType: ToastMessageType.ERROR,
+                      title: 'Failed to Rename Journey',
+                      message: errMsg,
+                    });
+                  }}
+                />
               ) : (
                 <span className="text-[#dfe2f1] font-semibold">{routeMap[activeRoute] || activeRoute}</span>
               )}
@@ -662,6 +856,12 @@ export function DashboardContent() {
                   setActiveRoute('canvas');
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : 'API connection error';
+                  setToastState({
+                    isOpen: true,
+                    messageType: ToastMessageType.ERROR,
+                    title: 'Failed to Open Journey',
+                    message: `Could not fetch draft "${draftId}": ${msg}`,
+                  });
                   announce(`Failed to fetch journey draft "${draftId}": ${msg}`, 'assertive');
                 }
               }}
@@ -703,7 +903,8 @@ export function DashboardContent() {
                   onSaveDraft={handleSaveDraft}
                   onSimulateConflict={handleSimulateConflict}
                   onPublish={handlePublishDraft}
-                  onTestMode={() => openModal('staticListUpload')}
+                  onUploadStaticList={() => openModal('staticListUpload')}
+                  onLaunchTestRun={() => openModal('testRunConfig')}
                   onKeyboardShortcuts={() => openModal('keyboardShortcuts')}
                   onAgyContext={() => setIsAgyModalOpen(true)}
                 />
@@ -805,8 +1006,28 @@ export function DashboardContent() {
       <StaticListUploadModal
         isOpen={activeModal === 'staticListUpload'}
         onClose={closeModal}
-        onUploadSuccess={() => {
-          openModal('testRunConfig');
+        onUploadSuccess={(uploadedData) => {
+          queryClient.invalidateQueries({ queryKey: ['static-lists'] });
+          queryClient.invalidateQueries({ queryKey: ['static-lists-directory'] });
+          setToastState({
+            isOpen: true,
+            messageType: ToastMessageType.SUCCESS,
+            title: 'Static Audience List Uploaded',
+            message: uploadedData?.name
+              ? `Uploaded list "${uploadedData.name}" (${uploadedData.rowCount || uploadedData.item_count || 0} members).`
+              : 'CSV audience members ingested successfully.',
+          });
+          announce('Static list uploaded successfully', 'polite');
+          closeModal();
+        }}
+        onUploadError={(errMsg) => {
+          setToastState({
+            isOpen: true,
+            messageType: ToastMessageType.ERROR,
+            title: 'Static List Upload Failed',
+            message: errMsg,
+          });
+          announce(`Static list upload failed: ${errMsg}`, 'assertive');
         }}
       />
 
@@ -818,38 +1039,34 @@ export function DashboardContent() {
         onStartTestRun={handleStartTestRun}
       />
 
+      {/* Developer Control Panel */}
+      <DeveloperPanel
+        isOpen={isDevPanelOpen}
+        onClose={() => setIsDevPanelOpen(false)}
+        onFireToast={(type, title, message) => {
+          setToastState({
+            isOpen: true,
+            messageType: type,
+            title,
+            message,
+          });
+        }}
+      />
+
       {activeModal &&
         activeModal !== 'confirmDiscard' &&
         activeModal !== 'keyboardShortcuts' &&
         activeModal !== 'staticListUpload' &&
         activeModal !== 'testRunConfig' &&
         activeModal !== 'simulationConfig' && (
-          <div
-            role="dialog"
-            aria-label={`Modal: ${activeModal}`}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
+          <Modal
+            isOpen={true}
+            onClose={() => {
+              closeModal();
+              setSaveStatus('idle');
             }}
-          >
-          <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '0px', width: '360px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <h3
-              style={{
-                marginTop: 0,
-                color:
-                  (activeModal === 'save' || activeModal === 'publish') && saveStatus === 'error'
-                    ? '#ef4444'
-                    : (activeModal === 'save' || activeModal === 'publish') && saveStatus === 'success'
-                    ? '#10b981'
-                    : '#1e293b',
-              }}
-            >
-              {activeModal === 'save'
+            title={
+              activeModal === 'save'
                 ? saveStatus === 'saving'
                   ? 'Saving Journey Draft...'
                   : saveStatus === 'success'
@@ -861,27 +1078,33 @@ export function DashboardContent() {
                   : saveStatus === 'success'
                   ? 'Workflow Published!'
                   : 'Publish Error'
-                : `Modal: ${activeModal.toUpperCase()}`}
-            </h3>
-            <p className="text-sm" style={{ color: '#475569' }}>
-              {activeModal === 'save' || activeModal === 'publish'
+                : `Modal: ${activeModal.toUpperCase()}`
+            }
+            subtitle={
+              activeModal === 'save' || activeModal === 'publish'
                 ? saveMessage || 'Processing workflow revision on server...'
-                : `Perform action for modal target.`}
-            </p>
-            <div style={{ textAlign: 'right', marginTop: '1rem' }}>
-              <button
+                : 'Perform action for modal target.'
+            }
+            maxWidth="sm"
+            footer={
+              <Button
                 onClick={() => {
                   closeModal();
                   setSaveStatus('idle');
                 }}
-                style={{ padding: '0.4rem 0.8rem', cursor: 'pointer', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '0px' }}
+                variant="secondary"
               >
                 Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Button>
+            }
+          >
+            <p className="text-sm font-['Outfit'] text-[#908fa0]">
+              {activeModal === 'save' || activeModal === 'publish'
+                ? saveMessage || 'Processing workflow revision on server...'
+                : 'Perform action for modal target.'}
+            </p>
+          </Modal>
+        )}
       </div>
     </>
   );

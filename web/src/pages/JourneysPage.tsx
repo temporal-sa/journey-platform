@@ -5,8 +5,10 @@ import { useEditorStore } from '../stores/editorStore';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
 import { Button } from '../components/common/Button';
-import { CloseButton } from '../components/common/CloseButton';
+import { Modal } from '../components/common/Modal';
 import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
+import { DirectoryLayout } from '../components/common/DirectoryLayout';
+import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { GraphDraft } from '../types/api';
 
@@ -231,74 +233,52 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
   );
 
   return (
-    <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
-      {/* Page Title Header */}
-      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5 font-['Outfit']">
-            <span className="material-symbols-outlined text-[#ddb7ff] text-2xl" aria-hidden="true">account_tree</span>
-            Journeys Directory
-          </h1>
-          <p className="text-xs text-[#908fa0] mt-1 font-['Outfit']">
-            Browse, search, and manage all event-driven journey workflows.
-          </p>
-        </div>
-      </div>
+    <DirectoryLayout
+      title="Journeys Directory"
+      subtitle="Browse, search, and manage all event-driven journey workflows."
+      icon="account_tree"
+      iconAccentColor="#ddb7ff"
+      controls={
+        <>
+          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                placeholder="Search by journey name, ID, description, or tenant..."
+                value={params.search}
+                onChange={(e) => setParams({ search: e.target.value, page: '1' })}
+                data-testid="journeys-search-input"
+                className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] transition-all rounded-none font-['Outfit',sans-serif]"
+              />
+            </div>
 
-      {/* Filter and Control Bar */}
-      <div className="bg-[#0F131D]/90 backdrop-blur-xl p-4 border border-[#464554] shadow-md flex flex-wrap items-center justify-between gap-4 rounded-none">
-        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              placeholder="Search by journey name, ID, description, or tenant..."
-              value={params.search}
-              onChange={(e) => setParams({ search: e.target.value, page: '1' })}
-              data-testid="journeys-search-input"
-              className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] transition-all rounded-none font-['Outfit',sans-serif]"
+            <StatusFilterDropdown
+              value={params.status}
+              onChange={(newStatus) => setParams({ status: newStatus, page: '1' })}
+              options={[
+                { status: 'all', label: 'All Statuses' },
+                { status: 'active', label: 'Active' },
+                { status: 'draft', label: 'Draft' },
+                { status: 'paused', label: 'Paused' },
+                { status: 'archived', label: 'Archived' },
+              ]}
+              getStatusStyles={getStatusStyles}
+              dataTestId="journeys-status-filter-dropdown"
             />
           </div>
 
-          <div className="flex items-center gap-1 bg-[#171b26] p-1 border border-[#464554] rounded-none">
-            {[
-              { status: 'all', label: 'All Statuses' },
-              { status: 'active', label: 'Active' },
-              { status: 'draft', label: 'Draft' },
-              { status: 'paused', label: 'Paused' },
-              { status: 'archived', label: 'Archived' },
-            ].map((item) => {
-              const isActive = params.status === item.status;
-              return (
-                <button
-                  key={item.status}
-                  type="button"
-                  onClick={() => setParams({ status: item.status, page: '1' })}
-                  className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider transition-all cursor-pointer ${getStatusStyles(item.status)} ${
-                    isActive
-                      ? 'ring-2 ring-current font-bold shadow-md scale-105 opacity-100'
-                      : 'opacity-70 hover:opacity-100 hover:brightness-125'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {(params.search || params.status !== 'all') && (
           <Button
             type="button"
             onClick={() => setParams({ search: '', status: 'all', page: '1' })}
-            aria-label="Clear Filters"
+            aria-label="Clear all active table filters"
+            title="Clear all active table filters"
             variant="secondary-dark"
             icon="filter_alt_off"
-          >
-            Clear Filters
-          </Button>
-        )}
-      </div>
-
+            data-testid="journeys-clear-filters-btn"
+          />
+        </>
+      }
+    >
       {/* Main Content Area: Loading, Error, Empty, or Paginated Table */}
       {isLoading ? (
         <div className="p-6 bg-[#0F131D]/90 border border-[#464554] space-y-4">
@@ -339,124 +319,84 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
         />
       )}
 
-      {/* Create Draft Modal */}
       {isModalOpen && (
-        <div
-          role="dialog"
-          aria-labelledby="create-draft-modal-title"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Create New Journey Draft"
+          subtitle="Configure business logic name and tenant metadata for isolated workflow candidate."
+          icon="add_circle"
+          iconAccentColor="#b76dff"
+          maxWidth="lg"
+          ariaLabelledBy="create-draft-modal-title"
+          footer={
+            <>
+              <Button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                variant="secondary-dark"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                onClick={handleCreateSubmit}
+                disabled={createMutation.isPending}
+                isLoading={createMutation.isPending}
+                variant="primary-purple"
+              >
+                {createMutation.isPending ? 'Creating...' : 'Create Draft'}
+              </Button>
+            </>
+          }
         >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              padding: '1.5rem',
-              borderRadius: '0px',
-              width: '100%',
-              maxWidth: '440px',
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 id="create-draft-modal-title" style={{ marginTop: 0, fontSize: '1.25rem' }}>
-                Create New Journey Draft
-              </h2>
-              <CloseButton onClick={() => setIsModalOpen(false)} ariaLabel="Close modal" />
+          <form onSubmit={handleCreateSubmit} className="space-y-4">
+            {formError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                {formError}
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-semibold text-[#dfe2f1] mb-1">
+                Journey Name *
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. VIP Re-engagement Workflow"
+                value={newJourneyName}
+                onChange={(e) => setNewJourneyName(e.target.value)}
+                className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] rounded-none font-['Outfit']"
+              />
             </div>
-            <form onSubmit={handleCreateSubmit}>
-              {formError && (
-                <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                  {formError}
-                </div>
-              )}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Journey Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. VIP Re-engagement Workflow"
-                  value={newJourneyName}
-                  onChange={(e) => setNewJourneyName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.4rem 0.75rem',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '0px',
-                    fontSize: '0.875rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Description
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Optional description of business logic or goal..."
-                  value={newJourneyDesc}
-                  onChange={(e) => setNewJourneyDesc(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.4rem 0.75rem',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '0px',
-                    fontSize: '0.875rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#dfe2f1] mb-1">
+                Description
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Optional description of business logic or goal..."
+                value={newJourneyDesc}
+                onChange={(e) => setNewJourneyDesc(e.target.value)}
+                className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] rounded-none font-['Outfit']"
+              />
+            </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Tenant ID
-                </label>
-                <input
-                  type="text"
-                  value={newJourneyTenant}
-                  onChange={(e) => setNewJourneyTenant(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.4rem 0.75rem',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '0px',
-                    fontSize: '0.875rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                <Button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  variant="secondary-dark"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  isLoading={createMutation.isPending}
-                  variant="primary-purple"
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Draft'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#dfe2f1] mb-1">
+                Tenant ID
+              </label>
+              <input
+                type="text"
+                value={newJourneyTenant}
+                onChange={(e) => setNewJourneyTenant(e.target.value)}
+                className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] rounded-none font-['Outfit']"
+              />
+            </div>
+          </form>
+        </Modal>
       )}
-    </div>
+    </DirectoryLayout>
   );
 };
 export default JourneysPage;

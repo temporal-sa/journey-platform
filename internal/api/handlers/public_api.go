@@ -139,10 +139,25 @@ func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
 		currentNodes = []string{}
 	}
 
+	targetEntityID := r.URL.Query().Get("sub_run_id")
+	if targetEntityID == "" {
+		targetEntityID = r.URL.Query().Get("subRunId")
+	}
+	if targetEntityID == "" {
+		targetEntityID = runID
+	}
+
 	var timelineEvents []map[string]interface{}
 
 	// Query recorded lifecycle events for this workflow run
-	events, err := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", runID)
+	events, err := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", targetEntityID)
+	if (err != nil || len(events) == 0) && targetEntityID == runID {
+		sub1 := fmt.Sprintf("%s-row-1", runID)
+		if subEvents, errSub := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", sub1); errSub == nil && len(subEvents) > 0 {
+			events = subEvents
+		}
+	}
+
 	if err == nil && len(events) > 0 {
 		for _, le := range events {
 			evtMap := map[string]interface{}{
@@ -191,6 +206,7 @@ func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := map[string]interface{}{
 		"run_id":        enrollment.EnrollmentID,
+		"sub_run_id":    targetEntityID,
 		"tenant_id":     enrollment.TenantID,
 		"workflow_id":   enrollment.JourneyVersionID,
 		"subject_id":    enrollment.SubjectID,
@@ -200,6 +216,191 @@ func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
 		"updated_at":    enrollment.UpdatedAt,
 		"completed_at":  enrollment.CompletedAt,
 		"timeline":      timelineEvents,
+	}
+
+	middleware.WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListJourneyRunSubRuns handles GET /api/v1/runs/{id}/sub-runs and /api/v1/journeys/runs/{id}/sub-runs
+func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request) {
+	if checkRateLimit(w, r) {
+		return
+	}
+	runID := chi.URLParam(r, "id")
+	if runID == "" {
+		runID = chi.URLParam(r, "run_id")
+	}
+	if runID == "" {
+		middleware.WriteError(w, r, http.StatusBadRequest, "missing run ID in path")
+		return
+	}
+	tenantID := getTenantID(r)
+
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+	search := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("search")))
+	statusFilter := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("status")))
+
+	page := 1
+	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+		page = p
+	}
+	limit := 10
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
+	}
+
+	testRun, _ := h.repo.GetTestRun(r.Context(), tenantID, runID)
+	var staticList *postgres.StaticList
+	var mockRows []map[string]interface{}
+
+	if testRun != nil {
+		if len(testRun.MockInputs) > 0 {
+			var mockInputs map[string]interface{}
+			if err := json.Unmarshal(testRun.MockInputs, &mockInputs); err == nil {
+				if slID, ok := mockInputs["static_list_id"].(string); ok && slID != "" {
+					sl, errSL := h.repo.GetStaticList(r.Context(), tenantID, slID)
+					if errSL == nil && sl != nil {
+						staticList = sl
+					}
+				}
+				if rowsArr, ok := mockInputs["rows"].([]interface{}); ok {
+					for _, rItem := range rowsArr {
+						if m, ok := rItem.(map[string]interface{}); ok {
+							mockRows = append(mockRows, m)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if staticList != nil && len(staticList.Items) > 0 && len(mockRows) == 0 {
+		var members []map[string]interface{}
+		if errUnm := json.Unmarshal(staticList.Items, &members); errUnm == nil {
+			mockRows = members
+		}
+	}
+
+	type SubRunItem struct {
+		SubRunID       string     `json:"sub_run_id"`
+		SubjectID      string     `json:"subject_id"`
+		Recipient      string     `json:"recipient"`
+		Name           string     `json:"name"`
+		Status         string     `json:"status"`
+		ExecutedBranch string     `json:"executed_branch"`
+		CompletedAt    *time.Time `json:"completed_at,omitempty"`
+	}
+
+	var allSubRuns []SubRunItem
+
+	if len(mockRows) > 0 {
+		for idx, row := range mockRows {
+			subID := fmt.Sprintf("%s-row-%d", runID, idx+1)
+			subjectID := fmt.Sprintf("usr_%03d", idx+1)
+			if s, ok := row["member_id"].(string); ok && s != "" {
+				subjectID = s
+			}
+			recipient := "contact@temporal.io"
+			if rVal, ok := row["recipient"].(string); ok && rVal != "" {
+				recipient = rVal
+			} else if rVal, ok := row["email"].(string); ok && rVal != "" {
+				recipient = rVal
+			}
+			name := fmt.Sprintf("Audience Contact %d", idx+1)
+			if n, ok := row["name"].(string); ok && n != "" {
+				name = n
+			}
+
+			events, errEvt := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", subID)
+			status := "completed"
+			branch := "default"
+			var completedAt *time.Time
+
+			if errEvt == nil && len(events) > 0 {
+				for _, ev := range events {
+					if ev.EventName == "node_entered" {
+						if strings.Contains(ev.EventID, "email") || strings.Contains(strings.ToLower(ev.EventID), "email") {
+							branch = "email"
+						} else if strings.Contains(ev.EventID, "sms") || strings.Contains(strings.ToLower(ev.EventID), "sms") {
+							branch = "sms"
+						}
+					}
+					if ev.EventName == "workflow_failed" {
+						status = "failed"
+					}
+					t := ev.CreatedAt
+					completedAt = &t
+				}
+			}
+
+			allSubRuns = append(allSubRuns, SubRunItem{
+				SubRunID:       subID,
+				SubjectID:      subjectID,
+				Recipient:      recipient,
+				Name:           name,
+				Status:         status,
+				ExecutedBranch: branch,
+				CompletedAt:    completedAt,
+			})
+		}
+	} else {
+		allSubRuns = append(allSubRuns, SubRunItem{
+			SubRunID:       runID,
+			SubjectID:      "static-list-contact@temporal.io",
+			Recipient:      "contact@temporal.io",
+			Name:           "Default Execution Contact",
+			Status:         "completed",
+			ExecutedBranch: "default",
+		})
+	}
+
+	var filtered []SubRunItem
+	for _, sr := range allSubRuns {
+		if statusFilter != "" && statusFilter != "all" {
+			if strings.ToLower(sr.Status) != statusFilter {
+				continue
+			}
+		}
+		if search != "" {
+			match := strings.Contains(strings.ToLower(sr.SubRunID), search) ||
+				strings.Contains(strings.ToLower(sr.SubjectID), search) ||
+				strings.Contains(strings.ToLower(sr.Recipient), search) ||
+				strings.Contains(strings.ToLower(sr.Name), search) ||
+				strings.Contains(strings.ToLower(sr.ExecutedBranch), search)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, sr)
+	}
+
+	total := len(filtered)
+	startIdx := (page - 1) * limit
+	if startIdx > total {
+		startIdx = total
+	}
+	endIdx := startIdx + limit
+	if endIdx > total {
+		endIdx = total
+	}
+
+	paged := filtered[startIdx:endIdx]
+	totalPages := 1
+	if limit > 0 {
+		totalPages = (total + limit - 1) / limit
+	}
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
+	resp := map[string]interface{}{
+		"run_id":      runID,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
+		"sub_runs":    paged,
 	}
 
 	middleware.WriteJSON(w, http.StatusOK, resp)
@@ -753,13 +954,27 @@ func (h *Handlers) ListStaticLists(w http.ResponseWriter, r *http.Request) {
 
 	res := make([]domain.StaticList, len(lists))
 	for i, l := range lists {
+		var items []string
+		if len(l.Items) > 0 {
+			var rawItems []json.RawMessage
+			if err := json.Unmarshal(l.Items, &rawItems); err == nil {
+				for _, r := range rawItems {
+					items = append(items, string(r))
+				}
+			}
+		}
+		dc := domain.DataClassificationNonPII
+		if l.DataClassification != "" {
+			dc = domain.DataClassification(l.DataClassification)
+		}
 		res[i] = domain.StaticList{
 			SchemaVersion:      domain.DefaultSchemaVersion,
 			ListID:             l.ListID,
 			Name:               l.Name,
 			Description:        l.Description,
 			ItemCount:          int(l.ItemCount),
-			DataClassification: domain.DataClassificationNonPII,
+			DataClassification: dc,
+			Items:              items,
 			ContentHash:        l.ContentHash,
 			CreatedAt:          l.CreatedAt,
 			UpdatedAt:          l.UpdatedAt,
@@ -839,13 +1054,29 @@ func (h *Handlers) GetStaticList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var items []string
+	if len(dbList.Items) > 0 {
+		var rawItems []json.RawMessage
+		if err := json.Unmarshal(dbList.Items, &rawItems); err == nil {
+			for _, r := range rawItems {
+				items = append(items, string(r))
+			}
+		}
+	}
+
+	dc := domain.DataClassificationNonPII
+	if dbList.DataClassification != "" {
+		dc = domain.DataClassification(dbList.DataClassification)
+	}
+
 	resp := domain.StaticList{
 		SchemaVersion:      domain.DefaultSchemaVersion,
 		ListID:             dbList.ListID,
 		Name:               dbList.Name,
 		Description:        dbList.Description,
 		ItemCount:          int(dbList.ItemCount),
-		DataClassification: domain.DataClassificationNonPII,
+		DataClassification: dc,
+		Items:              items,
 		ContentHash:        dbList.ContentHash,
 		CreatedAt:          dbList.CreatedAt,
 		UpdatedAt:          dbList.UpdatedAt,

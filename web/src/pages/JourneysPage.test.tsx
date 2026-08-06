@@ -35,8 +35,11 @@ describe('JourneysPage Component', () => {
       expect(screen.getByText('Welcome Journey Draft')).toBeInTheDocument();
     });
 
-    const activeFilterBtn = screen.getByRole('button', { name: /Active/i });
-    fireEvent.click(activeFilterBtn);
+    const triggerBtn = screen.getByTestId('journeys-status-filter-dropdown');
+    fireEvent.click(triggerBtn);
+
+    const activeOption = screen.getByRole('option', { name: /Active/i });
+    fireEvent.click(activeOption);
 
     await waitFor(() => {
       expect(screen.getByText('KYC Verification Nudge')).toBeInTheDocument();
@@ -63,10 +66,10 @@ describe('JourneysPage Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('No Journeys Found')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Clear Filters' })).toBeInTheDocument();
+      expect(screen.getByTestId('journeys-clear-filters-btn')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
+    fireEvent.click(screen.getByTestId('journeys-clear-filters-btn'));
 
     await waitFor(() => {
       expect(screen.getByText('Welcome Journey Draft')).toBeInTheDocument();

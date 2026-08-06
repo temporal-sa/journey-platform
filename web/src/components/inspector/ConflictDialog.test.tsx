@@ -43,13 +43,13 @@ describe('ConflictDialog Component', () => {
 
   it('does not render when isOpen is false', () => {
     render(<ConflictDialog {...defaultProps} isOpen={false} />);
-    expect(screen.queryByTestId('etag-conflict-dialog')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('conflict-dialog')).not.toBeInTheDocument();
   });
 
   it('renders ETag conflict dialog with side-by-side comparison of local vs server draft', () => {
     render(<ConflictDialog {...defaultProps} />);
 
-    expect(screen.getByTestId('etag-conflict-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('conflict-dialog')).toBeInTheDocument();
     expect(screen.getByText(/ETag Version Conflict Detected/i)).toBeInTheDocument();
 
     // Cards

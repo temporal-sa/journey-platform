@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Button } from './common/Button';
-import { CloseButton } from './common/CloseButton';
+import { Modal } from './common/Modal';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export interface ShortcutItem {
@@ -41,131 +41,61 @@ export function KeyboardShortcutsModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="shortcuts-modal-title"
-      aria-describedby="shortcuts-modal-desc"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '1rem',
-      }}
-      data-testid="keyboard-shortcuts-modal"
-    >
-      <div
-        ref={modalRef}
-        tabIndex={-1}
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '0px',
-          maxWidth: '560px',
-          width: '100%',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          overflow: 'hidden',
-          border: '1px solid #e2e8f0',
-          outline: 'none',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: '#f8fafc',
-          }}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Keyboard Shortcuts"
+      subtitle="Quick navigation and editing hotkeys for Journey Control Engine"
+      icon="keyboard"
+      iconAccentColor="#4cd7f6"
+      maxWidth="2xl"
+      testId="shortcuts-modal-backdrop"
+      ariaLabelledBy="shortcuts-modal-title"
+      ariaDescribedBy="shortcuts-modal-desc"
+      footer={
+        <Button
+          onClick={onClose}
+          data-testid="close-shortcuts-modal-btn"
+          variant="primary-cyan"
         >
-          <div>
-            <h2
-              id="shortcuts-modal-title"
-              className="text-lg font-bold"
-              style={{ margin: 0, color: '#0f172a' }}
-            >
-              Keyboard Shortcuts
-            </h2>
-            <p
-              id="shortcuts-modal-desc"
-              className="text-xs"
-              style={{ margin: '0.25rem 0 0 0', color: '#64748b' }}
-            >
-              Quick navigation and editing hotkeys for Journey Control Engine
-            </p>
-          </div>
-          <CloseButton
-            onClick={onClose}
-            ariaLabel="Close keyboard shortcuts modal"
-          />
-        </div>
-
+          Done
+        </Button>
+      }
+    >
+      <div ref={modalRef} tabIndex={-1} className="p-6 focus:outline-none">
         {/* Shortcuts List / Table */}
-        <div style={{ padding: '1.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
-          <table
-            className="text-sm w-full"
-            style={{ borderCollapse: 'collapse', textAlign: 'left' }}
-          >
+        <div className="max-h-[60vh] overflow-y-auto rounded-none border border-[#464554] bg-[#0F131D]">
+          <table className="text-sm w-full border-collapse text-left">
             <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                <th style={{ padding: '0.5rem 0.75rem', color: '#475569', fontWeight: 600 }}>Shortcut</th>
-                <th style={{ padding: '0.5rem 0.75rem', color: '#475569', fontWeight: 600 }}>Action</th>
-                <th style={{ padding: '0.5rem 0.75rem', color: '#475569', fontWeight: 600 }}>Category</th>
+              <tr className="border-b border-[#464554] bg-[#171b26]">
+                <th className="p-3 text-xs font-bold text-[#908fa0] uppercase tracking-wider">Shortcut</th>
+                <th className="p-3 text-xs font-bold text-[#908fa0] uppercase tracking-wider">Action</th>
+                <th className="p-3 text-xs font-bold text-[#908fa0] uppercase tracking-wider">Category</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#464554]/30">
               {DOCUMENTED_SHORTCUTS.map((sc, index) => (
                 <tr
                   key={index}
-                  style={{
-                    borderBottom: '1px solid #f1f5f9',
-                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
-                  }}
+                  className={index % 2 === 0 ? 'bg-[#0F131D]' : 'bg-[#171b26]'}
                 >
-                  <td style={{ padding: '0.625rem 0.75rem' }}>
-                    <kbd
-                      className="text-xs font-mono font-semibold"
-                      style={{
-                        backgroundColor: '#f1f5f9',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '0px',
-                        padding: '0.2rem 0.4rem',
-                        color: '#0f172a',
-                        boxShadow: '0 1px 1px rgba(0,0,0,0.05)',
-                      }}
-                    >
+                  <td className="p-3">
+                    <kbd className="text-xs font-mono font-semibold bg-[#1F2433] text-[#c0c1ff] border border-[#464554] px-2 py-1 rounded-none inline-block shadow-sm">
                       {sc.key}
                     </kbd>
                   </td>
-                  <td style={{ padding: '0.625rem 0.75rem', color: '#334155', fontWeight: 500 }}>
+                  <td className="p-3 text-[#dfe2f1] font-medium">
                     {sc.description}
                   </td>
-                  <td style={{ padding: '0.625rem 0.75rem' }}>
+                  <td className="p-3">
                     <span
-                      className="text-xs"
-                      style={{
-                        padding: '0.15rem 0.4rem',
-                        borderRadius: '0px',
-                        backgroundColor:
-                          sc.category === 'Global'
-                            ? '#eff6ff'
-                            : sc.category === 'Editor'
-                            ? '#f0fdf4'
-                            : '#fefce8',
-                        color:
-                          sc.category === 'Global'
-                            ? '#1d4ed8'
-                            : sc.category === 'Editor'
-                            ? '#15803d'
-                            : '#a16207',
-                        fontWeight: 600,
-                      }}
+                      className={`text-xs px-2.5 py-0.5 font-semibold rounded-none inline-block ${
+                        sc.category === 'Global'
+                          ? 'bg-[#4cd7f6]/10 text-[#4cd7f6] border border-[#4cd7f6]/30'
+                          : sc.category === 'Editor'
+                          ? 'bg-[#b76dff]/10 text-[#ddb7ff] border border-[#b76dff]/30'
+                          : 'bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/30'
+                      }`}
                     >
                       {sc.category}
                     </span>
@@ -175,17 +105,7 @@ export function KeyboardShortcutsModal({
             </tbody>
           </table>
         </div>
-
-        <div className="p-4 border-t border-[#464554] bg-[#171b26] flex justify-end">
-          <Button
-            onClick={onClose}
-            data-testid="close-shortcuts-modal-btn"
-            variant="primary-cyan"
-          >
-            Done
-          </Button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
