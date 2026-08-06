@@ -259,10 +259,6 @@ describe('Canvas Editor Components', () => {
       fireEvent.click(snapToggleBtn);
       expect(handleToggleSnap).toHaveBeenCalledTimes(1);
 
-      const snapAllBtn = screen.getByTestId('toolbar-snap-all');
-      fireEvent.click(snapAllBtn);
-      expect(handleSnapAll).toHaveBeenCalledTimes(1);
-
       const arrangeHBtn = screen.getByTestId('toolbar-auto-arrange-horizontal');
       fireEvent.click(arrangeHBtn);
       expect(handleArrangeHorizontal).toHaveBeenCalledTimes(1);

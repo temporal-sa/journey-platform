@@ -185,23 +185,6 @@ export function CanvasToolbar({
         </span>
       </button>
 
-      {/* Snap All Nodes to Grid Button */}
-      <button
-        onClick={onSnapAllNodesToGrid}
-        disabled={isLocked}
-        style={baseBtnStyle}
-        className={`w-10 h-10 p-0 rounded-full flex items-center justify-center transition-all cursor-pointer flat-icon-btn ${
-          !isLocked
-            ? 'text-[#ddb7ff] hover:text-white hover:bg-[#b76dff]/20'
-            : 'text-[#908fa0] cursor-not-allowed'
-        }`}
-        title="Snap All Nodes to Grid"
-        aria-label="Snap All Nodes to Grid"
-        data-testid="toolbar-snap-all"
-      >
-        <span className="material-symbols-outlined text-xl">grid_view</span>
-      </button>
-
       {/* Auto Arrange Horizontal Button */}
       <button
         onClick={onAutoArrangeHorizontal}
