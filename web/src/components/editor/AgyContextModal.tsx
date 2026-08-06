@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
+import { generateAgyContextString } from '../../utils/agyContext';
 import { Button } from '../common/Button';
+import { CloseButton } from '../common/CloseButton';
 
 interface AgyContextModalProps {
   isOpen: boolean;
@@ -79,13 +81,7 @@ ${JSON.stringify(
               </h2>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
+          <CloseButton onClick={onClose} ariaLabel="Close AGY context modal" />
         </div>
 
         {/* Content Body (Scrollable Container) */}

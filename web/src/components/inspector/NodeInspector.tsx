@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import { useEditorStore } from '../../stores/editorStore';
 import { Button } from '../common/Button';
+import { CloseButton } from '../common/CloseButton';
 import type { CatalogRecord, GraphNode } from '../../types/api';
 import { getNodeIssues, getFieldError, formatIssueCode } from './validationMapping';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
@@ -253,14 +254,11 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
         </div>
 
         {onClose && (
-          <button
+          <CloseButton
             onClick={onClose}
-            aria-label="Close Node Inspector"
-            data-testid="close-inspector-btn"
-            className="w-8 h-8 rounded-none bg-[#262a35] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-white/5 cursor-pointer shrink-0 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
+            ariaLabel="Close Node Inspector"
+            testId="close-inspector-btn"
+          />
         )}
       </div>
 

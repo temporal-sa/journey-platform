@@ -3,6 +3,7 @@ import { JourneyApiClient } from '../../api/client';
 import type { GraphDraft } from '../../types/api';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
 import { Button } from '../common/Button';
+import { CloseButton } from '../common/CloseButton';
 
 const apiClient = new JourneyApiClient();
 
@@ -77,14 +78,11 @@ function ConflictDialogInner({
             </div>
           </div>
 
-          <button
+          <CloseButton
             onClick={onCancel}
-            aria-label="Close conflict resolution modal"
-            data-testid="close-conflict-dialog-btn"
-            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
+            ariaLabel="Close conflict resolution modal"
+            testId="close-conflict-dialog-btn"
+          />
         </div>
 
         {/* Comparison Body */}

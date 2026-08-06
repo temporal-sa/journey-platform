@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
+import { CloseButton } from '../common/CloseButton';
 
 const apiClient = new JourneyApiClient();
 
@@ -165,14 +166,11 @@ function ParameterModalInner({
             </p>
           </div>
 
-          <button
+          <CloseButton
             onClick={onClose}
-            aria-label="Close parameter library modal"
-            data-testid="close-parameter-modal-btn"
-            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
+            ariaLabel="Close parameter library modal"
+            testId="close-parameter-modal-btn"
+          />
         </div>
 
         {/* Search & Category Filter Controls */}

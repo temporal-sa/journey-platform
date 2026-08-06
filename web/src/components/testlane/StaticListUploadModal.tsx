@@ -3,6 +3,7 @@ import type { StaticList } from '../../types/api';
 import { JourneyApiClient } from '../../api/client';
 import { DegradedStateView } from '../DegradedStateView';
 import { Button } from '../common/Button';
+import { CloseButton } from '../common/CloseButton';
 export interface StaticListUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -250,13 +251,7 @@ export function StaticListUploadModal({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            aria-label="Close upload modal"
-            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
+          <CloseButton onClick={onClose} ariaLabel="Close upload modal" />
         </div>
 
         {/* Modal Body */}

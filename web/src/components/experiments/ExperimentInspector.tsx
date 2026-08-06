@@ -4,6 +4,7 @@ import { JourneyApiClient } from '../../api/client';
 import type { CatalogRecord, ExperimentDefinition } from '../../types/api';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
 import { Button } from '../common/Button';
+import { CloseButton } from '../common/CloseButton';
 import type {
   ExperimentFormState,
   VariantFormState,
@@ -672,15 +673,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                 </div>
 
                 <div className="sm:col-span-1 flex justify-end">
-                  <button
-                    type="button"
-                    aria-label={`Remove Metric ${metric.key}`}
+                  <CloseButton
+                    size="sm"
+                    ariaLabel={`Remove Metric ${metric.key}`}
                     onClick={() => handleRemoveMetric(index)}
                     disabled={readOnly || formState.metrics.length <= 1}
-                    className="p-1.5 rounded-none border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
+                  />
                 </div>
               </div>
             ))}

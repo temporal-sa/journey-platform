@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../api/client';
 import type { StaticList } from '../types/api';
 import { Button } from '../components/common/Button';
+import { CloseButton } from '../components/common/CloseButton';
 import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
@@ -308,13 +309,10 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
                   {selectedListForInspect.list_id}
                 </code>
               </div>
-              <button
+              <CloseButton
                 onClick={() => setSelectedListForInspect(null)}
-                className="text-[#908fa0] hover:text-white transition-colors cursor-pointer"
-                aria-label="Close modal"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
+                ariaLabel="Close modal"
+              />
             </div>
 
             {/* Modal Content */}

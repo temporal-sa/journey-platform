@@ -5,6 +5,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
 import { Button } from '../components/common/Button';
+import { CloseButton } from '../components/common/CloseButton';
 import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { GraphDraft } from '../types/api';
@@ -363,9 +364,12 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
             }}
           >
-            <h2 id="create-draft-modal-title" style={{ marginTop: 0, fontSize: '1.25rem' }}>
-              Create New Journey Draft
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 id="create-draft-modal-title" style={{ marginTop: 0, fontSize: '1.25rem' }}>
+                Create New Journey Draft
+              </h2>
+              <CloseButton onClick={() => setIsModalOpen(false)} ariaLabel="Close modal" />
+            </div>
             <form onSubmit={handleCreateSubmit}>
               {formError && (
                 <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>

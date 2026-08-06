@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Button } from './common/Button';
+import { CloseButton } from './common/CloseButton';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export interface ShortcutItem {
@@ -99,13 +100,10 @@ export function KeyboardShortcutsModal({
               Quick navigation and editing hotkeys for Journey Control Engine
             </p>
           </div>
-          <button
+          <CloseButton
             onClick={onClose}
-            aria-label="Close keyboard shortcuts modal"
-            className="w-8 h-8 rounded-none bg-[#262a35] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-white/5 cursor-pointer shrink-0 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
+            ariaLabel="Close keyboard shortcuts modal"
+          />
         </div>
 
         {/* Shortcuts List / Table */}
