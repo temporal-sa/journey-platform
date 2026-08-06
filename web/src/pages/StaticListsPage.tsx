@@ -97,7 +97,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
   }
 
   return (
-    <div className="w-full min-h-screen p-6 space-y-6 bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif]">
+    <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F131D] p-5 border border-[#464554] shadow-lg">
         <div>
