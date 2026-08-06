@@ -8,6 +8,7 @@ import {
   VersionHistoryPage,
   RunListPage,
   RunDetailPage,
+  StaticListsPage,
 } from './pages';
 import { Canvas } from './components/editor/Canvas';
 import { AgyContextModal } from './components/editor/AgyContextModal';
@@ -29,7 +30,7 @@ const queryClient = new QueryClient({
     },
   },
 });
-export type NavigationRoute = 'journeys' | 'catalog' | 'history' | 'runs' | 'run-detail' | 'canvas' | 'experiments';
+export type NavigationRoute = 'journeys' | 'catalog' | 'history' | 'runs' | 'run-detail' | 'canvas' | 'experiments' | 'static-lists';
 
 export function getRouteFromHash(): NavigationRoute {
   const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0].split('?')[0];
@@ -41,6 +42,7 @@ export function getRouteFromHash(): NavigationRoute {
     'run-detail',
     'canvas',
     'experiments',
+    'static-lists',
   ];
   return validRoutes.includes(hash as NavigationRoute) ? (hash as NavigationRoute) : 'journeys';
 }
@@ -182,6 +184,7 @@ export function DashboardContent() {
     { route: 'catalog', label: 'Component Catalog' },
     { route: 'history', label: 'Version History' },
     { route: 'runs', label: 'Execution Runs' },
+    { route: 'static-lists', label: 'Static Lists' },
     { route: 'experiments', label: 'Experiment Analytics' },
     { route: 'canvas', label: 'Journey Canvas' },
   ];
@@ -194,6 +197,7 @@ export function DashboardContent() {
     'run-detail': 'Run Details',
     canvas: 'Journey Canvas',
     experiments: 'Experiment Analytics',
+    'static-lists': 'Static Lists Directory',
   };
   // Save Workflow with Conflict Simulation / Handling
   const handleSaveDraft = async () => {
@@ -549,6 +553,7 @@ export function DashboardContent() {
               if (item.route === 'catalog') icon = 'inventory_2';
               if (item.route === 'history') icon = 'history';
               if (item.route === 'runs') icon = 'list_alt';
+              if (item.route === 'static-lists') icon = 'format_list_bulleted';
               if (item.route === 'experiments') icon = 'analytics';
               if (item.route === 'canvas') icon = 'science';
 
@@ -683,6 +688,10 @@ export function DashboardContent() {
             />
           )}
           {activeRoute === 'experiments' && <ExperimentReportView />}
+
+          {activeRoute === 'static-lists' && (
+            <StaticListsPage onOpenUpload={() => openModal('staticListUpload')} />
+          )}
 
           {activeRoute === 'canvas' && (
             <div className="flex-1 flex flex-row min-w-0 w-full h-full max-h-full min-h-0 relative overflow-hidden bg-[#0B0F19]">
