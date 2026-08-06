@@ -18,20 +18,21 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   icon?: string;
   fullWidth?: boolean;
   isLoading?: boolean;
+  hoverColor?: string; // Configurable hover background color
   children?: React.ReactNode;
 }
 
 const VARIANT_STYLES: Record<ButtonVariant, { className: string; style?: React.CSSProperties }> = {
   'primary-purple': {
-    className: 'bg-[#b76dff] text-[#400071] hover:opacity-90 border-none shadow-none font-bold',
+    className: 'bg-[#b76dff] text-[#400071] hover:brightness-110 border-none shadow-none font-bold',
     style: { backgroundColor: '#b76dff', color: '#400071' },
   },
   'primary-cyan': {
-    className: 'bg-[#4cd7f6] text-[#400071] hover:opacity-90 border-none shadow-none font-bold',
+    className: 'bg-[#4cd7f6] text-[#400071] hover:brightness-110 border-none shadow-none font-bold',
     style: { backgroundColor: '#4cd7f6', color: '#400071' },
   },
   'primary-teal': {
-    className: 'bg-[#4cd7f6] text-[#003640] hover:bg-[#38c2e0] border border-[#4cd7f6]/40 shadow-lg shadow-[#4cd7f6]/20 font-bold',
+    className: 'bg-[#4cd7f6] text-[#003640] hover:brightness-110 border border-[#4cd7f6]/40 shadow-lg shadow-[#4cd7f6]/20 font-bold',
     style: { backgroundColor: '#4cd7f6', color: '#003640' },
   },
   'primary-lavender': {
@@ -39,13 +40,13 @@ const VARIANT_STYLES: Record<ButtonVariant, { className: string; style?: React.C
     style: { backgroundColor: '#c0c1ff', color: '#1000a9' },
   },
   'primary-indigo': {
-    className: 'bg-[#6366F1] text-white hover:bg-[#4F46E5] border border-[#8083ff]/40 shadow-md font-bold',
+    className: 'bg-[#6366F1] text-white hover:brightness-110 border border-[#8083ff]/40 shadow-md font-bold',
   },
   'secondary-dark': {
-    className: 'bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] border border-[#464554] font-semibold',
+    className: 'bg-[#1c1f2a] hover:brightness-110 text-[#dfe2f1] border border-[#464554] font-semibold',
   },
   'danger': {
-    className: 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-500/40 font-bold shadow-md',
+    className: 'bg-rose-600 hover:brightness-110 text-white border border-rose-500/40 font-bold shadow-md',
   },
   'ghost': {
     className: 'bg-transparent text-[#908fa0] hover:text-white hover:bg-white/10 border-none',
@@ -66,14 +67,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       icon,
       fullWidth = false,
       isLoading = false,
+      hoverColor,
       disabled,
       className = '',
       style,
+      onMouseEnter,
+      onMouseLeave,
       children,
       ...props
     },
     ref
   ) => {
+    const [isHovered, setIsHovered] = React.useState(false);
     const variantConfig = VARIANT_STYLES[variant];
     const sizeClass = SIZE_STYLES[size];
 
@@ -83,9 +88,20 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled || isLoading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
     } ${sizeClass} ${variantConfig.className} ${className}`;
 
-    const combinedStyle = {
+    const combinedStyle: React.CSSProperties = {
       ...variantConfig.style,
+      ...(isHovered && hoverColor ? { backgroundColor: hoverColor } : {}),
       ...style,
+    };
+
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      setIsHovered(true);
+      if (onMouseEnter) onMouseEnter(e);
+    };
+
+    const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+      setIsHovered(false);
+      if (onMouseLeave) onMouseLeave(e);
     };
 
     return (
@@ -94,6 +110,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || isLoading}
         className={baseClasses}
         style={combinedStyle}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         {...props}
       >
         {isLoading ? (

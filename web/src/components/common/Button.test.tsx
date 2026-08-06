@@ -34,4 +34,15 @@ describe('Button Component', () => {
     expect(btn).toBeDisabled();
     expect(btn).toHaveTextContent('sync');
   });
+
+  it('applies custom hoverColor when hovered', () => {
+    render(<Button hoverColor="#38c2e0">Custom Hover</Button>);
+    const btn = screen.getByRole('button', { name: /Custom Hover/i });
+
+    fireEvent.mouseEnter(btn);
+    expect(btn).toHaveStyle({ backgroundColor: '#38c2e0' });
+
+    fireEvent.mouseLeave(btn);
+    expect(btn).not.toHaveStyle({ backgroundColor: '#38c2e0' });
+  });
 });
