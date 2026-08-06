@@ -564,16 +564,23 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
   setDraftName: (name) => {
     if (get().isCanvasLocked) return;
     const { currentDraft, past } = get();
-    if (!currentDraft || currentDraft.name === name) return;
+    if (currentDraft && currentDraft.name === name) return;
 
-    const newPast = [...past, currentDraft].slice(-MAX_HISTORY_LENGTH);
-    const updatedDraft: GraphDraft = {
-      ...currentDraft,
-      name,
-    };
+    const baseDraft: GraphDraft = currentDraft
+      ? { ...currentDraft, name }
+      : {
+          schema_version: '1.0',
+          draft_id: 'draft-101',
+          tenant_id: 'default',
+          name,
+          version: 1,
+          nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
+          edges: [],
+        };
 
+    const newPast = currentDraft ? [...past, currentDraft].slice(-MAX_HISTORY_LENGTH) : [];
     set({
-      currentDraft: updatedDraft,
+      currentDraft: baseDraft,
       past: newPast,
       future: [],
       canUndo: true,

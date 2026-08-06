@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { JourneyApiClient } from '../../api/client';
+import { Button } from '../common/Button';
+import { Modal } from '../common/Modal';
+import { Badge } from '../common/Badge';
 import type { TestRun, StaticList } from '../../types/api';
 
 const apiClient = new JourneyApiClient();
@@ -78,17 +81,20 @@ export function TestRunModal({
           expiry_hours: parseInt(expiryHours, 10),
         },
       };
-      const res = await apiClient.startTestRun(payload);
-      const resRecord = (res && typeof res === 'object' ? res : {}) as Record<string, unknown>;
-      onStartTestRun?.({
-        draftId,
-        executionMode,
-        fixturePack,
-        fakeProviders,
-        expiryHours: parseInt(expiryHours, 10),
-        targetCount,
-        suppressionCount: typeof resRecord.suppressed_members_count === 'number' ? resRecord.suppressed_members_count : 0,
-      });
+      if (onStartTestRun) {
+        await onStartTestRun({
+          draftId,
+          executionMode,
+          fixturePack,
+          fakeProviders,
+          expiryHours: parseInt(expiryHours, 10),
+          targetCount,
+          suppressionCount: 0,
+          staticListId: selectedStaticListId || undefined,
+        });
+      } else {
+        await apiClient.startTestRun(payload);
+      }
       onClose();
     } catch (err) {
       console.error('Failed to launch test run:', err);
@@ -98,53 +104,38 @@ export function TestRunModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-labelledby="test-run-modal-title"
-      aria-modal="true"
-      data-testid="test-run-modal"
-      className="fixed inset-0 bg-[#0B0F19]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 font-['Outfit',sans-serif]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-none w-full max-w-2xl max-h-[580px] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal shrink-0">
-        {/* Modal Header with Test Mode Badging */}
-        <div className="bg-[#171b26] p-5 border-b border-[#464554] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
-              <span className="material-symbols-outlined text-xl">play_circle</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  data-testid="test-mode-badge"
-                  className="px-2 py-0.5 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
-                >
-                  TEST MODE
-                </span>
-                <h2
-                  id="test-run-modal-title"
-                  className="font-['Outfit'] font-bold text-lg text-white"
-                >
-                  Configure Test Run Execution
-                </h2>
-              </div>
-              <p className="text-xs text-[#908fa0] mt-0.5">
-                Run Candidate Journey IR against isolated test audience fixtures.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Configure Test Run Execution"
+      subtitle="Run Candidate Journey IR against isolated test audience fixtures."
+      icon="play_circle"
+      iconAccentColor="#4cd7f6"
+      badge={
+        <Badge variant="cyan" testId="test-mode-badge">
+          TEST MODE
+        </Badge>
+      }
+      maxWidth="2xl"
+      testId="test-run-modal"
+      ariaLabelledBy="test-run-modal-title"
+      footer={
+        <>
+          <Button variant="secondary-dark" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary-teal"
+            size="lg"
+            onClick={handleRunSubmit}
+            data-testid="start-test-run-btn"
+            isLoading={isSubmitting}
           >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
-        </div>
-        {/* Modal Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs font-['Outfit',sans-serif]">
+            {isSubmitting ? 'Launching Test Run...' : 'Execute Test Run'}
+          </Button>
+        </>
+      }
+    >
           {/* Target Journey Draft Header Info */}
           <div className="p-3.5 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6] text-xs font-mono flex items-center gap-2">
             <span className="material-symbols-outlined text-base">info</span>
@@ -283,31 +274,7 @@ export function TestRunModal({
             <div className="text-[11px] text-[#908fa0]">
               <strong className="text-[#dfe2f1]">Dispatchers:</strong> {fakeProviders.length > 0 ? fakeProviders.join(', ') : 'None selected'}
             </div>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-5 border-t border-[#464554] bg-[#171b26] flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleRunSubmit}
-            data-testid="start-test-run-btn"
-            disabled={isSubmitting}
-            className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
-              isSubmitting
-                ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
-                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'
-            }`}
-          >
-            {isSubmitting ? 'Launching Test Run...' : 'Execute Test Run'}
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

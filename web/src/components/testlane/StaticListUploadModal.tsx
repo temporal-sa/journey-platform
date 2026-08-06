@@ -2,10 +2,14 @@ import { useState, ChangeEvent } from 'react';
 import type { StaticList } from '../../types/api';
 import { JourneyApiClient } from '../../api/client';
 import { DegradedStateView } from '../DegradedStateView';
+import { Button } from '../common/Button';
+import { Modal } from '../common/Modal';
+import { Badge } from '../common/Badge';
 export interface StaticListUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess?: (list: Partial<StaticList> & { rowCount: number; verifiedContacts: number; formulaRejections: number; expires_at?: string }) => void;
+  onUploadError?: (error: string) => void;
   initialListId?: string;
 }
 
@@ -67,6 +71,7 @@ export function StaticListUploadModal({
   isOpen,
   onClose,
   onUploadSuccess,
+  onUploadError,
   initialListId = 'list-static-001',
 }: StaticListUploadModalProps) {
   const [listId, setListId] = useState(initialListId);
@@ -175,7 +180,7 @@ export function StaticListUploadModal({
       schema_version: '1.0',
       list_id: listId,
       name: listName,
-      description: `Uploaded static list version ${selectedVersion}`,
+      description: selectedVersion,
       data_classification: 'PII',
       item_count: activeSummary.rowCount,
       items: previews.map((p) => p.recipient || p.maskedDisplayValue),
@@ -203,6 +208,7 @@ export function StaticListUploadModal({
       setHasUploadError(true);
       const message = err instanceof Error ? err.message : 'Static list upload failed.';
       setErrorMsg(message);
+      onUploadError?.(message);
     }
   };
 
@@ -213,71 +219,56 @@ export function StaticListUploadModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="static-list-upload-title"
-      data-testid="static-list-upload-modal"
-      className="fixed inset-0 bg-[#0B0F19]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto font-['Outfit',sans-serif]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="bg-[#0F131D]/95 backdrop-blur-xl border border-[#464554] rounded-none w-full max-w-3xl max-h-[580px] my-auto flex flex-col shadow-2xl shadow-black/80 overflow-hidden glass-modal shrink-0">
-        <div className="bg-[#171b26] p-5 border-b border-[#464554] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
-              <span className="material-symbols-outlined text-xl">upload_file</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  data-testid="test-mode-badge"
-                  className="px-2.5 py-1 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
-                >
-                  TEST MODE ACTIVE
-                </span>
-                <h2
-                  id="static-list-upload-title"
-                >
-                  Static List CSV Upload
-                </h2>
-              </div>
-              <p className="text-xs text-[#908fa0] mt-0.5">
-                Upload target test recipients for isolated static test-run execution (`is_test = true`).
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            aria-label="Close upload modal"
-            className="w-8 h-8 rounded-none bg-[#1c1f2a] text-[#908fa0] hover:text-white hover:bg-white/10 flex items-center justify-center transition-all border border-[#464554] cursor-pointer shrink-0 shadow-sm"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Static List CSV Upload"
+      subtitle="Upload target test recipients for isolated static test-run execution (`is_test = true`)."
+      icon="upload_file"
+      iconAccentColor="#4cd7f6"
+      badge={
+        <Badge variant="cyan" testId="test-mode-badge">
+          TEST MODE ACTIVE
+        </Badge>
+      }
+      maxWidth="3xl"
+      testId="static-list-upload-modal"
+      ariaLabelledBy="static-list-upload-title"
+      footer={
+        <>
+          <Button variant="secondary-dark" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary-teal"
+            size="lg"
+            onClick={handleUploadSubmit}
+            isLoading={isProcessing}
           >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs font-['Outfit',sans-serif]">
-          {hasUploadError ? (
-            <DegradedStateView
-              type="api-disconnected"
-              title="Static List Upload Failed"
-              description={errorMsg || 'An error occurred while uploading the static list to the backend API.'}
-              onRetry={() => {
-                setHasUploadError(false);
-                handleUploadSubmit();
-              }}
-            />
-          ) : (
-            <>
-          {errorMsg && (
-            <div className="p-4 rounded-none bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2" role="alert">
-              <span className="material-symbols-outlined text-lg text-rose-400">error</span>
-              <span>{errorMsg}</span>
-            </div>
-          )}
+            {isProcessing ? 'Uploading & Indexing...' : uploadComplete ? 'Completed!' : 'Confirm Static List Upload'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-5 text-xs">
+        {hasUploadError ? (
+          <DegradedStateView
+            type="api-disconnected"
+            title="Static List Upload Failed"
+            description={errorMsg || 'An error occurred while uploading the static list to the backend API.'}
+            onRetry={() => {
+              setHasUploadError(false);
+              handleUploadSubmit();
+            }}
+          />
+        ) : (
+          <>
+            {errorMsg && (
+              <div className="p-4 rounded-none bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2" role="alert">
+                <span className="material-symbols-outlined text-lg text-rose-400">error</span>
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
           {/* Form Fields: List Metadata & Versioning */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -444,30 +435,9 @@ export function StaticListUploadModal({
               </div>
             </div>
           )}
-            </>
-          )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-5 border-t border-[#464554] bg-[#171b26] flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleUploadSubmit}
-            className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
-              isProcessing
-                ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
-                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'
-            }`}
-          >
-            {isProcessing ? 'Uploading & Indexing...' : uploadComplete ? 'Completed!' : 'Confirm Static List Upload'}
-          </button>
-        </div>
+        </>
+      )}
       </div>
-    </div>
+    </Modal>
   );
 }

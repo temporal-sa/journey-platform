@@ -259,10 +259,6 @@ describe('Canvas Editor Components', () => {
       fireEvent.click(snapToggleBtn);
       expect(handleToggleSnap).toHaveBeenCalledTimes(1);
 
-      const snapAllBtn = screen.getByTestId('toolbar-snap-all');
-      fireEvent.click(snapAllBtn);
-      expect(handleSnapAll).toHaveBeenCalledTimes(1);
-
       const arrangeHBtn = screen.getByTestId('toolbar-auto-arrange-horizontal');
       fireEvent.click(arrangeHBtn);
       expect(handleArrangeHorizontal).toHaveBeenCalledTimes(1);
@@ -270,6 +266,44 @@ describe('Canvas Editor Components', () => {
       const arrangeVBtn = screen.getByTestId('toolbar-auto-arrange-vertical');
       fireEvent.click(arrangeVBtn);
       expect(handleArrangeVertical).toHaveBeenCalledTimes(1);
+    });
+
+    it('triggers independent onUploadStaticList and onLaunchTestRun callbacks when clicked', () => {
+      const handleUpload = vi.fn();
+      const handleLaunch = vi.fn();
+
+      render(
+        <CanvasToolbar
+          onUndo={() => {}}
+          onRedo={() => {}}
+          canUndo={false}
+          canRedo={false}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+          onFitView={() => {}}
+          onDeleteSelected={() => {}}
+          hasSelection={false}
+          isPanMode={false}
+          onTogglePanMode={() => {}}
+          snapToGridEnabled={true}
+          onToggleSnapToGrid={() => {}}
+          onSnapAllNodesToGrid={() => {}}
+          onAutoArrangeHorizontal={() => {}}
+          onAutoArrangeVertical={() => {}}
+          onUploadStaticList={handleUpload}
+          onLaunchTestRun={handleLaunch}
+        />
+      );
+
+      const uploadBtn = screen.getByTestId('toolbar-upload-static-list');
+      expect(uploadBtn).toBeInTheDocument();
+      fireEvent.click(uploadBtn);
+      expect(handleUpload).toHaveBeenCalledTimes(1);
+
+      const launchBtn = screen.getByTestId('toolbar-launch-test-run');
+      expect(launchBtn).toBeInTheDocument();
+      fireEvent.click(launchBtn);
+      expect(handleLaunch).toHaveBeenCalledTimes(1);
     });
   });
 

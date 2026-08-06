@@ -3,8 +3,12 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { JourneyApiClient } from '../api/client';
 import { Skeleton } from '../components/Skeleton';
 import { DegradedStateView } from '../components/DegradedStateView';
+import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+import { PaginatedTable } from '../components/common/PaginatedTable';
+import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown';
 import { useRouteParams } from '../hooks/useRouteParams';
-import type { TimelineEvent, ActionResult } from '../types/api';
+import type { TimelineEvent, ActionResult, SubRunSummary } from '../types/api';
 
 const apiClient = new JourneyApiClient();
 
@@ -14,7 +18,6 @@ export interface SuppressionRecord {
   reason: string;
   timestamp: string;
 }
-
 
 interface RunDetailPageProps {
   runId?: string;
@@ -27,7 +30,48 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
   });
 
   const activeRunId = propRunId || params.runId || 'run-601';
-  // Fetch timeline and ledger data for activeRunId
+
+  const [selectedSubRunId, setSelectedSubRunId] = React.useState<string | undefined>(undefined);
+  const [subRunParams, setSubRunParams] = React.useState<{ page: string; search: string; status: string }>({
+    page: '1',
+    search: '',
+    status: 'all',
+  });
+
+  // Query sub-runs directory for activeRunId
+  const { data: subRunsData, isLoading: isSubRunsLoading } = useQuery({
+    queryKey: ['sub-runs', activeRunId, subRunParams],
+    queryFn: async () => {
+      try {
+        return await apiClient.listJourneyRunSubRuns(activeRunId, {
+          page: parseInt(subRunParams.page, 10) || 1,
+          limit: 10,
+          search: subRunParams.search || undefined,
+          status: subRunParams.status !== 'all' ? subRunParams.status : undefined,
+        });
+      } catch {
+        return {
+          run_id: activeRunId,
+          total: 1,
+          page: 1,
+          limit: 10,
+          total_pages: 1,
+          sub_runs: [
+            {
+              sub_run_id: `${activeRunId}-row-1`,
+              subject_id: 'usr_001',
+              recipient: 'contact@temporal.io',
+              name: 'Audience Contact 1',
+              status: 'completed',
+              executed_branch: 'email',
+            },
+          ],
+        };
+      }
+    },
+  });
+
+  // Fetch timeline and ledger data for activeRunId and selectedSubRunId
   const {
     data: runDetailData,
     isLoading,
@@ -35,10 +79,10 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
     error,
     refetch,
   } = useQuery({
-    queryKey: ['run-detail', activeRunId],
+    queryKey: ['run-detail', activeRunId, selectedSubRunId],
     queryFn: async () => {
       try {
-        const timelineRes = await apiClient.getJourneyRunTimeline(activeRunId);
+        const timelineRes = await apiClient.getJourneyRunTimeline(activeRunId, selectedSubRunId);
         const ledgerRes = await apiClient.getJourneyRun(activeRunId).catch(() => null);
         return {
           timeline: timelineRes,
@@ -96,37 +140,240 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
     completed_at: runDetailData?.ledger?.completed_at || runDetailData?.timeline?.completed_at,
     status: runDetailData?.ledger?.status || runDetailData?.timeline?.status || 'completed',
   };
+
+  const getStatusBadgeStyles = (status: string) => {
+    const s = status.toLowerCase();
+    switch (s) {
+      case 'completed':
+      case 'success':
+      case 'succeeded':
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50';
+      case 'running':
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/50';
+      case 'failed':
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/50';
+      case 'terminated':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/50';
+      default:
+        return 'bg-[#464554]/30 text-[#c7c4d7] border-[#464554]';
+    }
+  };
+
+  const getStatusStyles = (s: string) => {
+    const st = s.toLowerCase();
+    if (st === 'completed' || st === 'success') return { fill: 'bg-emerald-500/20', text: 'text-emerald-300', border: 'border-emerald-500/50' };
+    if (st === 'failed') return { fill: 'bg-rose-500/20', text: 'text-rose-300', border: 'border-rose-500/50' };
+    if (st === 'running') return { fill: 'bg-amber-500/20', text: 'text-amber-300', border: 'border-amber-500/50' };
+    return { fill: 'bg-[#464554]/20', text: 'text-[#c7c4d7]', border: 'border-[#464554]' };
+  };
+
+  const subRunColumns = React.useMemo(
+    () => [
+      {
+        key: 'contact',
+        header: 'Contact / Recipient',
+        cell: (sr: SubRunSummary) => (
+          <div className="flex flex-col">
+            <span className="font-bold text-white text-xs font-['Outfit']">{sr.name || sr.recipient}</span>
+            <span className="font-mono text-[#908fa0] text-[11px]">{sr.recipient || sr.subject_id}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'sub_run_id',
+        header: 'Sub-Run ID',
+        cell: (sr: SubRunSummary) => (
+          <code className="font-mono text-[#4cd7f6] text-[11px] bg-[#4cd7f6]/10 px-1.5 py-0.5 border border-[#4cd7f6]/20">
+            {sr.sub_run_id}
+          </code>
+        ),
+      },
+      {
+        key: 'executed_branch',
+        header: 'Evaluated Path',
+        cell: (sr: SubRunSummary) => (
+          <span className="px-2 py-0.5 rounded-none bg-[#c0c1ff]/15 text-[#c0c1ff] border border-[#c0c1ff]/30 font-mono text-[10px] font-bold uppercase tracking-wider">
+            {sr.executed_branch || 'default'}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (sr: SubRunSummary) => (
+          <span className={`px-2.5 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusBadgeStyles(sr.status)}`}>
+            {sr.status}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: 'Action',
+        cell: (sr: SubRunSummary) => {
+          const isSelected = selectedSubRunId === sr.sub_run_id || (!selectedSubRunId && runDetailData?.timeline?.sub_run_id === sr.sub_run_id);
+          return (
+            <Button
+              type="button"
+              variant={isSelected ? 'emerald' : 'secondary-dark'}
+              size="sm"
+              icon={isSelected ? 'visibility' : 'query_stats'}
+              onClick={() => setSelectedSubRunId(sr.sub_run_id)}
+              className={isSelected ? 'bg-emerald-500/30 text-emerald-200 border-emerald-400 font-bold' : ''}
+              data-testid={`view-subrun-trace-${sr.sub_run_id}`}
+            >
+              {isSelected ? 'Active Trace' : 'View Trace'}
+            </Button>
+          );
+        },
+      },
+    ],
+    [selectedSubRunId, runDetailData?.timeline?.sub_run_id]
+  );
+
   return (
     <div className="w-full h-full flex flex-col p-6 bg-[#0B0F19] overflow-y-auto space-y-6 text-[#dfe2f1] font-['Outfit',sans-serif]">
-      {/* Top Action Bar */}
-      <div className="flex items-center justify-between gap-4 shrink-0">
+      {/* Top Action Header Bar */}
+      <div className="flex items-center justify-between gap-4 shrink-0 flex-wrap">
         <div className="flex items-center gap-3">
           {onBackToList && (
-            <button
+            <Button
+              type="button"
+              variant="secondary-dark"
+              icon="arrow_back"
               onClick={onBackToList}
-              className="px-4 py-2 rounded-none bg-[#171b26] border border-[#464554] text-white hover:border-[#c0c1ff] text-xs font-semibold transition-all cursor-pointer"
+              aria-label="Back to Run List"
             >
-              ← Back to Run List
-            </button>
+              Back to Run List
+            </Button>
           )}
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3 font-['Outfit']">
             <span className="material-symbols-outlined text-emerald-400 text-2xl">account_tree</span>
-            Run Execution Detail: <code className="text-emerald-400 font-mono">{activeRunId}</code>
+            <span>Run Execution Detail:</span>
+            <code className="text-[#4cd7f6] font-mono bg-[#4cd7f6]/10 px-2 py-0.5 border border-[#4cd7f6]/30 text-base">
+              {activeRunId}
+            </code>
           </h1>
         </div>
 
-        {/* Retry / Replay Action Button */}
-        <button
-          onClick={() => replayMutation.mutate()}
-          disabled={replayMutation.isPending}
-          className="px-4 py-2 rounded-none bg-[#10b981]/20 hover:bg-[#10b981]/30 border border-[#10b981]/40 text-[#6ee7b7] text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {replayMutation.isPending ? 'Replaying Run...' : '↻ Trigger Replay / Retry'}
-        </button>
+        {/* Action Button Bar: External Dev Tools, Outcome Simulators, & Trigger Replay */}
+        <div className="flex items-center gap-2">
+          {/* External Dev Tool Icons */}
+          <Button
+            type="button"
+            variant="secondary-dark"
+            icon="schedule"
+            aria-label="Open Temporal UI"
+            title="Open Temporal UI (:8233)"
+            data-testid="link-temporal-ui"
+            onClick={() =>
+              window.open(
+                `http://localhost:8233/namespaces/default/workflows/${parameters.workflow_id}/${activeRunId}`,
+                '_blank'
+              )
+            }
+          />
+          <Button
+            type="button"
+            variant="secondary-dark"
+            icon="analytics"
+            aria-label="Open Jaeger Traces"
+            title="Open Jaeger Traces (:16686)"
+            data-testid="link-jaeger-ui"
+            onClick={() => window.open('http://localhost:16686', '_blank')}
+          />
+          <Button
+            type="button"
+            variant="secondary-dark"
+            icon="mail"
+            aria-label="Open Mailpit Inbox"
+            title="Open Mailpit Inbox (:8025)"
+            data-testid="link-mailpit-ui"
+            onClick={() => window.open('http://localhost:8025', '_blank')}
+          />
+
+          <div className="h-4 w-[1px] bg-[#464554] mx-1" />
+
+          {/* Outcome Simulator Icons */}
+          <Button
+            type="button"
+            variant="secondary-dark"
+            icon="mark_email_read"
+            aria-label="Simulate Email Open"
+            title="Simulate Email Open (→ /outcomes)"
+            data-testid="simulate-outcome-open"
+            className="bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/30 text-[#4cd7f6] border-[#4cd7f6]/40"
+            onClick={() => {
+              apiClient.emitKafkaTestEvent({
+                schema_version: '1.0',
+                event_id: `evt-open-${Date.now().toString().slice(-4)}`,
+                trace_id: `trace-${activeRunId}`,
+                event_type: 'email_opened',
+                source: 'web_control_center',
+                timestamp: new Date().toISOString(),
+                data_classification: 'NonPII',
+                data: { run_id: activeRunId },
+              });
+            }}
+          />
+          <Button
+            type="button"
+            variant="secondary-dark"
+            icon="ads_click"
+            aria-label="Simulate Link Click"
+            title="Simulate Link Click (→ /outcomes)"
+            data-testid="simulate-outcome-click"
+            className="bg-[#c0c1ff]/20 hover:bg-[#c0c1ff]/30 text-[#c0c1ff] border-[#c0c1ff]/40"
+            onClick={() => {
+              apiClient.emitKafkaTestEvent({
+                schema_version: '1.0',
+                event_id: `evt-click-${Date.now().toString().slice(-4)}`,
+                trace_id: `trace-${activeRunId}`,
+                event_type: 'email_clicked',
+                source: 'web_control_center',
+                timestamp: new Date().toISOString(),
+                data_classification: 'NonPII',
+                data: { run_id: activeRunId },
+              });
+            }}
+          />
+          <Button
+            type="button"
+            variant="emerald"
+            icon="task_alt"
+            aria-label="Simulate Conversion"
+            title="Simulate Conversion (→ /outcomes)"
+            data-testid="simulate-outcome-conversion"
+            onClick={() => {
+              apiClient.emitKafkaTestEvent({
+                schema_version: '1.0',
+                event_id: `evt-conv-${Date.now().toString().slice(-4)}`,
+                trace_id: `trace-${activeRunId}`,
+                event_type: 'conversion',
+                source: 'web_control_center',
+                timestamp: new Date().toISOString(),
+                data_classification: 'NonPII',
+                data: { run_id: activeRunId },
+              });
+            }}
+          />
+
+          <div className="h-4 w-[1px] bg-[#464554] mx-1" />
+
+          {/* Trigger Replay / Retry Icon */}
+          <Button
+            type="button"
+            variant="emerald"
+            icon="replay"
+            disabled={replayMutation.isPending}
+            aria-label={replayMutation.isPending ? 'Replaying Run...' : 'Trigger Replay / Retry'}
+            title={replayMutation.isPending ? 'Replaying Run...' : 'Trigger Replay / Retry'}
+            onClick={() => replayMutation.mutate()}
+          />
+        </div>
       </div>
 
       {replayMutation.isSuccess && (
-        <div role="status" className="p-4 rounded-none bg-[#10b981]/15 border border-[#10b981]/40 text-[#6ee7b7] text-xs">
+        <div role="status" className="p-4 rounded-none bg-[#10b981]/15 border border-[#10b981]/40 text-[#6ee7b7] text-xs font-['Outfit']">
           Successfully triggered event emission replay for run <strong className="font-mono">{activeRunId}</strong>! (Event ID:{' '}
           <code className="font-mono">{replayMutation.data?.event_id}</code>)
         </div>
@@ -135,35 +382,108 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
       {/* Summary Parameter Header Card */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl shrink-0">
         <div>
-          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">Tenant ID</span>
+          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+            Tenant ID
+          </span>
           <strong className="text-xs font-mono text-white">{parameters.tenant_id}</strong>
         </div>
         <div>
-          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">Workflow ID</span>
+          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+            Workflow ID
+          </span>
           <strong className="text-xs font-mono text-white">{parameters.workflow_id}</strong>
         </div>
         <div>
-          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">Execution Mode</span>
+          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+            Execution Mode
+          </span>
           <span
             className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase tracking-wider border ${
               parameters.execution_mode === 'production'
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                : 'bg-amber-500/20 text-amber-300 border-amber-500/50'
             }`}
           >
             {parameters.execution_mode}
           </span>
         </div>
         <div>
-          <span className="px-2 py-0.5 rounded-none bg-[#ef4444]/20 text-[#fca5a5] border border-[#ef4444]/30 text-[10px] font-mono font-bold">
-            {parameters.data_classification}
+          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+            Classification
           </span>
+          <Badge variant="rose" size="sm">
+            {parameters.data_classification}
+          </Badge>
         </div>
         <div>
-          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">Total Duration</span>
-          <strong className="text-xs font-mono text-[#6ee7b7]">{(parameters.duration_ms || 5000).toLocaleString()} ms</strong>
+          <span className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
+            Total Duration
+          </span>
+          <strong className="text-xs font-mono text-[#6ee7b7]">
+            {(parameters.duration_ms || 5000).toLocaleString()} ms
+          </strong>
         </div>
       </div>
+
+      {/* Audience Sub-Run Execution Directory Panel (Scalable 1,000+ Contacts) */}
+      <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap border-b border-[#464554] pb-3">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[#4cd7f6] text-xl">groups</span>
+            <div>
+              <h2 className="text-base font-bold text-white font-['Outfit'] flex items-center gap-2">
+                Audience Execution Sub-Runs Directory
+                <span className="px-2 py-0.5 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-xs font-bold">
+                  {subRunsData?.total || 0} Contacts Evaluated
+                </span>
+              </h2>
+              <p className="text-xs text-[#908fa0]">
+                Search, filter, and inspect individual target contact execution traces across static lists or test runs.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <input
+              type="text"
+              placeholder="Search contact, ID, recipient, or branch..."
+              value={subRunParams.search}
+              onChange={(e) => setSubRunParams((prev) => ({ ...prev, search: e.target.value, page: '1' }))}
+              data-testid="subrun-search-input"
+              className="px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#4cd7f6] transition-all rounded-none font-['Outfit',sans-serif] min-w-[220px]"
+            />
+            <StatusFilterDropdown
+              value={subRunParams.status}
+              onChange={(newStatus) => setSubRunParams((prev) => ({ ...prev, status: newStatus, page: '1' }))}
+              options={[
+                { status: 'all', label: 'All Statuses' },
+                { status: 'completed', label: 'Completed' },
+                { status: 'failed', label: 'Failed' },
+                { status: 'running', label: 'Running' },
+              ]}
+              getStatusStyles={getStatusStyles}
+              dataTestId="subrun-status-filter-dropdown"
+            />
+          </div>
+        </div>
+
+        {isSubRunsLoading ? (
+          <Skeleton count={3} height="2.5rem" />
+        ) : (
+          <PaginatedTable<SubRunSummary>
+            data={subRunsData?.sub_runs || []}
+            columns={subRunColumns}
+            getRowKey={(sr) => sr.sub_run_id}
+            currentPage={subRunsData?.page || 1}
+            pageSize={subRunsData?.limit || 10}
+            totalItems={subRunsData?.total || 0}
+            onPageChange={(p) => setSubRunParams((prev) => ({ ...prev, page: String(p) }))}
+            itemLabel="contacts"
+            testId="subruns-paginated-table"
+          />
+        )}
+      </div>
+
       {/* Error State with Retry Trigger */}
       {isError && (
         <DegradedStateView
@@ -191,7 +511,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
           {/* Left Column: Sequential Timeline of Node Visits */}
           <div className="lg:col-span-2 p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#464554] pb-3">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <h2 className="text-base font-bold text-white flex items-center gap-2 font-['Outfit']">
                 <span className="material-symbols-outlined text-[#c0c1ff] text-lg">schema</span>
                 Node Visits & Outcome Timeline ({timelineEvents.length} Steps)
               </h2>
@@ -204,7 +524,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                   className="flex gap-4 p-4 rounded-none bg-[#171b26] border border-[#464554] shadow-md"
                 >
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-mono text-xs font-bold">
+                    <div className="w-7 h-7 rounded-none bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center font-mono text-xs font-bold">
                       {index + 1}
                     </div>
                   </div>
@@ -213,21 +533,17 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         {evt.event_type && (
-                          <span className="px-2 py-0.5 rounded-none bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20 text-[10px] font-mono font-bold uppercase tracking-wider">
+                          <span className="px-2 py-0.5 rounded-none bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/40 text-[10px] font-mono font-bold uppercase tracking-wider">
                             {evt.event_type}
                           </span>
                         )}
                         <strong className="text-sm font-bold text-white font-mono">{evt.node_id || 'workflow_root'}</strong>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
-                        evt.status === 'completed' || evt.status === 'success' || evt.status === 'succeeded'
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : evt.status === 'running'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                          : evt.status === 'failed'
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : 'bg-purple-500/10 text-purple-300 border-purple-500/20'
-                      }`}>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusBadgeStyles(
+                          evt.status
+                        )}`}
+                      >
                         {evt.status}
                       </span>
                     </div>
@@ -252,10 +568,11 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
 
           {/* Right Column: Actions & Suppressions */}
           <div className="lg:col-span-1 space-y-6">
+
             {/* Actions Executed Panel */}
             <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-[#464554] pb-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2 font-['Outfit']">
                   <span className="material-symbols-outlined text-[#6ee7b7] text-lg">bolt</span>
                   Action Executions ({actions.length})
                 </h3>
@@ -268,13 +585,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
                     <div key={act.action_id} className="p-4 sm:p-5 rounded-none bg-[#171b26] border border-[#464554] space-y-2.5 min-w-0 break-words shadow-sm">
                       <div className="flex items-center justify-between text-xs gap-3 min-w-0">
                         <strong className="text-white font-mono truncate min-w-0 flex-1">{act.activity_type}</strong>
-                        <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase tracking-wider border shrink-0 ${
-                          act.status === 'success'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : act.status === 'retrying'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase tracking-wider border shrink-0 ${getStatusBadgeStyles(act.status)}`}>
                           {act.status}
                         </span>
                       </div>
@@ -290,7 +601,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
             {/* Suppressions & Safeguards Panel */}
             <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-[#464554] pb-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2 font-['Outfit']">
                   <span className="material-symbols-outlined text-amber-400 text-lg">gavel</span>
                   Suppressions & Policy Checks ({suppressions.length})
                 </h3>

@@ -27,7 +27,7 @@ describe('ParameterModal Component', () => {
   it('renders Parameter Library Modal with title, search input, and default items', () => {
     render(<ParameterModal {...defaultProps} />);
 
-    expect(screen.getByTestId('parameter-library-modal')).toBeInTheDocument();
+    expect(screen.getByTestId('parameter-modal')).toBeInTheDocument();
     expect(screen.getByText('Parameter Library')).toBeInTheDocument();
     expect(screen.getByText(/Insert dynamic parameter token into field "Recipient Email"/i)).toBeInTheDocument();
     expect(screen.getByTestId('parameter-search-input')).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('ParameterModal Component', () => {
 
     render(<ParameterModal {...defaultProps} onClose={onCloseMock} />);
 
-    const closeBtn = screen.getByTestId('close-parameter-modal-btn');
+    const closeBtn = screen.getByRole('button', { name: 'Close modal' });
     fireEvent.click(closeBtn);
 
     expect(onCloseMock).toHaveBeenCalledTimes(1);

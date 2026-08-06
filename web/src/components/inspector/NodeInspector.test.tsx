@@ -213,7 +213,7 @@ describe('NodeInspector Component', () => {
     );
 
     // Modal opens
-    expect(screen.getByTestId('parameter-library-modal')).toBeInTheDocument();
+    expect(screen.getByTestId('parameter-modal')).toBeInTheDocument();
 
     // Select token
     const insertBtn = screen.getByTestId('insert-token-btn-email');

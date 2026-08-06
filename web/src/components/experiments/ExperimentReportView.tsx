@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import type { AggregateReportData } from './types';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
+import { Button } from '../common/Button';
+import { Badge } from '../common/Badge';
 
 const apiClient = new JourneyApiClient();
 
@@ -185,25 +187,25 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
           </div>
 
           {onRefresh && (
-            <button
+            <Button
               type="button"
               onClick={onRefresh}
-              className="px-4 py-2 rounded-none bg-[#171b26] hover:bg-[#262a35] text-[#dfe2f1] border border-[#313540] font-semibold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+              variant="secondary-dark"
+              icon="refresh"
             >
-              <span className="material-symbols-outlined text-sm text-[#4cd7f6]">refresh</span>
-              <span>Refresh</span>
-            </button>
+              Refresh
+            </Button>
           )}
 
-          <button
+          <Button
             type="button"
             onClick={handleExportCSV}
             data-testid="export-csv-btn"
-            className="px-4 py-2 rounded-none bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs border border-[#8083ff] transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+            variant="primary-indigo"
+            icon="download"
           >
-            <span className="material-symbols-outlined text-sm">download</span>
-            <span>Export CSV</span>
-          </button>
+            Export CSV
+          </Button>
         </div>
       </div>
 
@@ -241,16 +243,13 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
               <span className="text-xs font-bold text-white font-['Outfit'] tracking-wide">
                 Sample Ratio Mismatch (SRM) Status:
               </span>
-              <span
-                data-testid="srm-status-badge"
-                className={`text-[10px] font-bold font-mono px-3 py-1 rounded-none uppercase tracking-wider border shadow-sm ${
-                  isSrmPassed
-                    ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40'
-                    : 'bg-[#f43f5e]/20 text-[#ffb4ab] border-[#f43f5e]/40'
-                }`}
+              <Badge
+                variant={isSrmPassed ? 'emerald' : 'rose'}
+                size="md"
+                testId="srm-status-badge"
               >
                 {mergedReport.srm_status}
-              </span>
+              </Badge>
             </div>
             <p className="text-xs text-[#c7c4d7] mt-1 font-['Inter']">
               {mergedReport.srm_details || 'Chi-square test evaluated across traffic distribution.'}

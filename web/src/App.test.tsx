@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingState } from './components/LoadingState';
@@ -76,14 +76,12 @@ describe('App & Foundation Components', () => {
     fireEvent.click(canvasNavBtn);
 
     const saveBtn = screen.getByRole('button', { name: 'Save Draft' });
-    fireEvent.click(saveBtn);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Saving Journey Draft/i })).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(saveBtn);
+    });
 
-    // Close modal
-    const closeBtn = screen.getByRole('button', { name: 'Close' });
-    fireEvent.click(closeBtn);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByTestId('app-toast-notification')).toBeInTheDocument();
+    expect(screen.getByText('Draft Saved Successfully')).toBeInTheDocument();
   });
 
   it('navigates to Experiment Analytics route and syncs location hash', async () => {
@@ -110,5 +108,101 @@ describe('App & Foundation Components', () => {
     await waitFor(() => {
       expect(screen.getByText('Component Catalog & Schemas')).toBeInTheDocument();
     });
+  });
+
+  it('renders dynamic build tag in sidebar header', () => {
+    render(<App />);
+    const versionTag = screen.getByTestId('sidebar-version-tag');
+
+    expect(versionTag).toBeInTheDocument();
+    expect(versionTag.textContent).toContain('ui-improvements-obsidian-feat/ui-improvements-obsidian-');
+  });
+
+  it('triggers error toast when publishing workflow during simulated API failure mode', async () => {
+    const { setSimulatedApiFailureEnabled } = await import('./api/simulatedFailure');
+    setSimulatedApiFailureEnabled(true);
+
+    try {
+      render(<App />);
+      const canvasNavBtn = screen.getByRole('button', { name: 'Journey Canvas' });
+      fireEvent.click(canvasNavBtn);
+
+      const publishBtn = screen.getByTestId('toolbar-publish');
+      await act(async () => {
+        fireEvent.click(publishBtn);
+      });
+
+      expect(screen.getByTestId('app-toast-notification')).toBeInTheDocument();
+      expect(screen.getByText('Failed to Publish Workflow')).toBeInTheDocument();
+    } finally {
+      setSimulatedApiFailureEnabled(false);
+    }
+  });
+
+  it('triggers error toast when launching test run during simulated API failure mode', async () => {
+    const { setSimulatedApiFailureEnabled } = await import('./api/simulatedFailure');
+    setSimulatedApiFailureEnabled(true);
+
+    try {
+      render(<App />);
+      const canvasNavBtn = screen.getByRole('button', { name: 'Journey Canvas' });
+      fireEvent.click(canvasNavBtn);
+
+      const testRunBtn = screen.getByRole('button', { name: 'Launch Test Execution' });
+      fireEvent.click(testRunBtn);
+
+      const launchBtn = screen.getByRole('button', { name: /Execute Test Run/i });
+      await act(async () => {
+        fireEvent.click(launchBtn);
+      });
+
+      expect(screen.getByTestId('app-toast-notification')).toBeInTheDocument();
+      expect(screen.getByText('Failed to Launch Test Execution')).toBeInTheDocument();
+    } finally {
+      setSimulatedApiFailureEnabled(false);
+    }
+  });
+
+  it('triggers error toast when renaming journey draft during simulated API failure mode', async () => {
+    const { setSimulatedApiFailureEnabled } = await import('./api/simulatedFailure');
+    setSimulatedApiFailureEnabled(true);
+
+    try {
+      render(<App />);
+      const canvasNavBtn = screen.getByRole('button', { name: 'Journey Canvas' });
+      fireEvent.click(canvasNavBtn);
+
+      const nameBtn = screen.getByRole('button', { name: /Journey name:/i });
+      fireEvent.click(nameBtn);
+
+      const input = screen.getByTestId('inline-journey-name-input');
+      fireEvent.change(input, { target: { value: 'Renamed Journey' } });
+      await act(async () => {
+        fireEvent.blur(input);
+      });
+
+      expect(screen.getByTestId('app-toast-notification')).toBeInTheDocument();
+      expect(screen.getByText('Failed to Rename Journey')).toBeInTheDocument();
+    } finally {
+      setSimulatedApiFailureEnabled(false);
+    }
+  });
+
+  it('triggers success toast when renaming journey draft successfully', async () => {
+    render(<App />);
+    const canvasNavBtn = screen.getByRole('button', { name: 'Journey Canvas' });
+    fireEvent.click(canvasNavBtn);
+
+    const nameBtn = screen.getByRole('button', { name: /Journey name:/i });
+    fireEvent.click(nameBtn);
+
+    const input = screen.getByTestId('inline-journey-name-input');
+    fireEvent.change(input, { target: { value: 'New Onboarding Flow' } });
+    await act(async () => {
+      fireEvent.blur(input);
+    });
+
+    expect(screen.getByTestId('app-toast-notification')).toBeInTheDocument();
+    expect(screen.getByText('Journey Renamed Successfully')).toBeInTheDocument();
   });
 });

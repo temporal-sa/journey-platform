@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import type { CatalogRecord, ExperimentDefinition } from '../../types/api';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
+import { Button } from '../common/Button';
+import { CloseButton } from '../common/CloseButton';
 import type {
   ExperimentFormState,
   VariantFormState,
@@ -671,15 +673,12 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
                 </div>
 
                 <div className="sm:col-span-1 flex justify-end">
-                  <button
-                    type="button"
-                    aria-label={`Remove Metric ${metric.key}`}
+                  <CloseButton
+                    size="sm"
+                    ariaLabel={`Remove Metric ${metric.key}`}
                     onClick={() => handleRemoveMetric(index)}
                     disabled={readOnly || formState.metrics.length <= 1}
-                    className="p-1.5 rounded-none border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#ffb4ab] hover:bg-[#f43f5e]/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
+                  />
                 </div>
               </div>
             ))}
@@ -706,23 +705,26 @@ const ExperimentInspectorInner: React.FC<ExperimentInspectorProps> = ({
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-2">
           {onCancel && (
-            <button
+            <Button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2.5 rounded-none border border-[#464554] hover:bg-[#262a35] text-[#c7c4d7] hover:text-white font-medium text-sm transition-colors cursor-pointer"
+              variant="secondary-dark"
+              size="lg"
             >
               Cancel
-            </button>
+            </Button>
           )}
 
-          <button
+          <Button
             type="submit"
             data-testid="save-experiment-btn"
             disabled={!isValid || readOnly}
-            className="px-6 py-2.5 rounded-none bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-sm shadow-md border border-[#8083ff]/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            variant="primary-indigo"
+            size="lg"
+            icon="science"
           >
             Save Experiment
-          </button>
+          </Button>
         </div>
       </form>
     </div>

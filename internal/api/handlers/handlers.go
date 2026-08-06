@@ -121,8 +121,11 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/api/v1/runs", h.ListRuns)
 	r.Get("/api/v1/runs/{id}", h.GetRunTimeline)
 	r.Get("/api/v1/runs/{id}/timeline", h.GetRunTimeline)
+	r.Get("/api/v1/runs/{id}/sub-runs", h.ListJourneyRunSubRuns)
 	r.Get("/api/v1/journeys/runs", h.ListRuns)
+	r.Get("/api/v1/journeys/runs/{id}", h.GetRunTimeline)
 	r.Get("/api/v1/journeys/runs/{id}/timeline", h.GetRunTimeline)
+	r.Get("/api/v1/journeys/runs/{id}/sub-runs", h.ListJourneyRunSubRuns)
 
 	// Experiment Endpoints
 	r.Post("/api/v1/experiments", h.CreateExperiment)

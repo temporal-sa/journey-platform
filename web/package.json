@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "generate-tag": "node scripts/generate-build-tag.js",
+    "predev": "node scripts/generate-build-tag.js",
     "dev": "vite",
+    "prebuild": "node scripts/generate-build-tag.js",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --pool=forks",

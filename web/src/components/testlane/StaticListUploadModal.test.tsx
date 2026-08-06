@@ -102,4 +102,33 @@ MBR-003,=SUM(A1:A10)
       { timeout: 2000 }
     );
   });
+
+  it('invokes onUploadError callback when upload API call fails', async () => {
+    const handleClose = vi.fn();
+    const handleUploadError = vi.fn();
+    const { setSimulatedApiFailureEnabled } = await import('../../api/simulatedFailure');
+
+    setSimulatedApiFailureEnabled(true);
+
+    try {
+      render(
+        <StaticListUploadModal
+          isOpen={true}
+          onClose={handleClose}
+          onUploadError={handleUploadError}
+        />
+      );
+
+      const confirmBtn = screen.getByRole('button', { name: 'Confirm Static List Upload' });
+      fireEvent.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(handleUploadError).toHaveBeenCalledWith(
+          expect.stringContaining('[DEV SIMULATION] Service Unavailable')
+        );
+      });
+    } finally {
+      setSimulatedApiFailureEnabled(false);
+    }
+  });
 });

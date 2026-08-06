@@ -153,6 +153,7 @@ export interface StaticList {
   item_count: number;
   data_classification: 'PII' | 'NonPII' | 'Sensitive';
   items: string[];
+  records?: Record<string, unknown>[];
   csv_content?: string;
   content_hash?: string;
   created_at?: string;
@@ -210,6 +211,7 @@ export interface TimelineEvent {
 
 export interface RunTimeline {
   run_id: string;
+  sub_run_id?: string;
   tenant_id?: string;
   workflow_id?: string;
   subject_id?: string;
@@ -220,6 +222,25 @@ export interface RunTimeline {
   completed_at?: string;
   current_nodes?: string[];
   timeline: TimelineEvent[];
+}
+
+export interface SubRunSummary {
+  sub_run_id: string;
+  subject_id: string;
+  recipient: string;
+  name: string;
+  status: string;
+  executed_branch: string;
+  completed_at?: string;
+}
+
+export interface SubRunListResponse {
+  run_id: string;
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  sub_runs: SubRunSummary[];
 }
 
 export interface EventEnvelope {

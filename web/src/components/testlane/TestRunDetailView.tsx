@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import { Skeleton } from '../Skeleton';
+import { Badge } from '../common/Badge';
 import { DegradedStateView } from '../DegradedStateView';
 
 export interface NodeVisitStep {
@@ -203,12 +204,9 @@ function TestRunDetailViewInner({
               <h2 className="font-['Outfit'] font-bold text-xl text-white tracking-tight">
                 Test-Run Results: <code className="text-[#4cd7f6] font-mono">{data.testRunId}</code>
               </h2>
-              <span
-                data-testid="test-mode-badge"
-                className="px-2.5 py-1 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-[10px] font-bold uppercase tracking-wider"
-              >
+              <Badge variant="cyan" testId="test-mode-badge">
                 TEST MODE
-              </span>
+              </Badge>
             </div>
             <p className="text-xs text-[#908fa0] mt-1 font-mono">
               Target Draft: <strong className="text-white">{data.draftId}</strong> | Mode: <strong className="text-[#4cd7f6]">{data.executionMode}</strong> | Pack: {data.fixturePack}

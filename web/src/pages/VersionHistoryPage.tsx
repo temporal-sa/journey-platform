@@ -9,7 +9,7 @@ import type { DraftVersionItem } from '../types/api';
 const apiClient = new JourneyApiClient();
 
 const DEFAULT_VERSION_HISTORY_PARAMS = {
-  draftId: 'draft-101',
+  draftId: '',
   v1: '1',
   v2: '2',
 };
@@ -17,23 +17,33 @@ const DEFAULT_VERSION_HISTORY_PARAMS = {
 export const VersionHistoryPage: React.FC = () => {
   const [params, setParams] = useRouteParams(DEFAULT_VERSION_HISTORY_PARAMS);
 
-  const draftId = params.draftId || 'draft-101';
+  // Fetch list of available journey drafts from engine API
+  const { data: availableDrafts = [], isLoading: isLoadingDrafts } = useQuery({
+    queryKey: ['journeys-drafts-list'],
+    queryFn: () => apiClient.listJourneyDrafts(),
+  });
+
+  const activeDraftId =
+    params.draftId || (availableDrafts.length > 0 ? availableDrafts[0].draft_id : '');
 
   // Fetch Version History List for given Draft ID
   const {
     data: versionData,
-    isLoading,
+    isLoading: isLoadingVersions,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: ['versions', draftId],
+    queryKey: ['versions', activeDraftId],
     queryFn: async () => {
-      const res = await apiClient.listDraftVersions(draftId);
+      if (!activeDraftId) return { draft_id: '', versions: [] };
+      const res = await apiClient.listDraftVersions(activeDraftId);
       return res;
     },
+    enabled: Boolean(activeDraftId),
   });
 
+  const isLoading = isLoadingDrafts || isLoadingVersions;
   const versions: DraftVersionItem[] = versionData?.versions || [];
 
   const selectedV1 = versions.find((v) => String(v.version) === params.v1) || versions[0];
@@ -57,15 +67,32 @@ export const VersionHistoryPage: React.FC = () => {
       {/* Filter & Draft Selection Bar */}
       <div className="w-full p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold text-[#908fa0] uppercase tracking-wider font-mono">
-            Draft ID:
+          <label htmlFor="history-draft-select" className="text-xs font-semibold text-[#908fa0] uppercase tracking-wider font-mono">
+            Journey Draft:
           </label>
-          <input
-            type="text"
-            value={draftId}
-            onChange={(e) => setParams({ draftId: e.target.value })}
-            className="px-4 py-2 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-mono w-48"
-          />
+          {availableDrafts.length > 0 ? (
+            <select
+              id="history-draft-select"
+              data-testid="history-draft-select"
+              value={activeDraftId}
+              onChange={(e) => setParams({ draftId: e.target.value })}
+              className="px-3 py-2 bg-[#171b26] border border-[#464554] text-white text-xs font-mono focus:outline-none focus:border-[#c0c1ff] rounded-none max-w-xs"
+            >
+              {availableDrafts.map((d) => (
+                <option key={d.draft_id} value={d.draft_id}>
+                  {d.name} ({d.draft_id})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={activeDraftId}
+              onChange={(e) => setParams({ draftId: e.target.value })}
+              placeholder="Enter Draft ID..."
+              className="px-4 py-2 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-mono w-48"
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-2 text-xs text-[#908fa0]">
@@ -84,7 +111,7 @@ export const VersionHistoryPage: React.FC = () => {
       {isError && (
         <DegradedStateView
           type="api-disconnected"
-          title={`Failed to Load Version History for "${draftId}"`}
+          title={`Failed to Load Version History for "${activeDraftId}"`}
           description={(error as Error)?.message || 'Could not fetch revision history from backend service.'}
           actionLabel="Retry Fetching"
           onRetry={() => { refetch(); }}
@@ -100,7 +127,7 @@ export const VersionHistoryPage: React.FC = () => {
         <DegradedStateView
           type="stale-report"
           title="No Version History Found"
-          description={`Draft "${draftId}" has no recorded versions in the canonical repository.`}
+          description={`Draft "${activeDraftId}" has no recorded versions in the canonical repository.`}
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full items-start">

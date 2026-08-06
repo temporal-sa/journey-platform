@@ -21,7 +21,7 @@ describe('JourneysPage Component', () => {
     renderWithClient(<JourneysPage />);
 
     expect(screen.getByText('Journeys Directory')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Search by name, ID, or description/i)).toBeInTheDocument();
+    expect(screen.getByTestId('journeys-search-input')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Welcome Journey Draft')).toBeInTheDocument();
@@ -35,8 +35,11 @@ describe('JourneysPage Component', () => {
       expect(screen.getByText('Welcome Journey Draft')).toBeInTheDocument();
     });
 
-    const activeFilterBtn = screen.getByRole('button', { name: /Active/i });
-    fireEvent.click(activeFilterBtn);
+    const triggerBtn = screen.getByTestId('journeys-status-filter-dropdown');
+    fireEvent.click(triggerBtn);
+
+    const activeOption = screen.getByRole('option', { name: /Active/i });
+    fireEvent.click(activeOption);
 
     await waitFor(() => {
       expect(screen.getByText('KYC Verification Nudge')).toBeInTheDocument();
@@ -46,7 +49,7 @@ describe('JourneysPage Component', () => {
   it('filters journeys by search text query', async () => {
     renderWithClient(<JourneysPage />);
 
-    const searchInput = screen.getByPlaceholderText(/Search by name, ID, or description/i);
+    const searchInput = screen.getByTestId('journeys-search-input');
     fireEvent.change(searchInput, { target: { value: 'KYC' } });
 
     await waitFor(() => {
@@ -55,20 +58,18 @@ describe('JourneysPage Component', () => {
     });
   });
 
-
-
   it('renders empty state when search returns zero results', async () => {
     renderWithClient(<JourneysPage />);
 
-    const searchInput = screen.getByPlaceholderText(/Search by name, ID, or description/i);
+    const searchInput = screen.getByTestId('journeys-search-input');
     fireEvent.change(searchInput, { target: { value: 'nonexistent_search_query_xyz' } });
 
     await waitFor(() => {
       expect(screen.getByText('No Journeys Found')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Clear Filters' })).toBeInTheDocument();
+      expect(screen.getByTestId('journeys-clear-filters-btn')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
+    fireEvent.click(screen.getByTestId('journeys-clear-filters-btn'));
 
     await waitFor(() => {
       expect(screen.getByText('Welcome Journey Draft')).toBeInTheDocument();
@@ -93,8 +94,8 @@ describe('JourneysPage Component', () => {
     renderWithClient(<JourneysPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Previous/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Next/i })).toBeDisabled();
     });
   });
 });

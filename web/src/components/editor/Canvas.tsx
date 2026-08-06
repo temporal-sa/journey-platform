@@ -22,6 +22,7 @@ import { Palette } from './Palette';
 import { CanvasToolbar } from './CanvasToolbar';
 import { validateConnection } from './CanvasValidation';
 import { getNodeValidationCounts, getNodeIssues } from '../inspector/validationMapping';
+import { CloseButton } from '../common/CloseButton';
 
 const edgeTypes = {
   labeled: LabeledEdge,
@@ -363,10 +364,13 @@ interface CanvasProps {
   onSimulateConflict?: () => void;
   onPublish?: () => void;
   onTestMode?: () => void;
+  onUploadStaticList?: () => void;
+  onLaunchTestRun?: () => void;
   onKeyboardShortcuts?: () => void;
+  onAgyContext?: () => void;
 }
 
-export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTestMode, onKeyboardShortcuts }: CanvasProps) {
+export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTestMode, onUploadStaticList, onLaunchTestRun, onKeyboardShortcuts, onAgyContext }: CanvasProps) {
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const currentDraft = useEditorStore((s) => s.currentDraft);
 
@@ -889,7 +893,10 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           onSimulateConflict={onSimulateConflict}
           onPublish={onPublish}
           onTestMode={onTestMode}
+          onUploadStaticList={onUploadStaticList}
+          onLaunchTestRun={onLaunchTestRun}
           onKeyboardShortcuts={onKeyboardShortcuts}
+          onAgyContext={onAgyContext}
           snapToGridEnabled={snapToGridEnabled}
           onToggleSnapToGrid={() => setSnapToGridEnabled(!snapToGridEnabled)}
           onSnapAllNodesToGrid={snapAllNodesToGrid}
@@ -904,12 +911,12 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           >
             <span className="material-symbols-outlined text-rose-400 text-sm">warning</span>
             <span>{validationError}</span>
-            <button
+            <CloseButton
               onClick={() => setValidationError(null)}
-              className="ml-2 text-rose-400 hover:text-white font-bold cursor-pointer"
-            >
-              ✕
-            </button>
+              ariaLabel="Dismiss validation error"
+              size="sm"
+              className="ml-2 text-rose-400 hover:text-white"
+            />
           </div>
         )}
 
