@@ -21,7 +21,7 @@ describe('JourneysPage Component', () => {
     renderWithClient(<JourneysPage />);
 
     expect(screen.getByText('Journeys Directory')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Search by name, ID, or description/i)).toBeInTheDocument();
+    expect(screen.getByTestId('journeys-search-input')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Welcome Journey Draft')).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('JourneysPage Component', () => {
   it('filters journeys by search text query', async () => {
     renderWithClient(<JourneysPage />);
 
-    const searchInput = screen.getByPlaceholderText(/Search by name, ID, or description/i);
+    const searchInput = screen.getByTestId('journeys-search-input');
     fireEvent.change(searchInput, { target: { value: 'KYC' } });
 
     await waitFor(() => {
@@ -55,12 +55,10 @@ describe('JourneysPage Component', () => {
     });
   });
 
-
-
   it('renders empty state when search returns zero results', async () => {
     renderWithClient(<JourneysPage />);
 
-    const searchInput = screen.getByPlaceholderText(/Search by name, ID, or description/i);
+    const searchInput = screen.getByTestId('journeys-search-input');
     fireEvent.change(searchInput, { target: { value: 'nonexistent_search_query_xyz' } });
 
     await waitFor(() => {

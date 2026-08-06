@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { JourneyApiClient } from '../api/client';
 import { useEditorStore } from '../stores/editorStore';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
 import { Button } from '../components/common/Button';
+import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { GraphDraft } from '../types/api';
 
@@ -159,44 +160,118 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
   const totalPages = Math.ceil(filteredJourneys.length / pageSize) || 1;
   const paginatedJourneys = filteredJourneys.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const journeyColumns: ColumnDef<JourneyItem>[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        header: 'Journey Name & ID',
+        cell: (j) => (
+          <div>
+            <div className="font-semibold text-white text-sm font-['Outfit']">{j.name}</div>
+            <div className="text-[11px] font-mono text-[#c0c1ff] mt-0.5">{j.draft_id}</div>
+            {j.description && <div className="text-xs text-[#908fa0] mt-1">{j.description}</div>}
+          </div>
+        ),
+      },
+      {
+        key: 'tenant_id',
+        header: 'Tenant',
+        cell: (j) => <span className="font-mono text-[#dfe2f1]">{j.tenant_id}</span>,
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (j) => (
+          <span
+            className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusStyles(
+              j.status
+            )}`}
+          >
+            {j.status.toUpperCase()}
+          </span>
+        ),
+      },
+      {
+        key: 'version',
+        header: 'Version',
+        cell: (j) => <span className="font-mono text-[#dfe2f1]">v{j.version}</span>,
+      },
+      {
+        key: 'nodes',
+        header: 'Nodes',
+        cell: (j) => <span className="font-mono text-[#dfe2f1]">{j.node_count} nodes</span>,
+      },
+      {
+        key: 'updated_at',
+        header: 'Last Updated',
+        cell: (j) => (
+          <span className="font-mono text-[#908fa0] text-[11px]">
+            {new Date(j.updated_at).toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: 'Actions',
+        cell: (j) => (
+          <Button
+            variant="secondary-dark"
+            size="sm"
+            icon="arrow_forward"
+            onClick={() => onSelectJourney?.(j.draft_id)}
+            className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
+          >
+            Open Canvas
+          </Button>
+        ),
+      },
+    ],
+    [onSelectJourney]
+  );
+
   return (
-    <div className="w-full h-full flex flex-col p-6 bg-[#0B0F19] text-[#DFE2F1] font-['Outfit',sans-serif] overflow-y-auto space-y-6">
-      {/* Page Header */}
-      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+    <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
+      {/* Page Title & Top Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F131D]/90 backdrop-blur-xl p-5 border border-[#464554] shadow-lg rounded-none">
         <div>
-          <h1 aria-label="Journeys Directory" className="font-['Outfit'] font-bold text-2xl text-white flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-[#c0c1ff] text-2xl">map</span>
-            <span>Journeys Directory</span>
-          </h1>
-          <p className="text-xs text-[#908fa0] mt-1">
-            Manage lifecycle drafts, active production workflows, and versioned customer journeys.
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ddb7ff] text-2xl">account_tree</span>
+            <h1 className="text-xl font-bold text-white tracking-wide font-['Outfit']">Journeys Directory</h1>
+          </div>
+          <p className="text-xs text-[#908fa0] mt-1 font-['Outfit']">
+            Browse, search, and manage all event-driven journey workflows.
           </p>
         </div>
+
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          data-testid="create-journey-btn"
+          variant="primary-purple"
+          size="md"
+          icon="add"
+        >
+          New Journey
+        </Button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="w-full p-4 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl flex flex-wrap items-end gap-4 shrink-0">
-        <div className="flex-1 min-w-[240px]">
-          <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-            Search Journeys
-          </label>
-          <div className="relative">
+      {/* Filter and Control Bar */}
+      <div className="bg-[#0F131D]/90 backdrop-blur-xl p-4 border border-[#464554] shadow-md flex flex-wrap items-center justify-between gap-4 rounded-none">
+        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-[#908fa0]">
+              search
+            </span>
             <input
               type="text"
-              placeholder="Search by name, ID, or description..."
+              placeholder="Search by journey name, ID, description, or tenant..."
               value={params.search}
               onChange={(e) => setParams({ search: e.target.value, page: '1' })}
-              className="w-full h-[34px] px-4 rounded-none bg-[#171b26] border border-[#464554] text-white placeholder-[#908fa0] text-xs focus:outline-none focus:border-[#c0c1ff] focus:ring-1 focus:ring-[#c0c1ff] font-['Outfit',sans-serif]"
+              data-testid="journeys-search-input"
+              className="w-full pl-9 pr-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] transition-all rounded-none font-['Outfit',sans-serif]"
             />
           </div>
-        </div>
 
-        {/* Status Filter Selector */}
-        <div>
-          <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-            Status Filter
-          </label>
-          <div className="flex flex-wrap items-center gap-1.5 h-[34px] bg-[#171b26] px-1.5 rounded-none border border-[#464554]" role="group" aria-label="Status Filter">
+          <div className="flex items-center gap-1 bg-[#171b26] p-1 border border-[#464554] rounded-none">
             {[
               { status: 'all', label: 'All Statuses' },
               { status: 'active', label: 'Active' },
@@ -223,23 +298,6 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
           </div>
         </div>
 
-        <div>
-          <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1">
-            Per Page
-          </label>
-          <select
-            aria-label="Per Page"
-            value={params.pageSize}
-            onChange={(e) => setParams({ pageSize: e.target.value, page: '1' })}
-            className="h-[34px] px-3 rounded-none bg-[#171b26] border border-[#464554] text-white text-xs focus:outline-none focus:border-[#c0c1ff] font-['Outfit',sans-serif] cursor-pointer"
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-
         {(params.search || params.status !== 'all') && (
           <Button
             type="button"
@@ -253,9 +311,9 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
         )}
       </div>
 
-      {/* Main Table / Content Section */}
+      {/* Main Content Area: Loading, Error, Empty, or Paginated Table */}
       {isLoading ? (
-        <div className="w-full p-6 rounded-none bg-[#0F131D]/90 border border-[#464554] shadow-xl">
+        <div className="p-6 bg-[#0F131D]/90 border border-[#464554] space-y-4">
           <Skeleton count={5} height="2.5rem" />
         </div>
       ) : isError ? (
@@ -266,107 +324,31 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
           actionLabel="Retry Loading"
           onRetry={() => { refetch(); }}
         />
-      ) : paginatedJourneys.length === 0 ? (
-        <DegradedStateView
-          type="stale-report"
-          title="No Journeys Found"
-          description={
-            params.search || params.status !== 'all'
-              ? 'No journeys matched your search or status filter criteria.'
-              : 'There are no journey drafts or published workflows in this tenant yet.'
-          }
-          actionLabel="Clear Filters"
-          onRefresh={() => setParams({ search: '', status: 'all', page: '1' })}
-        />
       ) : (
-        /* Journey List Table */
-        <div className="w-full bg-[#0F131D]/90 backdrop-blur-xl rounded-none border border-[#464554] shadow-xl overflow-hidden flex-1 flex flex-col justify-between">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left text-xs font-['Outfit',sans-serif]">
-              <thead>
-                <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] font-mono uppercase tracking-wider text-[10px]">
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Journey Name & ID</th>
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Tenant</th>
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Status</th>
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Version</th>
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Nodes</th>
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Last Updated</th>
-                  <th style={{ textAlign: 'left' }} className="p-4 font-semibold text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {paginatedJourneys.map((j) => (
-                  <tr key={j.draft_id} className="hover:bg-[#171b26]/50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-semibold text-white text-sm font-['Outfit']">{j.name}</div>
-                      <div className="text-[11px] font-mono text-[#c0c1ff] mt-0.5">{j.draft_id}</div>
-                      {j.description && <div className="text-xs text-[#908fa0] mt-1">{j.description}</div>}
-                    </td>
-                    <td className="p-4 font-mono text-[#dfe2f1]">{j.tenant_id}</td>
-                    <td className="p-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
-                          j.status === 'active'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : j.status === 'draft'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : j.status === 'paused'
-                            ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20'
-                            : 'bg-slate-800 text-slate-400 border-slate-700'
-                        }`}
-                      >
-                        {j.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="p-4 font-mono text-[#dfe2f1]">v{j.version}</td>
-                    <td className="p-4 font-mono text-[#dfe2f1]">{j.node_count} nodes</td>
-                    <td className="p-4 font-mono text-[#908fa0] text-[11px]">
-                      {new Date(j.updated_at).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-left" style={{ textAlign: 'left' }}>
-                      <button
-                        onClick={() => onSelectJourney?.(j.draft_id)}
-                        className="px-3.5 py-1.5 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/40 hover:brightness-125 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] font-semibold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-                      >
-                        <span>Open Canvas</span>
-                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between p-4 border-t border-[#464554] bg-[#171b26]/80 font-mono text-xs w-full shrink-0">
-            <div className="text-[#908fa0]">
-              Showing {filteredJourneys.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
-              {Math.min(currentPage * pageSize, filteredJourneys.length)} of {filteredJourneys.length} journeys
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={currentPage <= 1 || totalPages <= 1}
-                onClick={() => setParams({ page: String(currentPage - 1) })}
-                style={{ cursor: (currentPage <= 1 || totalPages <= 1) ? 'not-allowed' : 'pointer' }}
-                className="px-3 py-1.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] disabled:opacity-40 disabled:cursor-not-allowed disabled:text-[#908fa0] disabled:bg-[#171b26]/40 disabled:border-[#464554]/30 enabled:hover:bg-[#262a35] enabled:hover:text-white enabled:cursor-pointer transition-all text-xs font-mono"
-              >
-                Previous
-              </button>
-              <span className="text-xs text-[#908fa0] px-1">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                disabled={currentPage >= totalPages || totalPages <= 1}
-                onClick={() => setParams({ page: String(currentPage + 1) })}
-                style={{ cursor: (currentPage >= totalPages || totalPages <= 1) ? 'not-allowed' : 'pointer' }}
-                className="px-3 py-1.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] disabled:opacity-40 disabled:cursor-not-allowed disabled:text-[#908fa0] disabled:bg-[#171b26]/40 disabled:border-[#464554]/30 enabled:hover:bg-[#262a35] enabled:hover:text-white enabled:cursor-pointer transition-all text-xs font-mono"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
+        <PaginatedTable<JourneyItem>
+          data={paginatedJourneys}
+          columns={journeyColumns}
+          getRowKey={(j) => j.draft_id}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalItems={filteredJourneys.length}
+          onPageChange={(page) => setParams({ page: String(page) })}
+          itemLabel="journeys"
+          testId="journeys-table"
+          emptyState={
+            <DegradedStateView
+              type="stale-report"
+              title="No Journeys Found"
+              description={
+                params.search || params.status !== 'all'
+                  ? 'No journeys matched your search or status filter criteria.'
+                  : 'There are no journey drafts or published workflows in this tenant yet.'
+              }
+              actionLabel="Clear Filters"
+              onRefresh={() => setParams({ search: '', status: 'all', page: '1' })}
+            />
+          }
+        />
       )}
 
       {/* Create Draft Modal */}

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../api/client';
 import type { StaticList } from '../types/api';
 import { Button } from '../components/common/Button';
+import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
 
@@ -95,6 +96,77 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
       </div>
     );
   }
+
+  const staticListColumns: ColumnDef<StaticList>[] = useMemo(
+    () => [
+      {
+        key: 'details',
+        header: 'List Details',
+        cell: (list) => (
+          <div>
+            <div className="font-bold text-white text-sm">{list.name}</div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <code className="text-[11px] font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-1.5 py-0.5 border border-[#4cd7f6]/30">
+                {list.list_id}
+              </code>
+              {list.description && (
+                <span className="text-xs text-[#908fa0] truncate max-w-xs">{list.description}</span>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'count',
+        header: 'Items Count',
+        cell: (list) => (
+          <span className="font-mono text-emerald-400 font-bold">
+            {(list.item_count || list.items?.length || 0).toLocaleString()} items
+          </span>
+        ),
+      },
+      {
+        key: 'classification',
+        header: 'Classification',
+        cell: (list) => (
+          <span
+            className={`inline-block px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider border rounded-none ${getClassificationBadgeStyles(
+              list.data_classification
+            )}`}
+          >
+            {list.data_classification}
+          </span>
+        ),
+      },
+      {
+        key: 'created_at',
+        header: 'Created Date',
+        cell: (list) => (
+          <span className="font-mono text-[#908fa0] text-[11px]">
+            {list.created_at ? new Date(list.created_at).toLocaleString() : 'N/A'}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: 'Actions',
+        headerClassName: 'text-right',
+        cellClassName: 'text-right space-x-2',
+        cell: (list) => (
+          <Button
+            variant="secondary-dark"
+            size="sm"
+            icon="visibility"
+            onClick={() => setSelectedListForInspect(list)}
+            data-testid={`inspect-static-list-${list.list_id}`}
+          >
+            Inspect
+          </Button>
+        ),
+      },
+    ],
+    []
+  );
 
   return (
     <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
@@ -195,133 +267,37 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-[#0F131D] border border-[#464554] shadow-xl overflow-x-auto">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            <Skeleton height={40} />
-            <Skeleton height={40} />
-            <Skeleton height={40} />
-          </div>
-        ) : paginatedLists.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <span className="material-symbols-outlined text-4xl text-[#908fa0]">format_list_bulleted</span>
-            <p className="text-base font-bold text-white">No Static Lists Found</p>
-            <p className="text-xs text-[#908fa0]">
-              {searchTerm || classificationFilter !== 'all'
-                ? 'No lists match your search criteria.'
-                : 'No static contact lists have been uploaded yet.'}
-            </p>
-          </div>
-        ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] font-mono uppercase tracking-wider">
-                <th className="p-3.5">List Details</th>
-                <th className="p-3.5">Items Count</th>
-                <th className="p-3.5">Classification</th>
-                <th className="p-3.5">Created Date</th>
-                <th className="p-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#464554]/50">
-              {paginatedLists.map((list) => {
-                const count = list.item_count || list.items?.length || 0;
-                return (
-                  <tr
-                    key={list.list_id}
-                    className="hover:bg-[#171b26]/60 transition-colors"
-                    data-testid={`static-list-row-${list.list_id}`}
-                  >
-                    <td className="p-3.5">
-                      <div className="font-bold text-white text-sm">{list.name}</div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <code className="text-[11px] font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-1.5 py-0.5 border border-[#4cd7f6]/30">
-                          {list.list_id}
-                        </code>
-                        {list.description && (
-                          <span className="text-xs text-[#908fa0] truncate max-w-xs">{list.description}</span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="p-3.5 font-mono text-emerald-400 font-bold">
-                      {count.toLocaleString()} items
-                    </td>
-
-                    <td className="p-3.5">
-                      <span
-                        className={`inline-block px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider border rounded-none ${getClassificationBadgeStyles(
-                          list.data_classification
-                        )}`}
-                      >
-                        {list.data_classification}
-                      </span>
-                    </td>
-
-                    <td className="p-3.5 text-[#908fa0] font-mono text-[11px]">
-                      {list.created_at ? new Date(list.created_at).toLocaleString() : 'N/A'}
-                    </td>
-
-                    <td className="p-3.5 text-right space-x-2">
-                      <Button
-                        variant="secondary-dark"
-                        size="sm"
-                        icon="visibility"
-                        onClick={() => setSelectedListForInspect(list)}
-                        data-testid={`inspect-static-list-${list.list_id}`}
-                      >
-                        Inspect
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-
-        {/* Pagination Controls Footer */}
-        {!isLoading && filteredLists.length > 0 && (
-          <div className="p-4 bg-[#171b26] border-t border-[#464554] flex items-center justify-between">
-            <p className="text-xs text-[#908fa0]">
-              Showing <span className="text-white font-mono font-bold">{(validPage - 1) * pageSize + 1}</span> to{' '}
-              <span className="text-white font-mono font-bold">
-                {Math.min(validPage * pageSize, filteredLists.length)}
-              </span>{' '}
-              of <span className="text-white font-mono font-bold">{filteredLists.length}</span> items
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary-dark"
-                size="sm"
-                icon="chevron_left"
-                disabled={validPage <= 1}
-                onClick={() => handlePageChange(validPage - 1)}
-                data-testid="static-list-prev-page"
-              >
-                Prev
-              </Button>
-
-              <span className="text-xs font-mono text-white px-2">
-                Page {validPage} of {totalPages}
-              </span>
-
-              <Button
-                variant="secondary-dark"
-                size="sm"
-                icon="chevron_right"
-                disabled={validPage >= totalPages}
-                onClick={() => handlePageChange(validPage + 1)}
-                data-testid="static-list-next-page"
-              >
-                Next
-              </Button>
+      {/* Main Table using PaginatedTable Component */}
+      {isLoading ? (
+        <div className="bg-[#0F131D] border border-[#464554] p-6 space-y-3">
+          <Skeleton height={40} />
+          <Skeleton height={40} />
+          <Skeleton height={40} />
+        </div>
+      ) : (
+        <PaginatedTable<StaticList>
+          data={paginatedLists}
+          columns={staticListColumns}
+          getRowKey={(list) => list.list_id}
+          currentPage={validPage}
+          pageSize={pageSize}
+          totalItems={filteredLists.length}
+          onPageChange={handlePageChange}
+          itemLabel="lists"
+          testId="static-lists-table"
+          emptyState={
+            <div className="p-12 text-center space-y-3 bg-[#0F131D] border border-[#464554]">
+              <span className="material-symbols-outlined text-4xl text-[#908fa0]">format_list_bulleted</span>
+              <p className="text-base font-bold text-white">No Static Lists Found</p>
+              <p className="text-xs text-[#908fa0]">
+                {searchTerm || classificationFilter !== 'all'
+                  ? 'No lists match your search criteria.'
+                  : 'No static contact lists have been uploaded yet.'}
+              </p>
             </div>
-          </div>
-        )}
-      </div>
+          }
+        />
+      )}
 
       {/* Item Inspector Modal */}
       {selectedListForInspect && (
