@@ -109,8 +109,9 @@ ${JSON.stringify(
               className={`px-3.5 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer shrink-0 flex items-center gap-1.5 ${
                 copied
                   ? 'bg-[#10b981]/20 text-[#6ee7b7] border-[#10b981]/60 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                  : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#ddb7ff] border-[#4cd7f6] shadow-md shadow-[#4cd7f6]/20 active:scale-95'
+                  : 'bg-[#4cd7f6] hover:opacity-90 text-[#400071] border-none shadow-none active:scale-95'
               }`}
+              style={copied ? {} : { backgroundColor: '#4cd7f6', color: '#400071' }}
             >
               <span className="material-symbols-outlined text-sm">
                 {copied ? 'check' : 'content_copy'}
@@ -132,8 +133,9 @@ ${JSON.stringify(
             className={`px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer flex items-center gap-2 ${
               copied
                 ? 'bg-[#10b981]/20 text-[#6ee7b7] border-[#10b981]/60'
-                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#ddb7ff] border-[#4cd7f6] shadow-md shadow-[#4cd7f6]/20'
+                : 'bg-[#4cd7f6] hover:opacity-90 text-[#400071] border-none shadow-none'
             }`}
+            style={copied ? {} : { backgroundColor: '#4cd7f6', color: '#400071' }}
           >
             <span className="material-symbols-outlined text-sm">
               {copied ? 'check' : 'content_copy'}
