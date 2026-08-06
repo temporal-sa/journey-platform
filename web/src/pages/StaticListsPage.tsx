@@ -101,7 +101,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
     () => [
       {
         key: 'details',
-        header: 'List Details',
+        header: 'List Name & ID',
         cell: (list) => (
           <div>
             <div className="font-bold text-white text-sm">{list.name}</div>
