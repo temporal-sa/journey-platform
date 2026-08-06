@@ -91,8 +91,8 @@ describe('JourneysPage Component', () => {
     renderWithClient(<JourneysPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Previous/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Next/i })).toBeDisabled();
     });
   });
 });

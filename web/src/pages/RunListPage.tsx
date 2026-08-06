@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../api/client';
 import { Skeleton } from '../components/Skeleton';
 import { DegradedStateView } from '../components/DegradedStateView';
+import { Button } from '../components/common/Button';
+import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { RunProjection } from '../types/api';
 
@@ -90,6 +92,86 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
     if (s === 'terminated') return 'bg-purple-500/10 text-purple-300 border-purple-500/20';
     return 'bg-slate-800 text-slate-300 border-slate-700';
   };
+
+  const runColumns: ColumnDef<ExtendedRunItem>[] = useMemo(
+    () => [
+      {
+        key: 'run_id',
+        header: 'Run ID',
+        cell: (run) => (
+          <code className="px-2 py-1 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] font-mono text-xs">
+            {run.run_id}
+          </code>
+        ),
+      },
+      {
+        key: 'workflow_id',
+        header: 'Workflow ID',
+        cell: (run) => <span className="text-white font-medium">{run.workflow_id}</span>,
+      },
+      {
+        key: 'execution_mode',
+        header: 'Mode',
+        cell: (run) => (
+          <span
+            className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
+              run.execution_mode === 'production'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+            }`}
+          >
+            {run.execution_mode}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (run) => (
+          <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusStyles(run.status)}`}>
+            {run.status}
+          </span>
+        ),
+      },
+      {
+        key: 'current_nodes',
+        header: 'Current Active Node',
+        cell: (run) => (
+          <span className="font-mono text-[#c0c1ff]">
+            {run.current_nodes?.join(', ') || 'N/A'}
+          </span>
+        ),
+      },
+      {
+        key: 'started_at',
+        header: 'Started At',
+        cell: (run) => (
+          <span className="text-[#908fa0] text-xs font-mono">
+            {new Date(run.started_at).toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: 'Actions',
+        headerClassName: 'text-right',
+        cellClassName: 'text-right',
+        cell: (run) => (
+          <Button
+            variant="secondary-dark"
+            size="sm"
+            icon="arrow_forward"
+            onClick={() => onSelectRun?.(run.run_id)}
+            className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
+          >
+            Inspect Detail
+          </Button>
+        ),
+      },
+    ],
+    [onSelectRun]
+  );
+
   return (
     <div className="w-full h-full flex flex-col p-6 bg-[#0B0F19] overflow-y-auto space-y-6 text-[#dfe2f1] font-['Outfit',sans-serif]">
       {/* Top Section Header */}
@@ -223,83 +305,32 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
         />
       )}
 
-      {/* Main Content State */}
+      {/* Main Table using PaginatedTable Component */}
       {isLoading ? (
         <div className="p-6 rounded-none bg-[#0F131D]/90 border border-[#464554] shadow-xl">
           <Skeleton count={5} height="2.5rem" />
         </div>
-      ) : filteredRuns.length === 0 ? (
-        <DegradedStateView
-          type="stale-report"
-          title="No Journey Runs Found"
-          description="No execution runs match your current status, mode, search, or date range filters."
-          actionLabel="Reset Filters"
-          onRefresh={() => setParams({ mode: 'all', status: 'all', search: '', startDate: '', endDate: '', page: '1' })}
-        />
       ) : (
-        /* Obsidian Styled Runs Table */
-        <div className="w-full rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl overflow-hidden">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-[#171b26] text-[#908fa0] border-b border-[#464554] font-mono uppercase text-[10px] tracking-wider">
-                <th className="p-4 font-semibold">Run ID</th>
-                <th className="p-4 font-semibold">Workflow ID</th>
-                <th className="p-4 font-semibold">Mode</th>
-                <th className="p-4 font-semibold">Status</th>
-                <th className="p-4 font-semibold">Current Active Node</th>
-                <th className="p-4 font-semibold">Started At</th>
-                <th className="p-4 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#464554]/50">
-              {filteredRuns.map((run) => {
-                const isProd = run.execution_mode === 'production';
-
-                return (
-                  <tr key={run.run_id} className="hover:bg-[#171b26]/50 transition-colors">
-                    <td className="p-4 font-mono">
-                      <code className="px-2 py-1 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] font-mono text-xs">
-                        {run.run_id}
-                      </code>
-                    </td>
-                    <td className="p-4 text-white font-medium">{run.workflow_id}</td>
-                    <td className="p-4 font-mono">
-                      <span
-                        className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${
-                          isProd
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}
-                      >
-                        {run.execution_mode}
-                      </span>
-                    </td>
-                    <td className="p-4 font-mono">
-                      <span className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusStyles(run.status)}`}>
-                        {run.status}
-                      </span>
-                    </td>
-                    <td className="p-4 font-mono text-[#c0c1ff]">
-                      {run.current_nodes?.join(', ') || 'N/A'}
-                    </td>
-                    <td className="p-4 text-[#908fa0] text-xs font-mono">
-                      {new Date(run.started_at).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => onSelectRun?.(run.run_id)}
-                        className="px-3.5 py-1.5 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/40 hover:brightness-125 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-                      >
-                        <span>Inspect Detail</span>
-                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <PaginatedTable<ExtendedRunItem>
+          data={filteredRuns}
+          columns={runColumns}
+          getRowKey={(run) => run.run_id}
+          currentPage={1}
+          pageSize={Math.max(1, filteredRuns.length)}
+          totalItems={filteredRuns.length}
+          onPageChange={() => {}}
+          itemLabel="runs"
+          testId="runs-table"
+          emptyState={
+            <DegradedStateView
+              type="stale-report"
+              title="No Journey Runs Found"
+              description="No execution runs match your current status, mode, search, or date range filters."
+              actionLabel="Reset Filters"
+              onRefresh={() => setParams({ mode: 'all', status: 'all', search: '', startDate: '', endDate: '', page: '1' })}
+            />
+          }
+        />
       )}
     </div>
   );

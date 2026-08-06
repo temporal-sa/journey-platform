@@ -94,6 +94,7 @@ export function PaginatedTable<T>({
           <Button
             variant="secondary-dark"
             size="sm"
+            icon="chevron_left"
             disabled={currentPage <= 1 || totalPages <= 1}
             onClick={() => onPageChange(currentPage - 1)}
             data-testid={`${testId}-prev-page`}
@@ -106,6 +107,7 @@ export function PaginatedTable<T>({
           <Button
             variant="secondary-dark"
             size="sm"
+            icon="chevron_right"
             disabled={currentPage >= totalPages || totalPages <= 1}
             onClick={() => onPageChange(currentPage + 1)}
             data-testid={`${testId}-next-page`}
