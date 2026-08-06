@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import type { GraphDraft } from '../../types/api';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
+import { Button } from '../common/Button';
 
 const apiClient = new JourneyApiClient();
 
@@ -167,40 +168,42 @@ function ConflictDialogInner({
 
         {/* Footer Actions */}
         <div className="p-4 sm:p-5 border-t border-[#464554] bg-[#171b26] sticky bottom-0 z-10 shrink-0 flex flex-wrap items-center justify-between gap-3">
-          <button
+          <Button
             onClick={onCancel}
             data-testid="cancel-conflict-btn"
-            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
+            variant="secondary-dark"
           >
             Cancel
-          </button>
+          </Button>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {onMerge && (
-              <button
+              <Button
                 onClick={onMerge}
                 data-testid="merge-conflict-btn"
-                className="px-4 py-2.5 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/30 text-[#ddb7ff] hover:text-white font-semibold text-xs border border-[#ddb7ff]/30 transition-all cursor-pointer shadow-sm"
+                variant="secondary-dark"
+                className="bg-[#b76dff]/20 hover:bg-[#b76dff]/30 text-[#ddb7ff] border-[#ddb7ff]/30"
               >
                 Merge Local & Server
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
               onClick={onAcceptServer}
               data-testid="accept-server-btn"
-              className="px-4 py-2.5 rounded-none bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white font-semibold text-xs border border-emerald-500/40 transition-all cursor-pointer shadow-sm"
+              variant="secondary-dark"
+              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40"
             >
               Accept Server Revision
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={onKeepLocal}
               data-testid="keep-local-btn"
-              className="px-5 py-2.5 rounded-none bg-[#c0c1ff] hover:bg-[#a0a3ff] text-[#1000a9] font-bold text-xs shadow-lg shadow-[#c0c1ff]/20 border border-[#c0c1ff]/40 transition-all cursor-pointer"
+              variant="primary-lavender"
             >
               Overwrite Server with Local Edits
-            </button>
+            </Button>
           </div>
         </div>
       </div>

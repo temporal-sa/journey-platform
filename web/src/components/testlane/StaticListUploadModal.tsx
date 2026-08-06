@@ -2,6 +2,7 @@ import { useState, ChangeEvent } from 'react';
 import type { StaticList } from '../../types/api';
 import { JourneyApiClient } from '../../api/client';
 import { DegradedStateView } from '../DegradedStateView';
+import { Button } from '../common/Button';
 export interface StaticListUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -450,22 +451,17 @@ export function StaticListUploadModal({
 
         {/* Modal Footer */}
         <div className="p-5 border-t border-[#464554] bg-[#171b26] flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
-          >
+          <Button variant="secondary-dark" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary-teal"
+            size="lg"
             onClick={handleUploadSubmit}
-            className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
-              isProcessing
-                ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
-                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'
-            }`}
+            isLoading={isProcessing}
           >
             {isProcessing ? 'Uploading & Indexing...' : uploadComplete ? 'Completed!' : 'Confirm Static List Upload'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

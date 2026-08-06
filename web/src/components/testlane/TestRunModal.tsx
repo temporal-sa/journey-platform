@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { JourneyApiClient } from '../../api/client';
+import { Button } from '../common/Button';
 import type { TestRun, StaticList } from '../../types/api';
 
 const apiClient = new JourneyApiClient();
@@ -288,24 +289,18 @@ export function TestRunModal({
 
         {/* Modal Footer */}
         <div className="p-5 border-t border-[#464554] bg-[#171b26] flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] hover:text-white font-semibold text-xs border border-[#464554] transition-all cursor-pointer"
-          >
+          <Button variant="secondary-dark" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary-teal"
+            size="lg"
             onClick={handleRunSubmit}
             data-testid="start-test-run-btn"
-            disabled={isSubmitting}
-            className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
-              isSubmitting
-                ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
-                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'
-            }`}
+            isLoading={isSubmitting}
           >
             {isSubmitting ? 'Launching Test Run...' : 'Execute Test Run'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

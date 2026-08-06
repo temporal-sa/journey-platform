@@ -4,6 +4,7 @@ import { JourneyApiClient } from '../api/client';
 import { useEditorStore } from '../stores/editorStore';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Skeleton } from '../components/Skeleton';
+import { Button } from '../components/common/Button';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { GraphDraft } from '../types/api';
 
@@ -240,15 +241,15 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
         </div>
 
         {(params.search || params.status !== 'all') && (
-          <button
+          <Button
             type="button"
             onClick={() => setParams({ search: '', status: 'all', page: '1' })}
             aria-label="Clear Filters"
-            className="h-[34px] px-3 rounded-none bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] hover:text-white border border-[#ddb7ff]/30 hover:border-[#ddb7ff] text-xs font-semibold font-['Outfit'] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm hover:brightness-125 shrink-0"
+            variant="secondary-dark"
+            icon="filter_alt_off"
           >
-            <span className="material-symbols-outlined text-sm">filter_alt_off</span>
-            <span>Clear Filters</span>
-          </button>
+            Clear Filters
+          </Button>
         )}
       </div>
 
@@ -462,35 +463,21 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: '0.4rem 0.8rem',
-                    backgroundColor: '#f1f5f9',
-                    color: '#475569',
-                    border: 'none',
-                    borderRadius: '0px',
-                    cursor: 'pointer',
-                  }}
+                  variant="secondary-dark"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  style={{
-                    padding: '0.4rem 0.8rem',
-                    backgroundColor: '#2563eb',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '0px',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                  }}
+                  isLoading={createMutation.isPending}
+                  variant="primary-purple"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Draft'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

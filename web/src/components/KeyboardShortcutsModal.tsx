@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Button } from './common/Button';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export interface ShortcutItem {
@@ -177,31 +178,14 @@ export function KeyboardShortcutsModal({
           </table>
         </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            padding: '1rem 1.5rem',
-            borderTop: '1px solid #e2e8f0',
-            backgroundColor: '#f8fafc',
-            textAlign: 'right',
-          }}
-        >
-          <button
+        <div className="p-4 border-t border-[#464554] bg-[#171b26] flex justify-end">
+          <Button
             onClick={onClose}
             data-testid="close-shortcuts-modal-btn"
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '0px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
+            variant="primary-cyan"
           >
             Done
-          </button>
+          </Button>
         </div>
       </div>
     </div>

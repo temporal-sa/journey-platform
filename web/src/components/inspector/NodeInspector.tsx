@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import { useEditorStore } from '../../stores/editorStore';
+import { Button } from '../common/Button';
 import type { CatalogRecord, GraphNode } from '../../types/api';
 import { getNodeIssues, getFieldError, formatIssueCode } from './validationMapping';
 import { SafeQueryClientProvider } from '../SafeQueryClientProvider';
@@ -733,18 +734,18 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
           {/* Dry Run Button */}
           <div className="pt-2 space-y-2">
-            <button
+            <Button
               type="button"
               onClick={handleDryRun}
               disabled={isSimulating || !currentDraft?.draft_id}
               data-testid="dry-run-node-btn"
-              className="w-full py-2.5 bg-[#c0c1ff]/10 text-[#c0c1ff] border border-[#c0c1ff]/20 rounded-none font-bold hover:bg-[#c0c1ff]/20 transition-all flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md disabled:opacity-50"
+              variant="secondary-dark"
+              icon={isSimulating ? undefined : 'play_arrow'}
+              isLoading={isSimulating}
+              fullWidth
             >
-              <span className="material-symbols-outlined text-base">
-                {isSimulating ? 'sync' : 'play_arrow'}
-              </span>
-              <span>{isSimulating ? 'Simulating...' : 'Dry Run This Node'}</span>
-            </button>
+              {isSimulating ? 'Simulating...' : 'Dry Run This Node'}
+            </Button>
             {simulationStatus && (
               <div className="text-[11px] font-mono text-[#c0c1ff] p-2 rounded-none bg-[#11141d] border border-[#464554]">
                 {simulationStatus}
@@ -756,33 +757,27 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
       {/* Footer Controls: Isolated Draft Buffer Save and Cancel Semantics */}
       <div className="p-4 bg-[#1c1f2a]/90 border-t border-[#464554] flex items-center gap-3 shrink-0">
-        <button
+        <Button
           type="button"
           onClick={handleCancel}
           disabled={!isDirty}
           data-testid="inspector-cancel-btn"
-          className={`flex-1 py-2.5 rounded-none font-semibold text-xs border transition-all ${
-            !isDirty
-              ? 'bg-[#171b26] text-[#908fa0] border-[#464554] cursor-not-allowed opacity-50'
-              : 'bg-transparent text-[#c7c4d7] border-[#464554] hover:bg-[#262a35] cursor-pointer'
-          }`}
+          variant="secondary-dark"
+          className="flex-1"
         >
           Discard
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={handleSave}
           disabled={!isDirty}
           data-testid="inspector-save-btn"
-          className={`flex-1 py-2.5 rounded-none font-bold text-xs shadow-lg transition-all ${
-            !isDirty
-              ? 'bg-[#c0c1ff]/30 text-[#1000a9]/50 cursor-not-allowed'
-              : 'bg-[#c0c1ff] text-[#1000a9] hover:brightness-110 cursor-pointer'
-          }`}
+          variant={isDirty ? 'primary-lavender' : 'secondary-dark'}
+          className="flex-1"
         >
           Save Node
-        </button>
+        </Button>
       </div>
 
     </aside>
