@@ -111,7 +111,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
               </code>
               {list.description && (
                 <span className="text-xs text-[#908fa0] truncate max-w-xs">
-                  {list.description.replace(/uploaded static list\s*/i, '').trim()}
+                  {list.description.replace(/uploaded static list\s*/i, '').replace(/version\s*/i, '').trim()}
                 </span>
               )}
             </div>
