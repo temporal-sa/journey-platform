@@ -300,8 +300,8 @@ export function TestRunModal({
             disabled={isSubmitting}
             className={`px-5 py-2.5 rounded-none font-bold text-xs transition-all cursor-pointer ${
               isSubmitting
-                ? 'bg-[#4cd7f6]/40 text-[#003640]/50 cursor-not-allowed'
-                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]/40'
+                ? 'bg-[#4cd7f6]/40 text-[#ddb7ff]/50 cursor-not-allowed'
+                : 'bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#ddb7ff] shadow-lg shadow-[#4cd7f6]/20 border border-[#4cd7f6]'
             }`}
           >
             {isSubmitting ? 'Launching Test Run...' : 'Execute Test Run'}

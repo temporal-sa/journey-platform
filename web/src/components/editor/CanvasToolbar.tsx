@@ -362,7 +362,7 @@ export function CanvasToolbar({
         <button
           onClick={onAgyContext}
           style={baseBtnStyle}
-          className="w-10 h-10 p-0 rounded-none text-[#4cd7f6] hover:text-white hover:bg-[#4cd7f6]/20 flex items-center justify-center transition-colors cursor-pointer flat-icon-btn border border-[#4cd7f6]/30"
+          className="w-10 h-10 p-0 rounded-none bg-[#4cd7f6] text-[#ddb7ff] hover:bg-[#38c2e0] flex items-center justify-center transition-colors cursor-pointer flat-icon-btn border border-[#4cd7f6] shadow-md shadow-[#4cd7f6]/20 font-bold"
           title="Export AGY Prompt Context (Cmd+Shift+A)"
           aria-label="Export AGY Prompt Context"
           data-testid="toolbar-agy-context"
