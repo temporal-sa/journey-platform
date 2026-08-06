@@ -534,7 +534,7 @@ export function DashboardContent() {
               size="lg"
               icon="add"
               fullWidth
-              className="mb-2 uppercase tracking-wider"
+              className="mb-2"
             >
               New Journey
             </Button>
