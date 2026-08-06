@@ -16,6 +16,7 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { StaticListUploadModal, TestRunModal } from './components/testlane';
 import { DesktopOnlyNotice } from './components/DesktopOnlyNotice';
 import { ParameterModal } from './components/inspector/ParameterModal';
+import { Button } from './components/common/Button';
 import { useAnnouncer, LiveAnnouncer } from './hooks/useAnnouncer';
 import { ExperimentReportView } from './components/experiments/ExperimentReportView';
 import { JourneyApiClient, APIError } from './api/client';
@@ -526,15 +527,17 @@ export function DashboardContent() {
             </div>
 
             {/* Top Create Journey Button */}
-            <button
+            <Button
               onClick={handleCreateJourneyTop}
               data-testid="sidebar-create-journey-btn"
-              className="w-full mb-2 flex items-center justify-center gap-2 sidebar-top-action bg-[#b76dff] text-[#400071] py-3 px-4 rounded-none font-bold hover:opacity-90 transition-all text-sm font-['Outfit'] cursor-pointer shadow-none"
-              style={{ backgroundColor: '#b76dff', color: '#400071', boxShadow: 'none' }}
+              variant="primary-purple"
+              size="lg"
+              icon="add"
+              fullWidth
+              className="mb-2 uppercase tracking-wider"
             >
-              <span className="material-symbols-outlined text-xl">add</span>
-              <span>New Journey</span>
-            </button>
+              New Journey
+            </Button>
           </div>
 
           {/* Seamless Nav List (Flush with Sidebar) */}

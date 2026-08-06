@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
+import { Button } from '../common/Button';
 
 interface AgyContextModalProps {
   isOpen: boolean;
@@ -97,21 +98,15 @@ ${JSON.stringify(
 
         {/* Footer */}
         <div className="p-4 bg-[#171b26] border-t border-[#464554] flex justify-end items-center gap-3 shrink-0">
-          <button
+          <Button
             onClick={handleCopy}
             data-testid="agy-copy-context-btn"
-            className={`px-4 py-2 rounded-none font-['Outfit'] text-xs font-bold transition-all border cursor-pointer flex items-center gap-2 ${
-              copied
-                ? 'bg-[#10b981]/20 text-[#6ee7b7] border-[#10b981]/60'
-                : 'bg-[#4cd7f6] hover:opacity-90 text-[#400071] border-none shadow-none'
-            }`}
-            style={copied ? {} : { backgroundColor: '#4cd7f6', color: '#400071' }}
+            variant={copied ? 'secondary-dark' : 'primary-cyan'}
+            icon={copied ? 'check' : 'content_copy'}
+            className={copied ? 'bg-[#10b981]/20 text-[#6ee7b7] border-[#10b981]/60' : ''}
           >
-            <span className="material-symbols-outlined text-sm">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            <span>{copied ? 'Copied!' : 'Copy to clipboard'}</span>
-          </button>
+            {copied ? 'Copied!' : 'Copy to clipboard'}
+          </Button>
         </div>
       </div>
     </div>
