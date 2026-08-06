@@ -106,7 +106,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
           <div>
             <div className="font-bold text-white text-sm">{list.name}</div>
             <div className="flex items-center gap-2 mt-0.5">
-              <code className="text-[11px] font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-1.5 py-0.5 border border-[#4cd7f6]/30">
+              <code className="text-[11px] font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-1.5 py-0.5">
                 {list.list_id}
               </code>
               {list.description && (
@@ -314,7 +314,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#4cd7f6]">format_list_bulleted</span>
                 <h3 className="font-bold text-white text-base">{selectedListForInspect.name}</h3>
-                <code className="text-xs font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-2 py-0.5 border border-[#4cd7f6]/30">
+                <code className="text-xs font-mono text-[#4cd7f6] bg-[#4cd7f6]/10 px-2 py-0.5">
                   {selectedListForInspect.list_id}
                 </code>
               </div>
