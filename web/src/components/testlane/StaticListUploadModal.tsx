@@ -176,7 +176,7 @@ export function StaticListUploadModal({
       schema_version: '1.0',
       list_id: listId,
       name: listName,
-      description: `Uploaded static list version ${selectedVersion}`,
+      description: `Version ${selectedVersion}`,
       data_classification: 'PII',
       item_count: activeSummary.rowCount,
       items: previews.map((p) => p.recipient || p.maskedDisplayValue),

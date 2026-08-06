@@ -110,7 +110,9 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
                 {list.list_id}
               </code>
               {list.description && (
-                <span className="text-xs text-[#908fa0] truncate max-w-xs">{list.description}</span>
+                <span className="text-xs text-[#908fa0] truncate max-w-xs">
+                  {list.description.replace(/uploaded static list\s*/i, '').trim()}
+                </span>
               )}
             </div>
           </div>
