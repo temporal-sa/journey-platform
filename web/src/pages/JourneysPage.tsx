@@ -257,17 +257,14 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
       {/* Filter and Control Bar */}
       <div className="bg-[#0F131D]/90 backdrop-blur-xl p-4 border border-[#464554] shadow-md flex flex-wrap items-center justify-between gap-4 rounded-none">
         <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-          <div className="relative flex-1 min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-[#908fa0]">
-              search
-            </span>
+          <div className="flex-1 min-w-[200px]">
             <input
               type="text"
               placeholder="Search by journey name, ID, description, or tenant..."
               value={params.search}
               onChange={(e) => setParams({ search: e.target.value, page: '1' })}
               data-testid="journeys-search-input"
-              className="w-full pl-9 pr-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] transition-all rounded-none font-['Outfit',sans-serif]"
+              className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] transition-all rounded-none font-['Outfit',sans-serif]"
             />
           </div>
 
