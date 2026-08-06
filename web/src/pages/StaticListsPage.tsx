@@ -279,6 +279,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
           data={paginatedLists}
           columns={staticListColumns}
           getRowKey={(list) => list.list_id}
+          getRowTestId={(list) => `static-list-row-${list.list_id}`}
           currentPage={validPage}
           pageSize={pageSize}
           totalItems={filteredLists.length}

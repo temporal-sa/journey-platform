@@ -13,6 +13,7 @@ export interface PaginatedTableProps<T> {
   data: T[];
   columns: ColumnDef<T>[];
   getRowKey: (item: T) => string;
+  getRowTestId?: (item: T) => string;
   currentPage: number;
   pageSize: number;
   totalItems: number;
@@ -28,6 +29,7 @@ export function PaginatedTable<T>({
   data,
   columns,
   getRowKey,
+  getRowTestId,
   currentPage,
   pageSize,
   totalItems,
@@ -67,7 +69,11 @@ export function PaginatedTable<T>({
           </thead>
           <tbody className="divide-y divide-white/5">
             {data.map((item) => (
-              <tr key={getRowKey(item)} className="hover:bg-[#171b26]/50 transition-colors">
+              <tr
+                key={getRowKey(item)}
+                data-testid={getRowTestId ? getRowTestId(item) : undefined}
+                className="hover:bg-[#171b26]/50 transition-colors"
+              >
                 {columns.map((col) => (
                   <td key={col.key} className={`p-4 ${col.cellClassName || ''}`}>
                     {col.cell(item)}
