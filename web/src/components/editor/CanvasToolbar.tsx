@@ -270,22 +270,6 @@ export function CanvasToolbar({
         <span className="material-symbols-outlined text-xl">zoom_out</span>
       </button>
 
-      {/* Fit View Button */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onFitView();
-        }}
-        style={baseBtnStyle}
-        className="w-10 h-10 p-0 rounded-none text-[#ddb7ff] hover:text-[#ddb7ff] hover:bg-[#b76dff]/20 flex items-center justify-center transition-colors cursor-pointer flat-icon-btn"
-        title="Fit View"
-        aria-label="Fit View"
-        data-testid="toolbar-fit-view"
-      >
-        <span className="material-symbols-outlined text-xl">center_focus_strong</span>
-      </button>
-
       <div className="w-px h-5 bg-[#464554]/50 mx-0.5" />
 
       {/* Save Draft Action */}
