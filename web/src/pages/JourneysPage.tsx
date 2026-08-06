@@ -231,27 +231,17 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
 
   return (
     <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
-      {/* Page Title & Top Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F131D]/90 backdrop-blur-xl p-5 border border-[#464554] shadow-lg rounded-none">
+      {/* Page Title Header */}
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#ddb7ff] text-2xl">account_tree</span>
-            <h1 className="text-xl font-bold text-white tracking-wide font-['Outfit']">Journeys Directory</h1>
-          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5 font-['Outfit']">
+            <span className="material-symbols-outlined text-[#ddb7ff] text-2xl" aria-hidden="true">account_tree</span>
+            Journeys Directory
+          </h1>
           <p className="text-xs text-[#908fa0] mt-1 font-['Outfit']">
             Browse, search, and manage all event-driven journey workflows.
           </p>
         </div>
-
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          data-testid="create-journey-btn"
-          variant="primary-purple"
-          size="md"
-          icon="add"
-        >
-          New Journey
-        </Button>
       </div>
 
       {/* Filter and Control Bar */}

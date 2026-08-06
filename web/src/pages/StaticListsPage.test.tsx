@@ -50,9 +50,8 @@ function renderWithQueryClient(ui: React.ReactElement) {
 }
 
 describe('StaticListsPage Component', () => {
-  it('renders header, metrics, search box, and static list table', async () => {
-    const handleOpenUpload = vi.fn();
-    renderWithQueryClient(<StaticListsPage onOpenUpload={handleOpenUpload} />);
+  it('renders header, search box, and static list table', async () => {
+    renderWithQueryClient(<StaticListsPage />);
 
     expect(screen.getByText('Static Lists Directory')).toBeInTheDocument();
 
@@ -60,10 +59,6 @@ describe('StaticListsPage Component', () => {
       expect(screen.getByText('VIP Customers List')).toBeInTheDocument();
       expect(screen.getByText('Beta Testers Segment')).toBeInTheDocument();
     });
-
-    const uploadBtn = screen.getByTestId('static-list-upload-trigger');
-    fireEvent.click(uploadBtn);
-    expect(handleOpenUpload).toHaveBeenCalledTimes(1);
   });
 
   it('filters static lists by search term', async () => {

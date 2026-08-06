@@ -172,29 +172,17 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
 
   return (
     <div className="flex-1 w-full min-w-0 h-full overflow-y-auto bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] p-6 space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F131D] p-5 border border-[#464554] shadow-lg">
+      {/* Page Title Header */}
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#4cd7f6] text-2xl">format_list_bulleted</span>
-            <h1 className="text-xl font-bold text-white tracking-wide">Static Lists Directory</h1>
-          </div>
-          <p className="text-xs text-[#908fa0] mt-1">
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5 font-['Outfit']">
+            <span className="material-symbols-outlined text-[#4cd7f6] text-2xl" aria-hidden="true">format_list_bulleted</span>
+            Static Lists Directory
+          </h1>
+          <p className="text-xs text-[#908fa0] mt-1 font-['Outfit']">
             Manage static CSV contact datasets, audience segments, and classification policies.
           </p>
         </div>
-
-        {onOpenUpload && (
-          <Button
-            variant="primary-cyan"
-            size="md"
-            icon="upload_file"
-            onClick={onOpenUpload}
-            data-testid="static-list-upload-trigger"
-          >
-            Upload Static List
-          </Button>
-        )}
       </div>
 
       {/* Filter and Control Bar */}
