@@ -86,7 +86,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
 
   if (isError) {
     return (
-      <div className="p-6">
+      <div className="w-full p-6">
         <DegradedStateView
           title="Failed to Load Static Lists"
           message={error instanceof Error ? error.message : 'Unable to fetch static list directory'}
@@ -97,7 +97,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif] min-h-screen">
+    <div className="w-full min-h-screen p-6 space-y-6 bg-[#0B0F19] text-[#dfe2f1] font-['Outfit',sans-serif]">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F131D] p-5 border border-[#464554] shadow-lg">
         <div>
@@ -123,41 +123,11 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
         )}
       </div>
 
-      {/* Summary Stats Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#0F131D] p-4 border border-[#464554] flex items-center justify-between">
-          <div>
-            <p className="text-xs text-[#908fa0] uppercase tracking-wider font-semibold">Total Datasets</p>
-            <p className="text-2xl font-bold text-white mt-1 font-mono">{isLoading ? '...' : totalLists}</p>
-          </div>
-          <span className="material-symbols-outlined text-3xl text-[#4cd7f6]/40">database</span>
-        </div>
-
-        <div className="bg-[#0F131D] p-4 border border-[#464554] flex items-center justify-between">
-          <div>
-            <p className="text-xs text-[#908fa0] uppercase tracking-wider font-semibold">Indexed Contacts / Items</p>
-            <p className="text-2xl font-bold text-emerald-400 mt-1 font-mono">{isLoading ? '...' : totalItemsCount.toLocaleString()}</p>
-          </div>
-          <span className="material-symbols-outlined text-3xl text-emerald-500/40">contacts</span>
-        </div>
-
-        <div className="bg-[#0F131D] p-4 border border-[#464554] flex items-center justify-between">
-          <div>
-            <p className="text-xs text-[#908fa0] uppercase tracking-wider font-semibold">PII Restricted Lists</p>
-            <p className="text-2xl font-bold text-amber-400 mt-1 font-mono">{isLoading ? '...' : piiCount}</p>
-          </div>
-          <span className="material-symbols-outlined text-3xl text-amber-500/40">shield</span>
-        </div>
-      </div>
-
       {/* Filter and Control Bar */}
       <div className="bg-[#0F131D] p-4 border border-[#464554] flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-[#908fa0]">
-              search
-            </span>
+          <div className="flex-1 min-w-[200px]">
             <input
               type="text"
               placeholder="Search by list name or ID..."
@@ -167,7 +137,7 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
                 setCurrentPage(1);
               }}
               data-testid="static-list-search-input"
-              className="w-full pl-9 pr-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] outline-none focus:border-[#4cd7f6] transition-all rounded-none font-['Outfit']"
+              className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] outline-none focus:border-[#4cd7f6] transition-all rounded-none font-['Outfit']"
             />
           </div>
 
