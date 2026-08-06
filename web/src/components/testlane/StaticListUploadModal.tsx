@@ -352,7 +352,7 @@ export function StaticListUploadModal({
             />
             <label
               htmlFor="csv-file-input"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-none bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#ddb7ff] font-bold text-xs shadow-lg shadow-[#4cd7f6]/20 transition-all cursor-pointer border border-[#4cd7f6]"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-none bg-[#4cd7f6] hover:bg-[#38c2e0] text-[#003640] font-bold text-xs shadow-lg shadow-[#4cd7f6]/20 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">folder_open</span>
               <span>Choose CSV File</span>
