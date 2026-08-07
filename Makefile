@@ -132,6 +132,19 @@ migrate:
 dev:
 	@./scripts/dev.sh
 
+.PHONY: webmcp
+## Start dev stack with WebMCP support enabled
+webmcp:
+	@./scripts/dev-webmcp.sh
+
+.PHONY: tunnel
+## Expose local dev server (port 3002) via Cloudflare Tunnel
+tunnel:
+	@if command -v cloudflared >/dev/null 2>&1; then \
+		cloudflared tunnel --url http://localhost:3002; \
+	else \
+		echo "cloudflared CLI not found. Install via 'brew install cloudflared' to use Cloudflare Tunnels."; \
+	fi
 .PHONY: logs
 ## View service logs
 logs:

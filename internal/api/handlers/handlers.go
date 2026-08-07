@@ -155,5 +155,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	// Event & Callback Ingress Endpoints
 	r.Post("/api/v1/events/emit", h.EmitKafkaTestEvent)
 	r.Post("/api/v1/callbacks/outcomes", h.ProcessOutcomeCallback)
+
+	// WebMCP JSON-RPC 2.0 Endpoint
+	r.Post("/mcp", h.HandleWebMCP)
 }
 

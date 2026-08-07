@@ -31,6 +31,10 @@ export default defineConfig({
         target: `http://127.0.0.1:${process.env.CONTROL_API_PORT || '8080'}`,
         changeOrigin: true,
       },
+      '/mcp': {
+        target: `http://127.0.0.1:${process.env.CONTROL_API_PORT || '8080'}`,
+        changeOrigin: true,
+      },
     },
   },
   test: {
