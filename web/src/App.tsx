@@ -493,11 +493,8 @@ export function DashboardContent() {
   const handleStartTestRun = async (_config: {
     draftId: string;
     executionMode: 'realistic' | 'forced_variant_coverage';
-    fixturePack: string;
     fakeProviders: string[];
     expiryHours: number;
-    targetCount: number;
-    suppressionCount: number;
     staticListId?: string;
   }) => {
     try {
@@ -540,7 +537,6 @@ export function DashboardContent() {
           status: 'running',
           mock_inputs: {
             execution_mode: _config.executionMode,
-            fixture_pack: _config.fixturePack,
             fake_providers: _config.fakeProviders,
             expiry_hours: _config.expiryHours,
           },

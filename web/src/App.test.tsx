@@ -143,7 +143,6 @@ describe('App & Foundation Components', () => {
   it('triggers error toast when launching test run during simulated API failure mode', async () => {
     const { setSimulatedApiFailureEnabled } = await import('./api/simulatedFailure');
     setSimulatedApiFailureEnabled(true);
-
     try {
       render(<App />);
       const canvasNavBtn = screen.getByRole('button', { name: 'Journey Canvas' });
@@ -151,6 +150,9 @@ describe('App & Foundation Components', () => {
 
       const testRunBtn = screen.getByRole('button', { name: 'Launch Test Execution' });
       fireEvent.click(testRunBtn);
+
+      const selectList = screen.getByTestId('static-list-select');
+      fireEvent.change(selectList, { target: { value: 'list-static-001' } });
 
       const launchBtn = screen.getByRole('button', { name: /Execute Test Run/i });
       await act(async () => {

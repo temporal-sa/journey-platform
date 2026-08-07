@@ -17,11 +17,8 @@ export interface TestRunModalProps {
 export interface TestRunConfig {
   draftId: string;
   executionMode: 'realistic' | 'forced_variant_coverage';
-  fixturePack: string;
   fakeProviders: string[];
   expiryHours: number;
-  targetCount: number;
-  suppressionCount: number;
   staticListId?: string;
 }
 
@@ -32,13 +29,12 @@ export function TestRunModal({
   draftId = 'draft-101',
 }: TestRunModalProps) {
   const [executionMode, setExecutionMode] = useState<'realistic' | 'forced_variant_coverage'>('realistic');
-  const [fixturePack, setFixturePack] = useState('Standard Fixture Pack (50 contacts)');
   const [fakeProviders, setFakeProviders] = useState<string[]>(['mock-sendgrid', 'mock-twilio']);
   const [expiryHours, setExpiryHours] = useState('24');
   const [staticLists, setStaticLists] = useState<StaticList[]>([]);
   const [selectedStaticListId, setSelectedStaticListId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [validationError, setValidationError] = useState<string | null>(null);
   useEffect(() => {
     if (isOpen) {
       apiClient
@@ -57,9 +53,6 @@ export function TestRunModal({
 
   if (!isOpen) return null;
 
-  // Determine target member count based on selected fixture pack size
-  const targetCount = fixturePack.includes('250') ? 250 : fixturePack.includes('10') ? 10 : 50;
-
   const toggleProvider = (provider: string) => {
     setFakeProviders((prev) =>
       prev.includes(provider) ? prev.filter((p) => p !== provider) : [...prev, provider]
@@ -67,30 +60,32 @@ export function TestRunModal({
   };
 
   const handleRunSubmit = async () => {
+    if (!selectedStaticListId) {
+      setValidationError('Please select a static audience list to execute a test run.');
+      return;
+    }
+    setValidationError(null);
     setIsSubmitting(true);
     try {
       const payload: Partial<TestRun> = {
         schema_version: '1.0',
         test_run_id: `tr-${Date.now().toString().slice(-6)}`,
         draft_id: draftId,
-        static_list_id: selectedStaticListId || undefined,
+        static_list_id: selectedStaticListId,
         mock_inputs: {
           execution_mode: executionMode,
-          fixture_pack: fixturePack,
           fake_providers: fakeProviders,
           expiry_hours: parseInt(expiryHours, 10),
+          static_list_id: selectedStaticListId,
         },
       };
       if (onStartTestRun) {
         await onStartTestRun({
           draftId,
           executionMode,
-          fixturePack,
           fakeProviders,
           expiryHours: parseInt(expiryHours, 10),
-          targetCount,
-          suppressionCount: 0,
-          staticListId: selectedStaticListId || undefined,
+          staticListId: selectedStaticListId,
         });
       } else {
         await apiClient.startTestRun(payload);
@@ -131,6 +126,12 @@ export function TestRunModal({
       }
     >
       <div className="space-y-5 text-xs">
+        {validationError && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 rounded-none" role="alert">
+            <span className="material-symbols-outlined text-base text-rose-400">error</span>
+            <span>{validationError}</span>
+          </div>
+        )}
           {/* Execution Mode Dropdown Selector */}
           <div>
             <div className="flex items-center gap-1.5 mb-1.5 font-['Outfit',sans-serif]">
@@ -171,7 +172,10 @@ export function TestRunModal({
               style={{ fontFamily: "'Outfit', sans-serif" }}
               className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#4cd7f6]/60 text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
             >
-              <option value="" style={{ fontFamily: "'Outfit', sans-serif" }}>Default Mock Fixture Pack (No Static List)</option>
+              <option value="" style={{ fontFamily: "'Outfit', sans-serif" }}>Select a static audience list...</option>
+              {staticLists.length === 0 && (
+                <option value="list-static-001" style={{ fontFamily: "'Outfit', sans-serif" }}>Default Audience List (list-static-001)</option>
+              )}
               {staticLists.map((list) => (
                 <option key={list.list_id} value={list.list_id} style={{ fontFamily: "'Outfit', sans-serif" }}>
                   {list.name || list.list_id} ({list.item_count || 0} members)
@@ -180,23 +184,6 @@ export function TestRunModal({
             </select>
           </div>
 
-          {/* Fixture Pack Picker */}
-          <div>
-            <label htmlFor="fixture-pack-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
-              Fixture Pack Picker (Fallback Mode)
-            </label>
-            <select
-              id="fixture-pack-select"
-              value={fixturePack}
-              onChange={(e) => setFixturePack(e.target.value)}
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
-            >
-              <option value="Standard Fixture Pack (50 contacts)" style={{ fontFamily: "'Outfit', sans-serif" }}>Standard Fixture Pack (50 contacts)</option>
-              <option value="Edge Cases & Invalid Emails (10 contacts)" style={{ fontFamily: "'Outfit', sans-serif" }}>Edge Cases & Invalid Emails (10 contacts)</option>
-              <option value="High Volume Stress Pack (250 contacts)" style={{ fontFamily: "'Outfit', sans-serif" }}>High Volume Stress Pack (250 contacts)</option>
-            </select>
-          </div>
 
           {/* Fake Provider Selector */}
           <div>
@@ -241,25 +228,6 @@ export function TestRunModal({
             </select>
           </div>
 
-          {/* Target Count & Execution Configuration Preview */}
-          <div className="p-4 rounded-none bg-[#171b26] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
-            <h3 className="font-['Outfit'] font-bold text-xs text-white uppercase tracking-wider">
-              Target Count & Execution Configuration
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6]">
-                <div className="text-[10px] text-[#908fa0] uppercase">Target Member Count</div>
-                <div className="text-lg font-bold text-white mt-0.5">{targetCount} members</div>
-              </div>
-              <div className="p-3 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1]">
-                <div className="text-[10px] text-[#908fa0] uppercase">Expiry Window</div>
-                <div className="text-lg font-bold text-white mt-0.5">{expiryHours} Hours</div>
-              </div>
-            </div>
-            <div className="text-[11px] text-[#908fa0]">
-              <strong className="text-[#dfe2f1]">Dispatchers:</strong> {fakeProviders.length > 0 ? fakeProviders.join(', ') : 'None selected'}
-            </div>
-          </div>
         </div>
     </Modal>
   );

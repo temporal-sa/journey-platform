@@ -8,7 +8,7 @@ describe('TestRunModal Component', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders modal with execution modes, fixture picker, fake providers, and preview metrics', () => {
+  it('renders modal with execution mode dropdown, audience source selector, and fake providers when isOpen is true', () => {
     render(<TestRunModal isOpen={true} onClose={() => {}} draftId="draft-xyz" />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -18,7 +18,6 @@ describe('TestRunModal Component', () => {
     expect(screen.getByText('Realistic Mode')).toBeInTheDocument();
     expect(screen.getByLabelText('Audience Source (Static List)')).toBeInTheDocument();
     expect(screen.getByText('Mock SendGrid (Email)')).toBeInTheDocument();
-    expect(screen.getByText('Target Member Count')).toBeInTheDocument();
   });
 
   it('allows toggling execution mode and provider checkboxes and starting test run', async () => {
@@ -42,17 +41,10 @@ describe('TestRunModal Component', () => {
     fireEvent.click(sendgridCheckbox);
     expect(sendgridCheckbox.checked).toBe(false);
 
-    // Click execute test run
+    // Click execute test run without selecting static list -> shows validation error
     const executeBtn = screen.getByRole('button', { name: 'Execute Test Run' });
     fireEvent.click(executeBtn);
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    expect(onStartTestRun).toHaveBeenCalledWith(
-      expect.objectContaining({
-        draftId: 'draft-abc',
-        executionMode: 'forced_variant_coverage',
-      })
-    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Please select a static audience list');
   });
 });

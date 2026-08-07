@@ -209,7 +209,7 @@ function TestRunDetailViewInner({
               </Badge>
             </div>
             <p className="text-xs text-[#908fa0] mt-1 font-mono">
-              Target Draft: <strong className="text-white">{data.draftId}</strong> | Mode: <strong className="text-[#4cd7f6]">{data.executionMode}</strong> | Pack: {data.fixturePack}
+              Target Draft: <strong className="text-white">{data.draftId}</strong> | Mode: <strong className="text-[#4cd7f6]">{data.executionMode}</strong>
             </p>
           </div>
         </div>
