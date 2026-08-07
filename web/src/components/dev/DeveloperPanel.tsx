@@ -5,6 +5,7 @@ import { Badge } from '../common/Badge';
 import { ToastMessageType } from '../common/Toast';
 import { BUILD_TAG } from '../../buildTag';
 import { useEditorStore } from '../../stores/editorStore';
+import { apiClient } from '../../api/client';
 import {
   isSimulatedApiFailureEnabled,
   toggleSimulatedApiFailure,
@@ -22,8 +23,11 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   onFireToast,
 }) => {
   const [isApiFailureActive, setIsApiFailureActive] = useState<boolean>(isSimulatedApiFailureEnabled());
+  const [eventType, setEventType] = useState<string>('order.completed');
+  const [subjectRef, setSubjectRef] = useState<string>('usr_gold_varA_event');
+  const [payloadJson, setPayloadJson] = useState<string>('{\n  "amount": 149.99,\n  "currency": "USD"\n}');
+  const [isEmitting, setIsEmitting] = useState<boolean>(false);
   const currentDraft = useEditorStore((s) => s.currentDraft);
-
   useEffect(() => {
     if (isOpen) {
       setIsApiFailureActive(isSimulatedApiFailureEnabled());
@@ -45,6 +49,51 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
         'API Failure Mode Disabled',
         'Normal backend client network requests restored.'
       );
+    }
+  };
+  const handleEmitEvent = async () => {
+    let parsedData = {};
+    try {
+      if (payloadJson.trim()) {
+        parsedData = JSON.parse(payloadJson);
+      }
+    } catch {
+      onFireToast(
+        ToastMessageType.ERROR,
+        'Invalid Event Payload JSON',
+        'Please enter a valid JSON object payload.'
+      );
+      return;
+    }
+
+    setIsEmitting(true);
+    try {
+      const eventId = `evt-dev-${Date.now().toString().slice(-6)}`;
+      await apiClient.emitKafkaTestEvent({
+        schema_version: '1.0',
+        event_id: eventId,
+        trace_id: `trace-${Date.now()}`,
+        event_type: eventType || 'order.completed',
+        source: 'dev_control_panel',
+        subject: subjectRef || undefined,
+        timestamp: new Date().toISOString(),
+        data_classification: 'NonPII',
+        data: parsedData,
+      });
+
+      onFireToast(
+        ToastMessageType.SUCCESS,
+        'Event Emitted Successfully',
+        `Emitted event '${eventType}' (${eventId}) to ingress topic & waiting workflows.`
+      );
+    } catch (err: any) {
+      onFireToast(
+        ToastMessageType.ERROR,
+        'Event Emission Failed',
+        err?.message || 'Failed to emit event.'
+      );
+    } finally {
+      setIsEmitting(false);
     }
   };
 
@@ -223,6 +272,78 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 <div className="text-xs font-bold text-white">Fire Info Toast</div>
                 <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5">ToastMessageType.INFO</div>
               </div>
+            </Button>
+          </div>
+        </div>
+        {/* Section 3: Interactive Event Ingress Simulator */}
+        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[#464554]/30">
+            <div className="w-8 h-8 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6]">
+              <span className="material-symbols-outlined text-lg">electric_bolt</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white font-['Outfit']">Event Ingress & Signal Simulator</h3>
+              <p className="text-xs text-[#908fa0] mt-0.5">
+                Emit custom inbound Kafka events (`POST /api/v1/events/emit`) to trigger `WaitForEvent` nodes.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+                Event Type (Matching WaitForEvent node)
+              </label>
+              <input
+                type="text"
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+                placeholder="order.completed"
+                data-testid="dev-event-type-input"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554]/60 text-white font-mono rounded-none focus:border-[#4cd7f6] outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+                Subject / Customer ID (Optional)
+              </label>
+              <input
+                type="text"
+                value={subjectRef}
+                onChange={(e) => setSubjectRef(e.target.value)}
+                placeholder="usr_gold_varA_event"
+                data-testid="dev-subject-ref-input"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554]/60 text-white font-mono rounded-none focus:border-[#4cd7f6] outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+              Event Payload Attributes (JSON)
+            </label>
+            <textarea
+              rows={3}
+              value={payloadJson}
+              onChange={(e) => setPayloadJson(e.target.value)}
+              data-testid="dev-event-payload-textarea"
+              className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554]/60 text-[#4cd7f6] font-mono text-[11px] rounded-none focus:border-[#4cd7f6] outline-none"
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={handleEmitEvent}
+              disabled={isEmitting}
+              data-testid="emit-ingress-event-btn"
+              variant="cyan"
+              size="sm"
+              icon="send"
+              className="font-bold bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/50 shadow-sm"
+            >
+              {isEmitting ? 'Emitting Event...' : 'Emit Ingress Event'}
             </Button>
           </div>
         </div>
