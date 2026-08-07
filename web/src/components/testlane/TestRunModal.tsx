@@ -130,6 +130,7 @@ export function TestRunModal({
         </>
       }
     >
+      <div className="space-y-5 text-xs">
           {/* Execution Mode Pill Toggle (matching toggle.jpeg design) */}
           <div className="p-3 bg-[#11141d] border border-[#464554] rounded-none flex items-center justify-between gap-4 font-['Outfit',sans-serif]">
             <div className="flex items-center gap-1.5 min-w-0">
@@ -140,8 +141,7 @@ export function TestRunModal({
                 {executionMode === 'realistic' ? 'Realistic' : '100% Coverage'}
               </span>
               <span
-                className="material-symbols-outlined text-xs text-[#908fa0] hover:text-[#4cd7f6] cursor-help transition-colors ml-0.5 shrink-0"
-                title="Realistic: Simulates standard audience distribution & production path weights.&#10;100% Coverage: Forces 100% path coverage across all A/B experiment variants & branch splits."
+                title={`Realistic: Simulates standard audience distribution & production path weights.\n100% Coverage: Forces 100% path coverage across all A/B experiment variants & branch splits.`}
                 aria-label="Execution mode details"
                 data-testid="execution-mode-tooltip-icon"
               >
@@ -154,17 +154,19 @@ export function TestRunModal({
                 type="button"
                 onClick={() => setExecutionMode('realistic')}
                 data-testid="mode-toggle-realistic"
-                className={`text-xs transition-colors cursor-pointer ${
+                style={{ background: 'transparent', border: 'none', outline: 'none' }}
+                className={`text-xs transition-colors cursor-pointer bg-transparent border-0 ${
                   executionMode === 'realistic' ? 'text-white font-bold' : 'text-[#908fa0] hover:text-[#dfe2f1]'
                 }`}
               >
                 Realistic
               </button>
 
-              {/* Glowing Pill Switch */}
+              {/* Glowing Pill Switch matching toggle.jpeg */}
               <button
                 type="button"
                 role="switch"
+                aria-label="Toggle Execution Mode"
                 aria-checked={executionMode === 'forced_variant_coverage'}
                 data-testid="execution-mode-toggle-switch"
                 onClick={() =>
@@ -172,17 +174,36 @@ export function TestRunModal({
                     prev === 'realistic' ? 'forced_variant_coverage' : 'realistic'
                   )
                 }
-                className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-300 ease-in-out focus:outline-none ${
-                  executionMode === 'forced_variant_coverage'
-                    ? 'bg-[#3b82f6] border-[#60a5fa] shadow-[0_0_15px_rgba(59,130,246,0.65)]'
-                    : 'bg-[#1e293b] border-[#475569] shadow-inner'
-                }`}
+                style={{
+                  width: '64px',
+                  height: '32px',
+                  borderRadius: '9999px',
+                  padding: '3px',
+                  background: executionMode === 'forced_variant_coverage' ? '#0070f3' : '#1e293b',
+                  borderColor: executionMode === 'forced_variant_coverage' ? '#38bdf8' : '#475569',
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  boxShadow: executionMode === 'forced_variant_coverage' ? '0 0 16px rgba(0, 112, 243, 0.75)' : 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  transition: 'all 0.3s ease-in-out',
+                  outline: 'none',
+                }}
+                className="relative shrink-0 focus:outline-none"
               >
-                <span className="sr-only">Toggle Execution Mode</span>
                 <span
-                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-300 ease-in-out mt-[2px] ${
-                    executionMode === 'forced_variant_coverage' ? 'translate-x-8' : 'translate-x-1'
-                  }`}
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffffff',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
+                    transform: executionMode === 'forced_variant_coverage' ? 'translateX(32px)' : 'translateX(0px)',
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'block',
+                    pointerEvents: 'none',
+                  }}
                 />
               </button>
 
@@ -190,7 +211,8 @@ export function TestRunModal({
                 type="button"
                 onClick={() => setExecutionMode('forced_variant_coverage')}
                 data-testid="mode-toggle-coverage"
-                className={`text-xs transition-colors cursor-pointer ${
+                style={{ background: 'transparent', border: 'none', outline: 'none' }}
+                className={`text-xs transition-colors cursor-pointer bg-transparent border-0 ${
                   executionMode === 'forced_variant_coverage' ? 'text-white font-bold' : 'text-[#908fa0] hover:text-[#dfe2f1]'
                 }`}
               >
@@ -198,7 +220,6 @@ export function TestRunModal({
               </button>
             </div>
           </div>
-
           {/* Static List Audience Selector */}
           <div>
             <label htmlFor="static-list-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
@@ -300,7 +321,8 @@ export function TestRunModal({
             <div className="text-[11px] text-[#908fa0]">
               <strong className="text-[#dfe2f1]">Dispatchers:</strong> {fakeProviders.length > 0 ? fakeProviders.join(', ') : 'None selected'}
             </div>
-      </div>
+          </div>
+        </div>
     </Modal>
   );
 }
