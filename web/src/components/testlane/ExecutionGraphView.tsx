@@ -1,0 +1,308 @@
+import React, { useMemo } from 'react';
+import {
+  ReactFlow,
+  Background,
+  BackgroundVariant,
+  Controls,
+  MiniMap,
+  Node,
+  Edge,
+  NodeProps,
+  EdgeProps,
+  getBezierPath,
+  EdgeLabelRenderer,
+  BaseEdge,
+  ReactFlowProvider,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+import { GraphNode, GraphEdge } from '../../types/api';
+import { nodeTypes as baseNodeTypes } from '../editor/nodes';
+
+export interface NodeVisitStep {
+  stepIndex: number;
+  nodeId: string;
+  nodeName?: string;
+  nodeType?: string;
+  status: 'passed' | 'failed' | 'running' | 'completed' | 'suppressed';
+  timestamp?: string;
+  output?: Record<string, unknown>;
+}
+
+export interface ExecutionGraphViewProps {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  visitSteps: NodeVisitStep[];
+  currentNodeId?: string;
+  status?: 'passed' | 'failed' | 'running';
+  height?: string;
+}
+
+function ExecutionNodeWrapper(props: NodeProps) {
+  const { id, type, data } = props;
+  const isVisited = Boolean(data?.isVisited);
+  const isActive = Boolean(data?.isActive);
+  const isUnvisited = !isVisited && !isActive;
+  const stepIndex = data?.stepIndex;
+
+  const BaseComponent = baseNodeTypes[type] || baseNodeTypes.EventStartNode || baseNodeTypes.EventStart;
+
+  return (
+    <div
+      data-testid={`execution-node-${id}`}
+      data-node-id={id}
+      data-node-type={type}
+      data-visited={isVisited}
+      data-active={isActive}
+      className={`relative transition-all duration-300 ${
+        isUnvisited ? 'opacity-45' : 'opacity-100'
+      }`}
+      style={{
+        opacity: isUnvisited ? 0.45 : 1,
+      }}
+    >
+      {/* Active Badge */}
+      {isActive && (
+        <div
+          data-testid={`node-badge-active-${id}`}
+          className="absolute -top-3 -left-2 z-30 px-2 py-0.5 rounded text-[10px] font-bold bg-[#4cd7f6] text-[#0B0F19] shadow-[0_0_10px_rgba(76,215,246,0.6)] font-mono uppercase tracking-wider animate-pulse flex items-center gap-1"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#0B0F19] animate-ping" />
+          Active
+        </div>
+      )}
+
+      {/* Visited Step Badge */}
+      {!isActive && isVisited && stepIndex !== undefined && (
+        <div
+          data-testid={`node-badge-step-${id}`}
+          className="absolute -top-3 -left-2 z-30 px-2 py-0.5 rounded text-[10px] font-bold bg-[#34d399] text-[#0B0F19] shadow-[0_0_10px_rgba(52,211,153,0.5)] font-mono uppercase tracking-wider flex items-center gap-1"
+        >
+          Step {stepIndex}
+        </div>
+      )}
+
+      {/* Node border & glow overlay container */}
+      <div
+        className={`rounded-none transition-all duration-300 ${
+          isActive
+            ? 'border-2 border-[#4cd7f6] ring-2 ring-[#4cd7f6]/60 animate-pulse shadow-[0_0_20px_rgba(76,215,246,0.6)]'
+            : isVisited
+            ? 'border-2 border-[#34d399] shadow-[0_0_15px_rgba(52,211,153,0.4)]'
+            : ''
+        }`}
+        style={{
+          ...(isActive
+            ? { borderColor: '#4cd7f6', boxShadow: '0 0 20px rgba(76, 215, 246, 0.6)' }
+            : isVisited
+            ? { borderColor: '#34d399', boxShadow: '0 0 15px rgba(52, 211, 153, 0.4)' }
+            : {}),
+        }}
+      >
+        <BaseComponent {...props} />
+      </div>
+    </div>
+  );
+}
+
+const executionNodeTypes: Record<string, React.ComponentType<NodeProps>> = Object.keys(
+  baseNodeTypes
+).reduce((acc, key) => {
+  acc[key] = (props: NodeProps) => <ExecutionNodeWrapper {...props} />;
+  return acc;
+}, {} as Record<string, React.ComponentType<NodeProps>>);
+
+// Fallback for custom or missing node types
+executionNodeTypes.default = (props: NodeProps) => <ExecutionNodeWrapper {...props} />;
+
+export function ExecutionEdge(props: EdgeProps) {
+  const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, label, data } = props;
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const displayLabel = (label as string) || (data?.label as string) || (data?.condition as string) || '';
+  const isTraversed = Boolean(data?.isTraversed);
+
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          stroke: isTraversed ? '#4cd7f6' : '#464554',
+          strokeWidth: isTraversed ? 2.5 : 1.5,
+          strokeDasharray: isTraversed ? undefined : '6 4',
+          filter: isTraversed ? 'drop-shadow(0 0 8px rgba(76, 215, 246, 0.6))' : undefined,
+          ...style,
+        }}
+      />
+      {displayLabel && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all',
+            }}
+            className={`nodrag nopan px-2 py-0.5 rounded-none text-[10px] font-mono font-semibold transition-all backdrop-blur-md border ${
+              isTraversed
+                ? 'bg-[#032b36]/90 text-[#4cd7f6] border-[#4cd7f6] shadow-[0_0_10px_rgba(76,215,246,0.4)]'
+                : 'bg-[#171b26]/90 text-[#8e8c9e] border-[#464554]'
+            }`}
+            data-testid={`edge-label-${id}`}
+          >
+            {displayLabel}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+const edgeTypes = {
+  labeled: ExecutionEdge,
+  default: ExecutionEdge,
+};
+
+function ExecutionGraphViewInner({
+  nodes,
+  edges,
+  visitSteps,
+  currentNodeId,
+  status,
+  height = '600px',
+}: ExecutionGraphViewProps) {
+  // Determine active node ID
+  const activeNodeId = useMemo(() => {
+    if (currentNodeId) return currentNodeId;
+    if (status === 'running' && visitSteps.length > 0) {
+      return visitSteps[visitSteps.length - 1].nodeId;
+    }
+    return undefined;
+  }, [currentNodeId, status, visitSteps]);
+
+  // Map of nodeId -> stepIndex
+  const nodeStepMap = useMemo(() => {
+    const map = new Map<string, number>();
+    visitSteps.forEach((step) => {
+      if (!map.has(step.nodeId)) {
+        map.set(step.nodeId, step.stepIndex);
+      }
+    });
+    return map;
+  }, [visitSteps]);
+
+  // Set of traversed edge keys: "sourceId->targetId"
+  const traversedEdgePairs = useMemo(() => {
+    const pairs = new Set<string>();
+    for (let i = 0; i < visitSteps.length - 1; i++) {
+      const from = visitSteps[i].nodeId;
+      const to = visitSteps[i + 1].nodeId;
+      pairs.add(`${from}->${to}`);
+    }
+    return pairs;
+  }, [visitSteps]);
+
+  // Map input nodes to ReactFlow nodes
+  const flowNodes: Node[] = useMemo(() => {
+    return nodes.map((node, index) => {
+      const isVisited = nodeStepMap.has(node.id);
+      const isActive = activeNodeId !== undefined && node.id === activeNodeId;
+      const stepIndex = nodeStepMap.get(node.id);
+
+      return {
+        id: node.id,
+        type: node.type || 'EventStart',
+        position: {
+          x: node.position?.x ?? (index % 3) * 380 + 50,
+          y: node.position?.y ?? Math.floor(index / 3) * 180 + 50,
+        },
+        measured: { width: 346, height: 112 },
+        data: {
+          label: node.name,
+          name: node.name,
+          config: node.config || {},
+          isVisited,
+          isActive,
+          stepIndex,
+        },
+      };
+    });
+  }, [nodes, nodeStepMap, activeNodeId]);
+
+  // Map input edges to ReactFlow edges
+  const flowEdges: Edge[] = useMemo(() => {
+    return edges.map((edge) => {
+      const isTraversed = traversedEdgePairs.has(`${edge.source}->${edge.target}`);
+      const displayLabel = edge.label || edge.condition;
+
+      return {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle,
+        targetHandle: edge.targetHandle,
+        type: 'labeled',
+        animated: isTraversed,
+        style: {
+          stroke: isTraversed ? '#4cd7f6' : '#464554',
+          strokeWidth: isTraversed ? 2.5 : 1.5,
+        },
+        data: {
+          label: displayLabel,
+          condition: edge.condition,
+          isTraversed,
+        },
+      };
+    });
+  }, [edges, traversedEdgePairs]);
+
+  return (
+    <div
+      data-testid="execution-graph-view"
+      className="relative w-full overflow-hidden bg-[#0B0F19] border border-[#464554]/40"
+      style={{ height }}
+    >
+      <ReactFlow
+        nodes={flowNodes}
+        edges={flowEdges}
+        nodeTypes={executionNodeTypes}
+        edgeTypes={edgeTypes}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={true}
+        panOnDrag={true}
+        zoomOnScroll={true}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background color="#464554" variant={BackgroundVariant.Dots} gap={20} size={1} />
+        <Controls className="!bg-[#171b26] !border-[#464554] !fill-[#dfe2f1] !text-[#dfe2f1]" />
+        <MiniMap
+          nodeColor={(n) => {
+            if (n.data?.isActive) return '#4cd7f6';
+            if (n.data?.isVisited) return '#34d399';
+            return '#464554';
+          }}
+          maskColor="rgba(11, 15, 25, 0.7)"
+          className="!bg-[#171b26] !border-[#464554]"
+        />
+      </ReactFlow>
+    </div>
+  );
+}
+
+export function ExecutionGraphView(props: ExecutionGraphViewProps) {
+  return (
+    <ReactFlowProvider>
+      <ExecutionGraphViewInner {...props} />
+    </ReactFlowProvider>
+  );
+}

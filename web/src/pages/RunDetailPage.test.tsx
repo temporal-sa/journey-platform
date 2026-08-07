@@ -51,4 +51,30 @@ describe('RunDetailPage Component', () => {
 
     expect(handleBack).toHaveBeenCalled();
   });
+  it('renders view segment toggle and toggles between Visual Graph Trace and Timeline List', async () => {
+    renderWithClient(<RunDetailPage runId="run-601" />);
+
+    const graphToggle = await screen.findByTestId('view-toggle-graph');
+    const timelineToggle = await screen.findByTestId('view-toggle-timeline');
+
+    expect(graphToggle).toBeInTheDocument();
+    expect(timelineToggle).toBeInTheDocument();
+
+    expect(screen.getByText('Visual Journey Execution Trace Graph')).toBeInTheDocument();
+    expect(screen.getByTestId('execution-graph-container')).toBeInTheDocument();
+
+    fireEvent.click(timelineToggle);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Node Visits & Outcome Timeline/i)).toBeInTheDocument();
+      expect(screen.queryByTestId('execution-graph-container')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(graphToggle);
+
+    await waitFor(() => {
+      expect(screen.getByText('Visual Journey Execution Trace Graph')).toBeInTheDocument();
+      expect(screen.getByTestId('execution-graph-container')).toBeInTheDocument();
+    });
+  });
 });

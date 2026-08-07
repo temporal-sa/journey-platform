@@ -8,8 +8,8 @@ import { Badge } from '../components/common/Badge';
 import { PaginatedTable } from '../components/common/PaginatedTable';
 import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown';
 import { useRouteParams } from '../hooks/useRouteParams';
-import type { TimelineEvent, ActionResult, SubRunSummary } from '../types/api';
-
+import type { TimelineEvent, ActionResult, SubRunSummary, GraphNode, GraphEdge } from '../types/api';
+import { ExecutionGraphView, NodeVisitStep } from '../components/testlane/ExecutionGraphView';
 const apiClient = new JourneyApiClient();
 
 export interface SuppressionRecord {
@@ -32,6 +32,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
   const activeRunId = propRunId || params.runId || 'run-601';
 
   const [selectedSubRunId, setSelectedSubRunId] = React.useState<string | undefined>(undefined);
+  const [viewMode, setViewMode] = React.useState<'graph' | 'timeline'>('graph');
   const [subRunParams, setSubRunParams] = React.useState<{ page: string; search: string; status: string }>({
     page: '1',
     search: '',
@@ -140,6 +141,110 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
     completed_at: runDetailData?.ledger?.completed_at || runDetailData?.timeline?.completed_at,
     status: runDetailData?.ledger?.status || runDetailData?.timeline?.status || 'completed',
   };
+  const workflowId = runDetailData?.timeline?.workflow_id || runDetailData?.ledger?.workflow_id || parameters.workflow_id;
+
+  const { data: journeyDraft } = useQuery({
+    queryKey: ['journey-draft', workflowId],
+    queryFn: async () => {
+      try {
+        if (workflowId) {
+          const res = await apiClient.getJourneyDraft(workflowId);
+          if (res?.draft?.nodes?.length) return res.draft;
+        }
+      } catch {
+        // ignore
+      }
+      try {
+        const drafts = await apiClient.listJourneyDrafts();
+        if (drafts && drafts.length > 0 && drafts[0].nodes?.length) {
+          return drafts[0];
+        }
+      } catch {
+        // ignore
+      }
+      return null;
+    },
+    enabled: !!workflowId,
+  });
+
+  const visitSteps: NodeVisitStep[] = React.useMemo(() => {
+    const statusMap: Record<string, NodeVisitStep['status']> = {
+      completed: 'completed',
+      success: 'completed',
+      passed: 'passed',
+      failed: 'failed',
+      running: 'running',
+      suppressed: 'suppressed',
+    };
+
+    return timelineEvents.map((evt, idx) => ({
+      stepIndex: idx + 1,
+      nodeId: evt.node_id || `node-${idx + 1}`,
+      nodeName: evt.node_id ? `Step ${idx + 1}: ${evt.node_id}` : `Step ${idx + 1}`,
+      nodeType: evt.event_type || 'action',
+      status: statusMap[evt.status?.toLowerCase()] || 'completed',
+      timestamp: evt.timestamp,
+      output: evt.payload,
+    }));
+  }, [timelineEvents]);
+
+  const currentNodeId = React.useMemo(() => {
+    if (visitSteps.length === 0) return undefined;
+    const runningStep = visitSteps.find((s) => s.status === 'running');
+    if (runningStep) return runningStep.nodeId;
+    const failedStep = visitSteps.find((s) => s.status === 'failed');
+    if (failedStep) return failedStep.nodeId;
+    return visitSteps[visitSteps.length - 1]?.nodeId;
+  }, [visitSteps]);
+
+  const graphNodesAndEdges = React.useMemo(() => {
+    if (journeyDraft?.nodes && journeyDraft.nodes.length > 0) {
+      return {
+        nodes: journeyDraft.nodes,
+        edges: journeyDraft.edges || [],
+      };
+    }
+
+    if (timelineEvents.length > 0) {
+      const derivedNodes: GraphNode[] = timelineEvents.map((evt, idx) => {
+        const nodeId = evt.node_id || `node-${idx + 1}`;
+        let type = 'Email';
+        if (idx === 0) type = 'EventStart';
+        else if (evt.event_type?.includes('condition') || nodeId.includes('cond')) type = 'Condition';
+        else if (evt.event_type?.includes('sms') || nodeId.includes('sms')) type = 'SMS';
+        else if (evt.event_type?.includes('push')) type = 'Push';
+        else if (evt.event_type?.includes('delay')) type = 'Delay';
+
+        return {
+          id: nodeId,
+          type,
+          name: evt.node_id ? `Step ${idx + 1}: ${evt.node_id}` : `Step ${idx + 1}`,
+          position: { x: 100 + (idx % 3) * 320, y: 80 + Math.floor(idx / 3) * 180 },
+        };
+      });
+
+      const derivedEdges: GraphEdge[] = [];
+      for (let i = 0; i < derivedNodes.length - 1; i++) {
+        derivedEdges.push({
+          id: `e-${derivedNodes[i].id}-${derivedNodes[i + 1].id}`,
+          source: derivedNodes[i].id,
+          target: derivedNodes[i + 1].id,
+        });
+      }
+
+      return { nodes: derivedNodes, edges: derivedEdges };
+    }
+
+    const defaultNodes: GraphNode[] = [
+      { id: 'node-1', type: 'EventStart', name: 'User Signup Event', position: { x: 50, y: 100 } },
+      { id: 'node-2', type: 'Email', name: 'Send Welcome Email', position: { x: 320, y: 100 } },
+    ];
+    const defaultEdges: GraphEdge[] = [
+      { id: 'e-1-2', source: 'node-1', target: 'node-2' },
+    ];
+
+    return { nodes: defaultNodes, edges: defaultEdges };
+  }, [journeyDraft, timelineEvents]);
 
   const getStatusBadgeStyles = (status: string) => {
     const s = status.toLowerCase();
@@ -508,62 +613,117 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full items-start">
-          {/* Left Column: Sequential Timeline of Node Visits */}
+          {/* Left Column: Trace Graph or Sequential Timeline of Node Visits */}
           <div className="lg:col-span-2 p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#464554] pb-3">
+            <div className="flex items-center justify-between border-b border-[#464554] pb-3 flex-wrap gap-2">
               <h2 className="text-base font-bold text-white flex items-center gap-2 font-['Outfit']">
-                <span className="material-symbols-outlined text-[#c0c1ff] text-lg">schema</span>
-                Node Visits & Outcome Timeline ({timelineEvents.length} Steps)
+                <span className="material-symbols-outlined text-[#c0c1ff] text-lg">
+                  {viewMode === 'graph' ? 'account_tree' : 'schema'}
+                </span>
+                {viewMode === 'graph'
+                  ? 'Visual Journey Execution Trace Graph'
+                  : `Node Visits & Outcome Timeline (${timelineEvents.length} Steps)`}
               </h2>
-            </div>
 
-            <div className="space-y-4">
-              {timelineEvents.map((evt, index) => (
-                <div
-                  key={evt.event_id}
-                  className="flex gap-4 p-4 rounded-none bg-[#171b26] border border-[#464554] shadow-md"
+              {/* View Segment Toggle */}
+              <div
+                className="flex items-center bg-[#171b26] p-1 border border-[#464554]"
+                role="group"
+                aria-label="Execution Trace View Mode"
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewMode('graph')}
+                  data-testid="view-toggle-graph"
+                  className={`px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
+                    viewMode === 'graph'
+                      ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/40 font-bold shadow-sm'
+                      : 'text-[#908fa0] hover:text-white border border-transparent'
+                  }`}
                 >
-                  <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-none bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center font-mono text-xs font-bold">
-                      {index + 1}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {evt.event_type && (
-                          <span className="px-2 py-0.5 rounded-none bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/40 text-[10px] font-mono font-bold uppercase tracking-wider">
-                            {evt.event_type}
-                          </span>
-                        )}
-                        <strong className="text-sm font-bold text-white font-mono">{evt.node_id || 'workflow_root'}</strong>
-                      </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusBadgeStyles(
-                          evt.status
-                        )}`}
-                      >
-                        {evt.status}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-[#908fa0] font-mono">
-                      Timestamp: {new Date(evt.timestamp).toLocaleString()} | Event ID: {evt.event_id}
-                    </div>
-
-                    {evt.payload && (
-                      <div className="space-y-1 pt-1">
-                        <span className="text-xs font-semibold text-[#dfe2f1] block">Step Payload:</span>
-                        <pre className="p-3 rounded-none bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] text-xs font-mono overflow-x-auto">
-                          {JSON.stringify(evt.payload, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  Visual Graph Trace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('timeline')}
+                  data-testid="view-toggle-timeline"
+                  className={`px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
+                    viewMode === 'timeline'
+                      ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/40 font-bold shadow-sm'
+                      : 'text-[#908fa0] hover:text-white border border-transparent'
+                  }`}
+                >
+                  Timeline List
+                </button>
+              </div>
             </div>
+
+            {viewMode === 'graph' ? (
+              <div className="w-full h-[540px] rounded-none border border-[#464554]/50 bg-[#0B0F19] overflow-hidden" data-testid="execution-graph-container">
+                <ExecutionGraphView
+                  nodes={graphNodesAndEdges.nodes}
+                  edges={graphNodesAndEdges.edges}
+                  visitSteps={visitSteps}
+                  currentNodeId={currentNodeId}
+                  status={
+                    parameters.status === 'failed'
+                      ? 'failed'
+                      : parameters.status === 'running'
+                      ? 'running'
+                      : 'passed'
+                  }
+                  height="100%"
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {timelineEvents.map((evt, index) => (
+                  <div
+                    key={evt.event_id}
+                    className="flex gap-4 p-4 rounded-none bg-[#171b26] border border-[#464554] shadow-md"
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="w-7 h-7 rounded-none bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center font-mono text-xs font-bold">
+                        {index + 1}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {evt.event_type && (
+                            <span className="px-2 py-0.5 rounded-none bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/40 text-[10px] font-mono font-bold uppercase tracking-wider">
+                              {evt.event_type}
+                            </span>
+                          )}
+                          <strong className="text-sm font-bold text-white font-mono">{evt.node_id || 'workflow_root'}</strong>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-none text-[10px] font-mono font-semibold uppercase border tracking-wider ${getStatusBadgeStyles(
+                            evt.status
+                          )}`}
+                        >
+                          {evt.status}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-[#908fa0] font-mono">
+                        Timestamp: {new Date(evt.timestamp).toLocaleString()} | Event ID: {evt.event_id}
+                      </div>
+
+                      {evt.payload && (
+                        <div className="space-y-1 pt-1">
+                          <span className="text-xs font-semibold text-[#dfe2f1] block">Step Payload:</span>
+                          <pre className="p-3 rounded-none bg-[#0B0F19] border border-[#464554] text-[#c0c1ff] text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(evt.payload, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right Column: Actions & Suppressions */}
