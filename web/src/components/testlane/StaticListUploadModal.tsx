@@ -275,6 +275,7 @@ export function StaticListUploadModal({
                 type="text"
                 value={listId}
                 onChange={(e) => setListId(e.target.value)}
+                style={{ fontFamily: "'Outfit', sans-serif" }}
                 className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6] font-['Outfit',sans-serif]"
               />
             </div>
@@ -287,7 +288,8 @@ export function StaticListUploadModal({
                 type="text"
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6]"
+                style={{ fontFamily: "'Outfit', sans-serif" }}
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6] font-['Outfit',sans-serif]"
               />
             </div>
           </div>
@@ -301,10 +303,11 @@ export function StaticListUploadModal({
                 id="list-version-select"
                 value={selectedVersion}
                 onChange={(e) => setSelectedVersion(e.target.value)}
+                style={{ fontFamily: "'Outfit', sans-serif" }}
                 className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
               >
-                <option value="v1 (immutable)">v1 - Initial Commit (Immutable)</option>
-                <option value="v2 (immutable)">v2 - Draft Delta (Immutable)</option>
+                <option value="v1 (immutable)" style={{ fontFamily: "'Outfit', sans-serif" }}>v1 - Initial Commit (Immutable)</option>
+                <option value="v2 (immutable)" style={{ fontFamily: "'Outfit', sans-serif" }}>v2 - Draft Delta (Immutable)</option>
               </select>
             </div>
             <div>
@@ -315,16 +318,16 @@ export function StaticListUploadModal({
                 id="list-ttl-select"
                 value={ttlHours}
                 onChange={(e) => setTtlHours(e.target.value)}
+                style={{ fontFamily: "'Outfit', sans-serif" }}
                 className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
               >
-                <option value="1">1 Hour</option>
-                <option value="24">24 Hours (Default)</option>
-                <option value="168">7 Days</option>
-                <option value="720">30 Days</option>
+                <option value="1" style={{ fontFamily: "'Outfit', sans-serif" }}>1 Hour</option>
+                <option value="24" style={{ fontFamily: "'Outfit', sans-serif" }}>24 Hours (Default)</option>
+                <option value="168" style={{ fontFamily: "'Outfit', sans-serif" }}>7 Days</option>
+                <option value="720" style={{ fontFamily: "'Outfit', sans-serif" }}>30 Days</option>
               </select>
             </div>
           </div>
-
           {/* File Picker & Upload Area */}
           <div className="p-6 rounded-none border-2 border-dashed border-[#4cd7f6]/40 bg-[#4cd7f6]/5 text-center hover:border-[#4cd7f6]/80 transition-colors">
             <input
@@ -348,7 +351,7 @@ export function StaticListUploadModal({
               </p>
             ) : (
               <p className="mt-2.5 text-xs text-[#908fa0]">
-                Upload CSV file containing headers: <code className="text-[#4cd7f6]">user_id, email</code>
+                Upload CSV file containing headers: <span className="text-[#4cd7f6] font-semibold font-['Outfit',sans-serif]">user_id, email</span>
               </p>
             )}
           </div>
@@ -399,9 +402,9 @@ export function StaticListUploadModal({
                 Masked Member Preview ({previews.length} members)
               </h4>
               <div className="max-h-40 overflow-y-auto rounded-none border border-[#464554] bg-[#11141d]">
-                <table className="w-full text-left text-xs font-mono">
+                <table className="w-full text-left text-xs font-['Outfit',sans-serif]">
                   <thead>
-                    <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase">
+                    <tr className="bg-[#171b26] border-b border-[#464554] text-[#908fa0] text-[10px] uppercase font-['Outfit',sans-serif]">
                       <th className="p-2.5">Member ID</th>
                       <th className="p-2.5">Masked Preview</th>
                       <th className="p-2.5">Validation</th>
