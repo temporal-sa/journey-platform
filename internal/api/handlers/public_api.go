@@ -1594,6 +1594,34 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 
 	tc := h.GetTemporalClient()
 	if tc != nil {
+		evtType, _ := payload["event_type"].(string)
+		if evtType == "" {
+			evtType = "order.completed"
+		}
+
+		targetWfID := ""
+		if wID, ok := payload["workflow_id"].(string); ok && wID != "" {
+			targetWfID = wID
+		} else if wID, ok := dataMap["workflow_id"].(string); ok && wID != "" {
+			targetWfID = wID
+		} else if rID, ok := payload["run_id"].(string); ok && rID != "" {
+			targetWfID = fmt.Sprintf("wf-%s-%s", draftID, rID)
+		} else if rID, ok := dataMap["run_id"].(string); ok && rID != "" {
+			targetWfID = fmt.Sprintf("wf-%s-%s", draftID, rID)
+		}
+
+		sigData := workflows.EventSignal{
+			SchemaVersion: domain.DefaultSchemaVersion,
+			EventID:       eventID,
+			EventType:     evtType,
+			Payload:       dataMap,
+		}
+
+		if targetWfID != "" {
+			_ = tc.SignalWorkflow(r.Context(), targetWfID, "", "journey.signal.event", sigData)
+		}
+
+		// Also start new workflow if execution requested
 		wfID := fmt.Sprintf("wf-%s-%s-%s", tenantID, draftID, customerEmail)
 		wfOpts := client.StartWorkflowOptions{
 			ID:        wfID,
