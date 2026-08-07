@@ -130,38 +130,47 @@ export function TestRunModal({
         </>
       }
     >
-          {/* Execution Mode Selector */}
+          {/* Execution Mode Toggle */}
           <div>
-            <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-2 font-['Outfit',sans-serif]">
-              Execution Mode
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div
+            <div className="flex items-center gap-1.5 mb-2 font-['Outfit',sans-serif]">
+              <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider">
+                Execution Mode
+              </label>
+              <span
+                className="material-symbols-outlined text-xs text-[#908fa0] hover:text-[#4cd7f6] cursor-help transition-colors"
+                title="Realistic: Simulates standard audience distribution & production path weights.&#10;100% Coverage: Forces 100% path coverage across all A/B experiment variants & branch splits."
+                aria-label="Execution mode details"
+                data-testid="execution-mode-tooltip-icon"
+              >
+                info
+              </span>
+            </div>
+
+            <div className="inline-flex bg-[#11141d] p-1 border border-[#464554] rounded-none font-['Outfit',sans-serif] w-full">
+              <button
+                type="button"
                 onClick={() => setExecutionMode('realistic')}
-                className={`p-4 rounded-none border transition-all cursor-pointer ${
+                data-testid="mode-toggle-realistic"
+                className={`flex-1 py-2 px-4 text-xs font-bold transition-all rounded-none cursor-pointer text-center ${
                   executionMode === 'realistic'
-                    ? 'border-[#4cd7f6] bg-[#4cd7f6]/10 shadow-[0_0_20px_rgba(76,215,246,0.2)]'
-                    : 'border-[#464554] bg-[#171b26] hover:border-[#908fa0]'
+                    ? 'bg-[#4cd7f6] text-[#003640] shadow-sm'
+                    : 'text-[#dfe2f1] hover:text-white hover:bg-[#171b26]'
                 }`}
               >
-                <div className="font-semibold text-white font-['Outfit'] text-sm">Realistic Mode</div>
-                <div className="text-xs text-[#908fa0] mt-1">
-                  Simulates standard audience distribution & production path weights.
-                </div>
-              </div>
-              <div
+                Realistic
+              </button>
+              <button
+                type="button"
                 onClick={() => setExecutionMode('forced_variant_coverage')}
-                className={`p-4 rounded-none border transition-all cursor-pointer ${
+                data-testid="mode-toggle-coverage"
+                className={`flex-1 py-2 px-4 text-xs font-bold transition-all rounded-none cursor-pointer text-center ${
                   executionMode === 'forced_variant_coverage'
-                    ? 'border-[#4cd7f6] bg-[#4cd7f6]/10 shadow-[0_0_20px_rgba(76,215,246,0.2)]'
-                    : 'border-[#464554] bg-[#171b26] hover:border-[#908fa0]'
+                    ? 'bg-[#4cd7f6] text-[#003640] shadow-sm'
+                    : 'text-[#dfe2f1] hover:text-white hover:bg-[#171b26]'
                 }`}
               >
-                <div className="font-semibold text-white font-['Outfit'] text-sm">Forced Variant Coverage</div>
-                <div className="text-xs text-[#908fa0] mt-1">
-                  Forces 100% path coverage across all A/B experiment variants & branch splits.
-                </div>
-              </div>
+                100% Coverage
+              </button>
             </div>
           </div>
 

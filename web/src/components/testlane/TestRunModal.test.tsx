@@ -13,8 +13,9 @@ describe('TestRunModal Component', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Configure Test Run Execution' })).toBeInTheDocument();
-    expect(screen.getByText('Realistic Mode')).toBeInTheDocument();
-    expect(screen.getByText('Forced Variant Coverage')).toBeInTheDocument();
+    expect(screen.getByTestId('mode-toggle-realistic')).toHaveTextContent('Realistic');
+    expect(screen.getByTestId('mode-toggle-coverage')).toHaveTextContent('100% Coverage');
+    expect(screen.getByTestId('execution-mode-tooltip-icon')).toBeInTheDocument();
     expect(screen.getByLabelText('Audience Source (Static List)')).toBeInTheDocument();
     expect(screen.getByText('Mock SendGrid (Email)')).toBeInTheDocument();
     expect(screen.getByText('Target Member Count')).toBeInTheDocument();
@@ -32,8 +33,8 @@ describe('TestRunModal Component', () => {
     );
 
     // Click Forced Variant Coverage mode
-    const forcedModeBtn = screen.getByText('Forced Variant Coverage');
-    fireEvent.click(forcedModeBtn);
+    const coverageBtn = screen.getByTestId('mode-toggle-coverage');
+    fireEvent.click(coverageBtn);
 
     // Toggle a provider checkbox
     const sendgridCheckbox = screen.getByLabelText('Mock SendGrid (Email)') as HTMLInputElement;
