@@ -389,3 +389,4 @@ export class JourneyApiClient {
     return res.data;
   }
 }
+export const apiClient = new JourneyApiClient();
