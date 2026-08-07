@@ -530,7 +530,7 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 			for i := range outgoing {
 				edge := outgoing[i]
 				expr := strings.TrimSpace(edge.ConditionExpression)
-				if (res.Status == "matched" && (expr == "" || expr == "true" || expr == "matched" || strings.Contains(expr, "matched"))) ||
+				if (res.Status == "matched" && (expr == "" || expr == "true" || expr == "matched" || strings.Contains(expr, "matched") || strings.Contains(expr, "event"))) ||
 					(res.Status == "timed_out" && (expr == "timeout" || expr == "timed_out" || strings.Contains(expr, "timeout"))) {
 					chosenEdge = &edge
 					break
@@ -539,8 +539,30 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 
 			if chosenEdge != nil {
 				nextNodeID = chosenEdge.TargetID
-			} else if len(outgoing) > 0 {
+			} else if res.Status == "matched" && len(outgoing) > 0 {
 				nextNodeID = outgoing[0].TargetID
+			} else if res.Status == "timed_out" {
+				state.Status = StatusSuppressed
+				_ = workflow.ExecuteActivity(WithActivitySummary(ctx, fmt.Sprintf("Emit workflow_suppressed lifecycle event for node %s", node.ID)), act.EmitLifecycleEvent, activities.LifecycleEvent{
+					SchemaVersion: domain.DefaultSchemaVersion,
+					RunID:         input.RunID,
+					TenantID:      input.TenantID,
+					WorkflowID:    input.WorkflowID,
+					EventType:     "workflow_suppressed",
+					NodeID:        node.ID,
+					Status:        string(StatusSuppressed),
+					Timestamp:     workflow.Now(ctx),
+					Metadata:      map[string]interface{}{"reason": "wait_for_event_timed_out_no_branch"},
+				}).Get(ctx, nil)
+				return &CompiledJourneyResult{
+					RunID:             input.RunID,
+					WorkflowID:        input.WorkflowID,
+					Status:            StatusSuppressed,
+					CurrentNodeID:     node.ID,
+					VisitCounts:       state.VisitCounts,
+					NodeOutputs:       state.NodeOutputs,
+					ExperimentContext: state.ExperimentContext,
+				}, nil
 			}
 
 		case nodeType == "delay" || nodeType == "timer" || nodeType == "wait":
