@@ -267,7 +267,7 @@ export function StaticListUploadModal({
           {/* Form Fields: List Metadata & Versioning */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="list-id-input" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+              <label htmlFor="list-id-input" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
                 List ID (Target Identifier)
               </label>
               <input
@@ -275,11 +275,11 @@ export function StaticListUploadModal({
                 type="text"
                 value={listId}
                 onChange={(e) => setListId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] focus:ring-1 focus:ring-[#4cd7f6] font-['Outfit',sans-serif]"
               />
             </div>
             <div>
-              <label htmlFor="list-name-input" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+              <label htmlFor="list-name-input" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
                 List Name
               </label>
               <input
@@ -294,28 +294,28 @@ export function StaticListUploadModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="list-version-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+              <label htmlFor="list-version-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
                 Immutable List Version
               </label>
               <select
                 id="list-version-select"
                 value={selectedVersion}
                 onChange={(e) => setSelectedVersion(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
               >
                 <option value="v1 (immutable)">v1 - Initial Commit (Immutable)</option>
                 <option value="v2 (immutable)">v2 - Draft Delta (Immutable)</option>
               </select>
             </div>
             <div>
-              <label htmlFor="list-ttl-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+              <label htmlFor="list-ttl-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
                 Expiry Duration (TTL)
               </label>
               <select
                 id="list-ttl-select"
                 value={ttlHours}
                 onChange={(e) => setTtlHours(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+                className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
               >
                 <option value="1">1 Hour</option>
                 <option value="24">24 Hours (Default)</option>
@@ -343,12 +343,12 @@ export function StaticListUploadModal({
               <span>Choose CSV File</span>
             </label>
             {selectedFile ? (
-              <p className="mt-2.5 text-xs text-[#4cd7f6] font-mono">
+              <p className="mt-2.5 text-xs text-[#4cd7f6]">
                 Selected: <strong className="text-white">{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(1)} KB)
               </p>
             ) : (
               <p className="mt-2.5 text-xs text-[#908fa0]">
-                Upload CSV file containing headers: <code className="text-[#4cd7f6] font-mono">user_id, email</code>
+                Upload CSV file containing headers: <code className="text-[#4cd7f6]">user_id, email</code>
               </p>
             )}
           </div>
@@ -356,7 +356,7 @@ export function StaticListUploadModal({
           {/* Upload Progress Bar */}
           {(isProcessing || uploadProgress > 0) && (
             <div className="space-y-1">
-              <div className="flex justify-between text-[10px] font-mono text-[#908fa0]">
+              <div className="flex justify-between text-[10px] text-[#908fa0]">
                 <span>Upload Progress</span>
                 <span>{uploadProgress}%</span>
               </div>
@@ -375,7 +375,7 @@ export function StaticListUploadModal({
 
           {/* Validation Summary Cards */}
           {summary && (
-            <div className="grid grid-cols-3 gap-3 font-mono">
+            <div className="grid grid-cols-3 gap-3">
               <div className="p-3.5 rounded-none bg-[#c0c1ff]/10 border border-[#c0c1ff]/20 text-[#c0c1ff]">
                 <div className="text-[10px] text-[#908fa0] uppercase">Total Rows</div>
                 <div className="text-lg font-bold text-white mt-0.5">{summary.rowCount}</div>
@@ -391,11 +391,6 @@ export function StaticListUploadModal({
             </div>
           )}
 
-          {/* Expiry Display Box */}
-          <div className="p-3.5 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] text-xs font-mono flex items-center gap-2">
-            <span className="material-symbols-outlined text-base text-[#4cd7f6]">schedule</span>
-            <span><strong className="text-[#4cd7f6]">List Expiry Target:</strong> {getExpiryLabel()}</span>
-          </div>
 
           {/* Masked Member Preview Table */}
           {previews.length > 0 && (
