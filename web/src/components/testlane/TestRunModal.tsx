@@ -131,96 +131,32 @@ export function TestRunModal({
       }
     >
       <div className="space-y-5 text-xs">
-          {/* Execution Mode In-Track Pill Toggle */}
-          <div className="flex items-center gap-3 font-['Outfit',sans-serif] py-1">
-            <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider shrink-0">
-              Execution Mode:
-            </label>
-
-            {/* Widened Glowing Pill Switch with internal text inside track */}
-            <button
-              type="button"
-              role="switch"
-              aria-label="Toggle Execution Mode"
-              aria-checked={executionMode === 'forced_variant_coverage'}
-              data-testid="execution-mode-toggle-switch"
-              onClick={() =>
-                setExecutionMode((prev) =>
-                  prev === 'realistic' ? 'forced_variant_coverage' : 'realistic'
-                )
-              }
-              style={{
-                width: '144px',
-                height: '32px',
-                borderRadius: '9999px',
-                padding: '3px 4px',
-                background: executionMode === 'forced_variant_coverage' ? '#0070f3' : '#1e293b',
-                borderColor: executionMode === 'forced_variant_coverage' ? '#38bdf8' : '#475569',
-                borderWidth: '2px',
-                borderStyle: 'solid',
-                boxShadow: executionMode === 'forced_variant_coverage' ? '0 0 16px rgba(0, 112, 243, 0.75)' : 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                position: 'relative',
-                transition: 'all 0.3s ease-in-out',
-                outline: 'none',
-                userSelect: 'none',
-              }}
-              className="relative shrink-0 focus:outline-none overflow-hidden"
-            >
-              {/* White 3D Knob on Left when Realistic */}
-              {executionMode === 'realistic' && (
-                <span
-                  style={{
-                    width: '22px',
-                    height: '22px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ffffff',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
-                    display: 'block',
-                    pointerEvents: 'none',
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-
-              {/* In-Track Text Label */}
+          {/* Execution Mode Dropdown Selector */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5 font-['Outfit',sans-serif]">
+              <label htmlFor="execution-mode-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider">
+                Execution Mode
+              </label>
               <span
-                className={`text-[11px] font-bold transition-all duration-300 ${
-                  executionMode === 'forced_variant_coverage' ? 'text-white pl-2' : 'text-[#908fa0] pr-2 ml-auto'
-                }`}
+                className="material-symbols-outlined text-sm text-[#4cd7f6] hover:text-[#38c2e0] cursor-help transition-colors"
+                title={`Realistic: Simulates standard audience distribution & production path weights.\nFull Coverage: Forces 100% path coverage across all A/B experiment variants & branch splits.`}
+                aria-label="Execution mode details"
+                data-testid="execution-mode-tooltip-icon"
               >
-                {executionMode === 'forced_variant_coverage' ? 'Full Coverage' : 'Realistic'}
+                help_outline
               </span>
-
-              {/* White 3D Knob on Right when Full Coverage */}
-              {executionMode === 'forced_variant_coverage' && (
-                <span
-                  style={{
-                    width: '22px',
-                    height: '22px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ffffff',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
-                    display: 'block',
-                    pointerEvents: 'none',
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-            </button>
-
-            {/* Cyan Question Mark Tooltip Icon located just after toggle */}
-            <span
-              className="material-symbols-outlined text-sm text-[#4cd7f6] hover:text-[#38c2e0] cursor-help transition-colors shrink-0"
-              title={`Realistic: Simulates standard audience distribution & production path weights.\nFull Coverage: Forces 100% path coverage across all A/B experiment variants & branch splits.`}
-              aria-label="Execution mode details"
-              data-testid="execution-mode-tooltip-icon"
+            </div>
+            <select
+              id="execution-mode-select"
+              data-testid="execution-mode-select"
+              value={executionMode}
+              onChange={(e) => setExecutionMode(e.target.value as 'realistic' | 'forced_variant_coverage')}
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
             >
-              help_outline
-            </span>
+              <option value="realistic" style={{ fontFamily: "'Outfit', sans-serif" }}>Realistic Mode</option>
+              <option value="forced_variant_coverage" style={{ fontFamily: "'Outfit', sans-serif" }}>Full Coverage Mode</option>
+            </select>
           </div>
           {/* Static List Audience Selector */}
           <div>
