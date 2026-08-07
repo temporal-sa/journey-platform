@@ -134,6 +134,36 @@ func (h *Handlers) getAvailableWebMCPTools() []mcpTool {
 			},
 		},
 		{
+			Name:        "create_journey_draft",
+			Description: "Create or update a journey draft workflow with nodes and edges",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"draft_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Optional draft ID. Generated if not supplied.",
+					},
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the journey draft",
+					},
+					"description": map[string]interface{}{
+						"type":        "string",
+						"description": "Description of the journey draft",
+					},
+					"nodes": map[string]interface{}{
+						"type":        "array",
+						"description": "List of graph nodes (trigger, Email, SMS, Exit, etc.)",
+					},
+					"edges": map[string]interface{}{
+						"type":        "array",
+						"description": "List of graph edges connecting nodes",
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
 			Name:        "trigger_test_run",
 			Description: "Trigger a test execution for a journey draft with mock inputs or static audience list",
 			InputSchema: map[string]interface{}{
@@ -199,6 +229,65 @@ func (h *Handlers) executeWebMCPTool(ctx context.Context, tenantID, name string,
 			return nil, fmt.Errorf("journey draft '%s' not found", draftID)
 		}
 		return draft, nil
+	case "create_journey_draft":
+		name, _ := args["name"].(string)
+		if name == "" {
+			name = "New Journey Draft"
+		}
+		draftID, _ := args["draft_id"].(string)
+		if draftID == "" {
+			draftID = fmt.Sprintf("draft-%d", time.Now().UnixNano()/1e6)
+		}
+		desc, _ := args["description"].(string)
+
+		nodesRaw, _ := args["nodes"].([]interface{})
+		edgesRaw, _ := args["edges"].([]interface{})
+
+		nodesBytes, _ := json.Marshal(nodesRaw)
+		edgesBytes, _ := json.Marshal(edgesRaw)
+
+		if len(nodesRaw) == 0 {
+			// Default 3-step workflow (Start -> Email -> Exit)
+			defaultNodes := []map[string]interface{}{
+				{"id": "node-start", "type": "trigger", "name": "Start Event", "position": map[string]interface{}{"x": 100, "y": 100}},
+				{"id": "node-email", "type": "Email", "name": "Email Action", "position": map[string]interface{}{"x": 100, "y": 300}},
+				{"id": "node-exit", "type": "Exit", "name": "Exit Node", "position": map[string]interface{}{"x": 100, "y": 500}},
+			}
+			defaultEdges := []map[string]interface{}{
+				{"id": "edge-start-email", "source": "node-start", "target": "node-email", "condition": "source"},
+				{"id": "edge-email-exit", "source": "node-email", "target": "node-exit", "condition": "source"},
+			}
+			nodesBytes, _ = json.Marshal(defaultNodes)
+			edgesBytes, _ = json.Marshal(defaultEdges)
+		}
+
+		now := time.Now().UTC()
+		draft := &postgres.JourneyDraft{
+			TenantID:    tenantID,
+			DraftID:     draftID,
+			Name:        name,
+			Description: desc,
+			Version:     1,
+			Nodes:       nodesBytes,
+			Edges:       edgesBytes,
+			ContentHash: fmt.Sprintf("hash-%d", now.Unix()),
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+
+		existing, _ := h.repo.GetJourneyDraft(ctx, tenantID, draftID)
+		var saved *postgres.JourneyDraft
+		var err error
+		if existing == nil {
+			saved, err = h.repo.CreateJourneyDraft(ctx, draft)
+		} else {
+			draft.Version = existing.Version + 1
+			saved, err = h.repo.UpdateJourneyDraft(ctx, draft)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to save journey draft: %w", err)
+		}
+		return saved, nil
 
 	case "trigger_test_run":
 		draftID, _ := args["draft_id"].(string)

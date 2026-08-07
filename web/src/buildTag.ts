@@ -1,5 +1,5 @@
 // Auto-generated build tag file
-export const BUILD_TAG = 'webmcp-local-integration-feat/webmcp-local-integration-2';
+export const BUILD_TAG = 'webmcp-local-integration-feat/webmcp-local-integration-4';
 export const WORKTREE_NAME = 'webmcp-local-integration';
 export const BRANCH_NAME = 'feat/webmcp-local-integration';
-export const BUILD_INCREMENT = 2;
+export const BUILD_INCREMENT = 4;
