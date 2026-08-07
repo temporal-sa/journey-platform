@@ -104,11 +104,11 @@ export const Modal: React.FC<ModalProps> = ({
               </div>
             )}
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                {badge}
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 id={ariaLabelledBy} className="font-['Outfit'] font-bold text-lg text-white tracking-wide truncate">
                   {title}
                 </h2>
+                {badge}
               </div>
               {subtitle && <p id={ariaDescribedBy} className="text-xs text-[#908fa0] mt-0.5">{subtitle}</p>}
             </div>
