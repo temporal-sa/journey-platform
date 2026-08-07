@@ -115,4 +115,21 @@ describe('DeveloperPanel Component', () => {
       'ETag draft hash updated to draft-101-v5 revision.'
     );
   });
+  it('renders Event Ingress & Signal Simulator form inputs and controls', () => {
+    const handleClose = vi.fn();
+    const handleFireToast = vi.fn();
+
+    render(
+      <DeveloperPanel
+        isOpen={true}
+        onClose={handleClose}
+        onFireToast={handleFireToast}
+      />
+    );
+
+    expect(screen.getByTestId('dev-event-type-input')).toBeInTheDocument();
+    expect(screen.getByTestId('dev-subject-ref-input')).toBeInTheDocument();
+    expect(screen.getByTestId('dev-event-payload-textarea')).toBeInTheDocument();
+    expect(screen.getByTestId('emit-ingress-event-btn')).toBeInTheDocument();
+  });
 });

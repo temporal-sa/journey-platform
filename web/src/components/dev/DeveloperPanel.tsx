@@ -275,24 +275,29 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
             </Button>
           </div>
         </div>
-        {/* Section 3: Interactive Event Ingress Simulator */}
-        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md">
+        {/* Section 3: Interactive Event Ingress & WebMCP Signal Simulator */}
+        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-4 shadow-md">
           <div className="flex items-center gap-2.5 pb-3 border-b border-[#464554]/30">
-            <div className="w-8 h-8 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6]">
+            <div className="w-8 h-8 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6] shrink-0">
               <span className="material-symbols-outlined text-lg">electric_bolt</span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white font-['Outfit']">Event Ingress & Signal Simulator</h3>
+              <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
+                <span>Event Ingress & Signal Simulator</span>
+                <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 rounded-none">
+                  KAFKA / WEBMCP
+                </span>
+              </h3>
               <p className="text-xs text-[#908fa0] mt-0.5">
-                Emit custom inbound Kafka events (`POST /api/v1/events/emit`) to trigger `WaitForEvent` nodes.
+                Emit custom inbound events (<code className="text-[#4cd7f6] bg-[#111520] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[10px]">POST /api/v1/events/emit</code>) to signal waiting workflows.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
-                Event Type (Matching WaitForEvent node)
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
+                Event Type (Matches WaitForEvent node)
               </label>
               <input
                 type="text"
@@ -300,12 +305,13 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 onChange={(e) => setEventType(e.target.value)}
                 placeholder="order.completed"
                 data-testid="dev-event-type-input"
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554]/60 text-white font-mono rounded-none focus:border-[#4cd7f6] outline-none"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-3 py-2 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
                 Subject / Customer ID (Optional)
               </label>
               <input
@@ -314,13 +320,14 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 onChange={(e) => setSubjectRef(e.target.value)}
                 placeholder="usr_gold_varA_event"
                 data-testid="dev-subject-ref-input"
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554]/60 text-white font-mono rounded-none focus:border-[#4cd7f6] outline-none"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-3 py-2 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
               Event Payload Attributes (JSON)
             </label>
             <textarea
@@ -328,11 +335,16 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
               value={payloadJson}
               onChange={(e) => setPayloadJson(e.target.value)}
               data-testid="dev-event-payload-textarea"
-              className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554]/60 text-[#4cd7f6] font-mono text-[11px] rounded-none focus:border-[#4cd7f6] outline-none"
+              style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+              className="w-full px-3 py-2 bg-[#111520] border border-[#464554] text-[#4cd7f6] font-mono text-[11px] rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center pt-1">
+            <span className="text-[10px] font-mono text-[#908fa0]">
+              Endpoint: <span className="text-[#c0c1ff]">/api/v1/events/emit</span>
+            </span>
+
             <Button
               type="button"
               onClick={handleEmitEvent}
@@ -340,14 +352,13 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
               data-testid="emit-ingress-event-btn"
               variant="cyan"
               size="sm"
-              icon="send"
-              className="font-bold bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/50 shadow-sm"
+              icon="bolt"
+              className="font-bold bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/50 shadow-sm rounded-none"
             >
               {isEmitting ? 'Emitting Event...' : 'Emit Ingress Event'}
             </Button>
           </div>
         </div>
-
         {/* Section 3: Runtime Diagnostics & System Metadata */}
         <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3 shadow-md">
           <div className="flex items-center gap-2.5 pb-2 border-b border-[#464554]/30">
