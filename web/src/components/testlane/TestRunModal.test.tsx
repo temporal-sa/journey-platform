@@ -8,12 +8,11 @@ describe('TestRunModal Component', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders modal with explicit TEST MODE badge, execution modes, fixture picker, fake providers, and preview metrics', () => {
+  it('renders modal with execution modes, fixture picker, fake providers, and preview metrics', () => {
     render(<TestRunModal isOpen={true} onClose={() => {}} draftId="draft-xyz" />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Configure Test Run Execution' })).toBeInTheDocument();
-    expect(screen.getByTestId('test-mode-badge')).toHaveTextContent('TEST MODE');
     expect(screen.getByText('Realistic Mode')).toBeInTheDocument();
     expect(screen.getByText('Forced Variant Coverage')).toBeInTheDocument();
     expect(screen.getByLabelText('Audience Source (Static List)')).toBeInTheDocument();

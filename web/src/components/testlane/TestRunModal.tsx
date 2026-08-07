@@ -108,14 +108,8 @@ export function TestRunModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Configure Test Run Execution"
-      subtitle="Run Candidate Journey IR against isolated test audience fixtures."
       icon="play_circle"
       iconAccentColor="#4cd7f6"
-      badge={
-        <Badge variant="cyan" testId="test-mode-badge">
-          TEST MODE
-        </Badge>
-      }
       maxWidth="2xl"
       testId="test-run-modal"
       ariaLabelledBy="test-run-modal-title"
@@ -137,13 +131,13 @@ export function TestRunModal({
       }
     >
           {/* Target Journey Draft Header Info */}
-          <div className="p-3.5 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6] text-xs font-mono flex items-center gap-2">
+          <div className="p-3.5 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6] text-xs flex items-center gap-2 font-['Outfit',sans-serif]">
             <span className="material-symbols-outlined text-base">info</span>
             <span>Target Journey Draft: <strong className="text-white">{draftId}</strong> (Isolated Sandbox Mode)</span>
           </div>
           {/* Execution Mode Selector */}
           <div>
-            <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-2">
+            <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-2 font-['Outfit',sans-serif]">
               Execution Mode
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -178,7 +172,7 @@ export function TestRunModal({
 
           {/* Static List Audience Selector */}
           <div>
-            <label htmlFor="static-list-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+            <label htmlFor="static-list-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
               Audience Source (Static List)
             </label>
             <select
@@ -186,11 +180,12 @@ export function TestRunModal({
               data-testid="static-list-select"
               value={selectedStaticListId}
               onChange={(e) => setSelectedStaticListId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#4cd7f6]/60 text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#4cd7f6]/60 text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
             >
-              <option value="">Default Mock Fixture Pack (No Static List)</option>
+              <option value="" style={{ fontFamily: "'Outfit', sans-serif" }}>Default Mock Fixture Pack (No Static List)</option>
               {staticLists.map((list) => (
-                <option key={list.list_id} value={list.list_id}>
+                <option key={list.list_id} value={list.list_id} style={{ fontFamily: "'Outfit', sans-serif" }}>
                   {list.name || list.list_id} ({list.item_count || 0} members)
                 </option>
               ))}
@@ -199,27 +194,28 @@ export function TestRunModal({
 
           {/* Fixture Pack Picker */}
           <div>
-            <label htmlFor="fixture-pack-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+            <label htmlFor="fixture-pack-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
               Fixture Pack Picker (Fallback Mode)
             </label>
             <select
               id="fixture-pack-select"
               value={fixturePack}
               onChange={(e) => setFixturePack(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
             >
-              <option value="Standard Fixture Pack (50 contacts)">Standard Fixture Pack (50 contacts)</option>
-              <option value="Edge Cases & Invalid Emails (10 contacts)">Edge Cases & Invalid Emails (10 contacts)</option>
-              <option value="High Volume Stress Pack (250 contacts)">High Volume Stress Pack (250 contacts)</option>
+              <option value="Standard Fixture Pack (50 contacts)" style={{ fontFamily: "'Outfit', sans-serif" }}>Standard Fixture Pack (50 contacts)</option>
+              <option value="Edge Cases & Invalid Emails (10 contacts)" style={{ fontFamily: "'Outfit', sans-serif" }}>Edge Cases & Invalid Emails (10 contacts)</option>
+              <option value="High Volume Stress Pack (250 contacts)" style={{ fontFamily: "'Outfit', sans-serif" }}>High Volume Stress Pack (250 contacts)</option>
             </select>
           </div>
 
           {/* Fake Provider Selector */}
           <div>
-            <label className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
               Fake Provider Selector (Mock Dispatchers)
             </label>
-            <div className="flex gap-3 flex-wrap mt-2 font-mono text-xs">
+            <div className="flex gap-3 flex-wrap mt-2 text-xs font-['Outfit',sans-serif]">
               {[
                 { id: 'mock-sendgrid', label: 'Mock SendGrid (Email)' },
                 { id: 'mock-twilio', label: 'Mock Twilio (SMS)' },
@@ -241,23 +237,24 @@ export function TestRunModal({
 
           {/* Expiry Duration */}
           <div>
-            <label htmlFor="test-run-expiry-select" className="block text-[10px] font-mono font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5">
+            <label htmlFor="test-run-expiry-select" className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-1.5 font-['Outfit',sans-serif]">
               Test Run Expiry Duration
             </label>
             <select
               id="test-run-expiry-select"
               value={expiryHours}
               onChange={(e) => setExpiryHours(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] font-mono text-xs focus:outline-none focus:border-[#4cd7f6]"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+              className="w-full px-3.5 py-2.5 rounded-none bg-[#11141d] border border-[#464554] text-[#dfe2f1] text-xs focus:outline-none focus:border-[#4cd7f6] font-['Outfit',sans-serif]"
             >
-              <option value="1">1 Hour</option>
-              <option value="24">24 Hours (Default)</option>
-              <option value="168">7 Days</option>
+              <option value="1" style={{ fontFamily: "'Outfit', sans-serif" }}>1 Hour</option>
+              <option value="24" style={{ fontFamily: "'Outfit', sans-serif" }}>24 Hours (Default)</option>
+              <option value="168" style={{ fontFamily: "'Outfit', sans-serif" }}>7 Days</option>
             </select>
           </div>
 
           {/* Target Count & Execution Configuration Preview */}
-          <div className="p-4 rounded-none bg-[#171b26] border border-[#464554] space-y-3 font-mono">
+          <div className="p-4 rounded-none bg-[#171b26] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
             <h3 className="font-['Outfit'] font-bold text-xs text-white uppercase tracking-wider">
               Target Count & Execution Configuration
             </h3>
