@@ -1,0 +1,5 @@
+user_id,email,name,tier
+usr_gold_varA_event,taylor.gold@temporal.io,Taylor Gold,gold
+usr_silver_varA_timeout,sam.silver@temporal.io,Sam Silver,silver
+usr_bronze_varB_event,chris.bronze@temporal.io,Chris Bronze,bronze
+usr_platinum_varB_timeout,pat.platinum@temporal.io,Pat Platinum,platinum
