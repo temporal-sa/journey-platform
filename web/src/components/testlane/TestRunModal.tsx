@@ -131,18 +131,13 @@ export function TestRunModal({
       }
     >
       <div className="space-y-5 text-xs">
-          {/* Execution Mode Inline Toggle */}
-          <div className="flex items-center gap-3.5 font-['Outfit',sans-serif] py-1">
-            <div className="flex items-center gap-2 shrink-0">
-              <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider">
-                Execution Mode:
-              </label>
-              <span className="text-xs font-bold text-white">
-                {executionMode === 'realistic' ? 'Realistic' : 'Full Coverage'}
-              </span>
-            </div>
+          {/* Execution Mode In-Track Pill Toggle */}
+          <div className="flex items-center gap-3 font-['Outfit',sans-serif] py-1">
+            <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider shrink-0">
+              Execution Mode:
+            </label>
 
-            {/* Glowing Pill Switch matching toggle.jpeg */}
+            {/* Widened Glowing Pill Switch with internal text inside track */}
             <button
               type="button"
               role="switch"
@@ -155,10 +150,10 @@ export function TestRunModal({
                 )
               }
               style={{
-                width: '56px',
-                height: '28px',
+                width: '144px',
+                height: '32px',
                 borderRadius: '9999px',
-                padding: '2px',
+                padding: '3px 4px',
                 background: executionMode === 'forced_variant_coverage' ? '#0070f3' : '#1e293b',
                 borderColor: executionMode === 'forced_variant_coverage' ? '#38bdf8' : '#475569',
                 borderWidth: '2px',
@@ -167,24 +162,54 @@ export function TestRunModal({
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'relative',
                 transition: 'all 0.3s ease-in-out',
                 outline: 'none',
+                userSelect: 'none',
               }}
-              className="relative shrink-0 focus:outline-none"
+              className="relative shrink-0 focus:outline-none overflow-hidden"
             >
+              {/* White 3D Knob on Left when Realistic */}
+              {executionMode === 'realistic' && (
+                <span
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffffff',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
+                    display: 'block',
+                    pointerEvents: 'none',
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+
+              {/* In-Track Text Label */}
               <span
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
-                  transform: executionMode === 'forced_variant_coverage' ? 'translateX(28px)' : 'translateX(0px)',
-                  transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  display: 'block',
-                  pointerEvents: 'none',
-                }}
-              />
+                className={`text-[11px] font-bold transition-all duration-300 ${
+                  executionMode === 'forced_variant_coverage' ? 'text-white pl-2' : 'text-[#908fa0] pr-2 ml-auto'
+                }`}
+              >
+                {executionMode === 'forced_variant_coverage' ? 'Full Coverage' : 'Realistic'}
+              </span>
+
+              {/* White 3D Knob on Right when Full Coverage */}
+              {executionMode === 'forced_variant_coverage' && (
+                <span
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffffff',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
+                    display: 'block',
+                    pointerEvents: 'none',
+                    flexShrink: 0,
+                  }}
+                />
+              )}
             </button>
 
             {/* Cyan Question Mark Tooltip Icon located just after toggle */}
