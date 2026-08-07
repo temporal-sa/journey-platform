@@ -344,7 +344,7 @@ func resolveRandomizationUnitValue(unitKey string, node domain.IRNode, state *Co
 	}
 
 	// Fallback to common unit keys
-	commonKeys := []string{"user_id", "subject_id", "subject_ref", "user_ref", "customer_id"}
+	commonKeys := []string{"user_id", "member_id", "member_key", "subject_id", "subject_ref", "user_ref", "customer_id"}
 	for _, k := range commonKeys {
 		if state.Variables != nil {
 			if val, ok := state.Variables[k].(string); ok && val != "" {
@@ -369,13 +369,13 @@ func resolveRecipientAddress(channel string, node domain.IRNode, state *Compiled
 	var keys []string
 	switch channel {
 	case "email":
-		keys = []string{"recipient_address", "email", "to", "address"}
+		keys = []string{"recipient_address", "email", "recipient", "to", "address"}
 	case "sms":
-		keys = []string{"recipient_address", "phone", "phone_number", "mobile", "to"}
+		keys = []string{"recipient_address", "phone", "phone_number", "mobile", "recipient", "to"}
 	case "push":
-		keys = []string{"recipient_address", "push_token", "device_token", "to"}
+		keys = []string{"recipient_address", "push_token", "device_token", "recipient", "to"}
 	default:
-		keys = []string{"recipient_address", "address", "to", "url", "endpoint"}
+		keys = []string{"recipient_address", "address", "recipient", "to", "url", "endpoint"}
 	}
 
 	for _, k := range keys {

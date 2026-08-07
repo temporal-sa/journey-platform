@@ -260,7 +260,10 @@ func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request)
 			if err := json.Unmarshal(testRun.MockInputs, &mockInputs); err == nil {
 				if slID, ok := mockInputs["static_list_id"].(string); ok && slID != "" {
 					sl, errSL := h.repo.GetStaticList(r.Context(), tenantID, slID)
-					if errSL == nil && sl != nil {
+					if (errSL != nil || sl == nil) && tenantID != "default" {
+						sl, _ = h.repo.GetStaticList(r.Context(), "default", slID)
+					}
+					if sl != nil {
 						staticList = sl
 					}
 				}
@@ -276,10 +279,7 @@ func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request)
 	}
 
 	if staticList != nil && len(staticList.Items) > 0 && len(mockRows) == 0 {
-		var members []map[string]interface{}
-		if errUnm := json.Unmarshal(staticList.Items, &members); errUnm == nil {
-			mockRows = members
-		}
+		mockRows = parseStaticListItemsToMaps(staticList.Items)
 	}
 
 	type SubRunItem struct {
@@ -999,6 +999,9 @@ func (h *Handlers) FinalizeStaticList(w http.ResponseWriter, r *http.Request) {
 	tenantID := getTenantID(r)
 
 	dbList, err := h.repo.GetStaticList(r.Context(), tenantID, listID)
+	if (err != nil || dbList == nil) && tenantID != "default" {
+		dbList, err = h.repo.GetStaticList(r.Context(), "default", listID)
+	}
 	if err != nil || dbList == nil {
 		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("static list '%s' not found", listID))
 		return
@@ -1049,6 +1052,9 @@ func (h *Handlers) GetStaticList(w http.ResponseWriter, r *http.Request) {
 	tenantID := getTenantID(r)
 
 	dbList, err := h.repo.GetStaticList(r.Context(), tenantID, listID)
+	if (err != nil || dbList == nil) && tenantID != "default" {
+		dbList, err = h.repo.GetStaticList(r.Context(), "default", listID)
+	}
 	if err != nil || dbList == nil {
 		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("static list '%s' not found", listID))
 		return
@@ -1170,9 +1176,23 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if trInput.StaticListID == "" && trInput.MockInputs != nil {
+		if slID, ok := trInput.MockInputs["static_list_id"].(string); ok && slID != "" {
+			trInput.StaticListID = slID
+		}
+	}
+
 	// Validate referenced static list if supplied
 	if trInput.StaticListID != "" {
+		if trInput.MockInputs == nil {
+			trInput.MockInputs = make(map[string]interface{})
+		}
+		trInput.MockInputs["static_list_id"] = trInput.StaticListID
+
 		dbList, err := h.repo.GetStaticList(r.Context(), tenantID, trInput.StaticListID)
+		if (err != nil || dbList == nil) && tenantID != "default" {
+			dbList, err = h.repo.GetStaticList(r.Context(), "default", trInput.StaticListID)
+		}
 		if err != nil || dbList == nil {
 			middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("referenced static list '%s' not found", trInput.StaticListID))
 			return
@@ -1258,11 +1278,11 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 
 		if trInput.StaticListID != "" {
 			dbList, err := h.repo.GetStaticList(r.Context(), tenantID, trInput.StaticListID)
-			if err == nil && dbList != nil && len(dbList.Items) > 0 {
-				var members []map[string]interface{}
-				if errUnm := json.Unmarshal(dbList.Items, &members); errUnm == nil && len(members) > 0 {
-					rows = members
-				}
+			if (err != nil || dbList == nil) && tenantID != "default" {
+				dbList, _ = h.repo.GetStaticList(r.Context(), "default", trInput.StaticListID)
+			}
+			if dbList != nil && len(dbList.Items) > 0 {
+				rows = parseStaticListItemsToMaps(dbList.Items)
 			}
 		}
 
@@ -1436,6 +1456,9 @@ func (h *Handlers) ListStaticListVersions(w http.ResponseWriter, r *http.Request
 	tenantID := getTenantID(r)
 
 	dbList, err := h.repo.GetStaticList(r.Context(), tenantID, listID)
+	if (err != nil || dbList == nil) && tenantID != "default" {
+		dbList, err = h.repo.GetStaticList(r.Context(), "default", listID)
+	}
 	if err != nil || dbList == nil {
 		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("static list '%s' not found", listID))
 		return
@@ -1640,3 +1663,56 @@ func (h *Handlers) ProcessOutcomeCallback(w http.ResponseWriter, r *http.Request
 	middleware.WriteJSON(w, http.StatusOK, resp)
 }
 
+
+func parseStaticListItemsToMaps(itemsBytes []byte) []map[string]interface{} {
+	if len(itemsBytes) == 0 {
+		return nil
+	}
+	var rows []map[string]interface{}
+	var rawItems []interface{}
+	if err := json.Unmarshal(itemsBytes, &rawItems); err == nil && len(rawItems) > 0 {
+		for _, raw := range rawItems {
+			if m, ok := raw.(map[string]interface{}); ok {
+				rowMap := make(map[string]interface{})
+				for k, v := range m {
+					if k == "attributes" {
+						if attrs, ok := v.(map[string]interface{}); ok {
+							for ak, av := range attrs {
+								rowMap[ak] = av
+							}
+						}
+					} else {
+						rowMap[k] = v
+					}
+				}
+				if rec, ok := m["recipient"].(string); ok && rec != "" {
+					if _, exists := rowMap["email"]; !exists {
+						rowMap["email"] = rec
+					}
+					if _, exists := rowMap["recipient_address"]; !exists {
+						rowMap["recipient_address"] = rec
+					}
+				}
+				if memID, ok := m["member_id"].(string); ok && memID != "" {
+					if _, exists := rowMap["user_id"]; !exists {
+						rowMap["user_id"] = memID
+					}
+					if _, exists := rowMap["subject_id"]; !exists {
+						rowMap["subject_id"] = memID
+					}
+				}
+				rows = append(rows, rowMap)
+			} else if s, ok := raw.(string); ok {
+				rows = append(rows, map[string]interface{}{
+					"user_id":           s,
+					"member_id":         s,
+					"subject_id":        s,
+					"recipient":         s,
+					"recipient_address": s,
+					"email":             s,
+				})
+			}
+		}
+	}
+	return rows
+}

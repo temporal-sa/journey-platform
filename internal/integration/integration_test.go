@@ -23,8 +23,8 @@ func TestSeedIdempotency(t *testing.T) {
 	if res1.CatalogsSeeded == 0 {
 		t.Errorf("Expected catalogs to be seeded, got 0")
 	}
-	if res1.StaticListsSeeded != 2 {
-		t.Errorf("Expected 2 static lists seeded, got %d", res1.StaticListsSeeded)
+	if res1.StaticListsSeeded != 3 {
+		t.Errorf("Expected 3 static lists seeded, got %d", res1.StaticListsSeeded)
 	}
 	if res1.ExperimentsSeeded != 1 {
 		t.Errorf("Expected 1 experiment seeded, got %d", res1.ExperimentsSeeded)
@@ -105,7 +105,7 @@ func TestSeedIdempotency(t *testing.T) {
 		t.Errorf("Idempotency violation! Catalog count changed: before=%d, after=%d", catalogCountFirstRun, len(catalogsSecondRun))
 	}
 
-	if res2.StaticListsSeeded != 2 || res2.ExperimentsSeeded != 1 {
+	if res2.StaticListsSeeded != 3 || res2.ExperimentsSeeded != 1 {
 		t.Errorf("Unexpected seed counts on second run: %+v", res2)
 	}
 }

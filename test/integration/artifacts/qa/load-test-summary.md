@@ -4,6 +4,6 @@
 - **Successful Ingests**: 1
 - **Duplicates Handled**: 999
 - **Errors**: 0
-- **Duration**: 3 ms
-- **Throughput**: 279778.97 events/sec
+- **Duration**: 10 ms
+- **Throughput**: 98836.20 events/sec
 - **Status**: PASS

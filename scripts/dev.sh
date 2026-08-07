@@ -54,14 +54,9 @@ if command -v docker >/dev/null 2>&1; then
             sleep 1
         done
         echo "Applying PostgreSQL database schema migrations..."
-        docker compose exec -T postgres psql -U journey -d journeydb -c "
-            CREATE TABLE IF NOT EXISTS catalogs (tenant_id VARCHAR(255) NOT NULL, record_id VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, component_type VARCHAR(64) NOT NULL, version VARCHAR(64) NOT NULL, description TEXT NOT NULL DEFAULT '', schema_definition JSONB NOT NULL DEFAULT '{}'::jsonb, content_hash VARCHAR(64) NOT NULL DEFAULT '', tags TEXT[] NOT NULL DEFAULT '{}', is_deprecated BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (tenant_id, record_id));
-            CREATE TABLE IF NOT EXISTS journey_drafts (tenant_id VARCHAR(255) NOT NULL, draft_id VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, description TEXT NOT NULL DEFAULT '', version INT NOT NULL DEFAULT 1, nodes JSONB NOT NULL DEFAULT '[]'::jsonb, edges JSONB NOT NULL DEFAULT '[]'::jsonb, content_hash VARCHAR(64) NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (tenant_id, draft_id));
-            CREATE TABLE IF NOT EXISTS journey_versions (tenant_id VARCHAR(255) NOT NULL, version_id VARCHAR(255) NOT NULL, draft_id VARCHAR(255) NOT NULL, version INT NOT NULL DEFAULT 1, entry_node_id VARCHAR(255) NOT NULL DEFAULT '', nodes JSONB NOT NULL DEFAULT '[]'::jsonb, edges JSONB NOT NULL DEFAULT '[]'::jsonb, content_hash VARCHAR(64) NOT NULL DEFAULT '', compiled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (tenant_id, version_id));
-            CREATE TABLE IF NOT EXISTS static_lists (tenant_id VARCHAR(255) NOT NULL, list_id VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, description TEXT NOT NULL DEFAULT '', item_count INT NOT NULL DEFAULT 0, data_classification VARCHAR(64) NOT NULL DEFAULT 'NonPII', items JSONB NOT NULL DEFAULT '[]'::jsonb, content_hash VARCHAR(64) NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (tenant_id, list_id));
-            CREATE TABLE IF NOT EXISTS test_runs (tenant_id VARCHAR(255) NOT NULL, test_run_id VARCHAR(255) NOT NULL, draft_id VARCHAR(255) NOT NULL, ir_id VARCHAR(255) NOT NULL DEFAULT '', static_list_id VARCHAR(255) NOT NULL DEFAULT '', status VARCHAR(64) NOT NULL DEFAULT 'running', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (tenant_id, test_run_id));
-            CREATE TABLE IF NOT EXISTS enrollments (tenant_id VARCHAR(255) NOT NULL, enrollment_id VARCHAR(255) NOT NULL, journey_version_id VARCHAR(255) NOT NULL, subject_id VARCHAR(255) NOT NULL, status VARCHAR(64) NOT NULL DEFAULT 'active', current_node_id VARCHAR(255) NOT NULL DEFAULT '', state_data JSONB NOT NULL DEFAULT '{}'::jsonb, enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), completed_at TIMESTAMPTZ, PRIMARY KEY (tenant_id, enrollment_id));
-        " 2>/dev/null || true
+        if [ -f "migrations/postgres/000001_create_postgres_tables.up.sql" ]; then
+            docker compose exec -T postgres psql -U journey -d journeydb < migrations/postgres/000001_create_postgres_tables.up.sql 2>/dev/null || true
+        fi
     fi
 fi
 

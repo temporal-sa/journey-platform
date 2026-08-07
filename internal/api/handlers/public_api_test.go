@@ -2,11 +2,13 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
 	"github.com/validated-pattern/journey-platform/internal/domain"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 )
@@ -480,6 +482,59 @@ func TestTestRunEndpoints_StartCancelIdempotency(t *testing.T) {
 
 	if recCancel2.Code != http.StatusConflict {
 		t.Fatalf("expected 409 Conflict when cancelling terminal test run, got %d: %s", recCancel2.Code, recCancel2.Body.String())
+	}
+}
+func TestStartTestRun_WithStaticList(t *testing.T) {
+	router, repo := setupTestRouter()
+	ctx := context.Background()
+
+	// Seed static list under "default" tenant
+	itemsJSON, _ := json.Marshal([]map[string]interface{}{
+		{"member_id": "m-001", "recipient": "alice@example.com", "tier": "gold"},
+		{"member_id": "m-002", "recipient": "bob@example.com", "tier": "silver"},
+	})
+	_, err := repo.CreateStaticList(ctx, &postgres.StaticList{
+		TenantID:           "default",
+		ListID:             "list-test-audience",
+		Name:               "Test Audience List",
+		ItemCount:          2,
+		DataClassification: "NonPII",
+		Items:              itemsJSON,
+		ContentHash:        "hash-test-aud",
+		CreatedAt:          time.Now().UTC(),
+		UpdatedAt:          time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatalf("failed to seed static list: %v", err)
+	}
+
+	// 1. Execute Test Run with Static List under non-default tenant ("tenant-custom")
+	trPayload := map[string]interface{}{
+		"draft_id":       "draft-101",
+		"static_list_id": "list-test-audience",
+		"mock_inputs": map[string]interface{}{
+			"execution_mode": "realistic",
+		},
+	}
+	bodyBytes, _ := json.Marshal(trPayload)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/test-runs", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", "tenant-custom")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201 Created for StartTestRun with static list, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var trResp domain.TestRun
+	if err := json.Unmarshal(rec.Body.Bytes(), &trResp); err != nil {
+		t.Fatalf("failed to unmarshal test run response: %v", err)
+	}
+
+	if trResp.MockInputs["static_list_id"] != "list-test-audience" {
+		t.Fatalf("expected mock_inputs.static_list_id to be 'list-test-audience', got %v", trResp.MockInputs["static_list_id"])
 	}
 }
 

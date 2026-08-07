@@ -124,7 +124,7 @@ reset:
 migrate:
 	@echo "Applying PostgreSQL database schema migrations..."
 	@if [ -f migrations/postgres/000001_create_postgres_tables.up.sql ]; then \
-		docker compose exec -T postgres psql -U journey -d journeydb -f /migrations/postgres/000001_create_postgres_tables.up.sql 2>/dev/null || true; \
+		docker compose exec -T postgres psql -U journey -d journeydb < migrations/postgres/000001_create_postgres_tables.up.sql 2>/dev/null || true; \
 	fi
 
 .PHONY: dev

@@ -277,9 +277,10 @@ func (m *MinIOStore) FinalizeObject(ctx context.Context, key string) error {
 		Object: key,
 	}
 	dst := minio.CopyDestOptions{
-		Bucket:       m.bucket,
-		Object:       key,
-		UserMetadata: updatedUserMeta,
+		Bucket:          m.bucket,
+		Object:          key,
+		UserMetadata:    updatedUserMeta,
+		ReplaceMetadata: true,
 	}
 
 	_, err = m.client.CopyObject(ctx, dst, src)

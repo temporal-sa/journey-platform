@@ -110,12 +110,13 @@ describe('App & Foundation Components', () => {
     });
   });
 
-  it('renders dynamic build tag in sidebar header', () => {
+  it('renders dynamic build tag in sidebar header', async () => {
+    const { BUILD_TAG } = await import('./buildTag');
     render(<App />);
     const versionTag = screen.getByTestId('sidebar-version-tag');
 
     expect(versionTag).toBeInTheDocument();
-    expect(versionTag.textContent).toContain('ui-improvements-obsidian-feat/ui-improvements-obsidian-');
+    expect(versionTag.textContent).toContain(BUILD_TAG);
   });
 
   it('triggers error toast when publishing workflow during simulated API failure mode', async () => {
