@@ -466,6 +466,9 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
   const edges: Edge[] = useMemo(() => {
     if (!currentDraft?.edges) return [];
     return currentDraft.edges.map((e) => {
+      const sourceNode = currentDraft.nodes?.find((n) => n.id === e.source);
+      const sourceType = sourceNode?.type;
+
       let resolvedSourceHandle =
         e.sourceHandle ||
         (e.condition === 'true' || e.id.includes('-true-')
@@ -482,6 +485,22 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
         resolvedSourceHandle = resolvedSourceHandle.replace('variant-', 'variant_');
       }
 
+      if (
+        sourceType === 'WaitForEvent' ||
+        sourceType === 'WaitForEventNode' ||
+        sourceType === 'wait_for_event' ||
+        sourceType === 'event_wait'
+      ) {
+        if (
+          resolvedSourceHandle === 'timeout' ||
+          e.condition === 'timeout' ||
+          e.id.includes('-timeout-')
+        ) {
+          resolvedSourceHandle = 'timeout';
+        } else {
+          resolvedSourceHandle = 'event';
+        }
+      }
       const isSelected = selectedEdgeIds.includes(e.id) || e.id === selectedEdgeId;
       const edgeLabel = e.label || getBranchLabel(resolvedSourceHandle);
       const edgeData = getMemoizedEdgeData(e.id, e.condition || resolvedSourceHandle, edgeLabel);
