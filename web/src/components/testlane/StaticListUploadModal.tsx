@@ -4,7 +4,6 @@ import { JourneyApiClient } from '../../api/client';
 import { DegradedStateView } from '../DegradedStateView';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
-import { Badge } from '../common/Badge';
 export interface StaticListUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -212,11 +211,6 @@ export function StaticListUploadModal({
     }
   };
 
-  const getExpiryLabel = () => {
-    const hours = parseInt(ttlHours, 10);
-    const date = new Date(Date.now() + hours * 3600 * 1000);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()} (${hours}h TTL)`;
-  };
 
   return (
     <Modal

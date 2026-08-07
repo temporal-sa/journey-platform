@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { JourneyApiClient } from '../../api/client';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
-import { Badge } from '../common/Badge';
 import type { TestRun, StaticList } from '../../types/api';
 
 const apiClient = new JourneyApiClient();
