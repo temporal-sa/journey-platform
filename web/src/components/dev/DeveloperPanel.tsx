@@ -24,7 +24,13 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
 }) => {
   const [isApiFailureActive, setIsApiFailureActive] = useState<boolean>(isSimulatedApiFailureEnabled());
   const [eventType, setEventType] = useState<string>('order.completed');
+  const [source, setSource] = useState<string>('web_control_panel');
+  const [schemaVersion, setSchemaVersion] = useState<string>('1.0');
+  const [dataClassification, setDataClassification] = useState<'NonPII' | 'PII' | 'Sensitive'>('NonPII');
   const [subjectRef, setSubjectRef] = useState<string>('usr_gold_varA_event');
+  const [workflowId, setWorkflowId] = useState<string>('');
+  const [eventId, setEventId] = useState<string>('');
+  const [traceId, setTraceId] = useState<string>('');
   const [payloadJson, setPayloadJson] = useState<string>('{\n  "amount": 149.99,\n  "currency": "USD"\n}');
   const [isEmitting, setIsEmitting] = useState<boolean>(false);
   const currentDraft = useEditorStore((s) => s.currentDraft);
@@ -52,10 +58,35 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
     }
   };
   const handleEmitEvent = async () => {
+    if (!eventType.trim()) {
+      onFireToast(
+        ToastMessageType.ERROR,
+        'Missing Required Field',
+        'Event Type (event_type) is required per schema.'
+      );
+      return;
+    }
+
+    if (!source.trim()) {
+      onFireToast(
+        ToastMessageType.ERROR,
+        'Missing Required Field',
+        'Event Source (source) is required per schema.'
+      );
+      return;
+    }
+
     let parsedData = {};
     try {
       if (payloadJson.trim()) {
         parsedData = JSON.parse(payloadJson);
+      } else {
+        onFireToast(
+          ToastMessageType.ERROR,
+          'Missing Required Field',
+          'Event Data Payload (data) is required per schema.'
+        );
+        return;
       }
     } catch {
       onFireToast(
@@ -68,23 +99,28 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
 
     setIsEmitting(true);
     try {
-      const eventId = `evt-dev-${Date.now().toString().slice(-6)}`;
+      const generatedEvtId = eventId.trim() || `evt-dev-${Date.now().toString().slice(-6)}`;
+      const generatedTraceId = traceId.trim() || `trace-${Date.now()}`;
+
       await apiClient.emitKafkaTestEvent({
-        schema_version: '1.0',
-        event_id: eventId,
-        trace_id: `trace-${Date.now()}`,
-        event_type: eventType || 'order.completed',
-        source: 'dev_control_panel',
-        subject: subjectRef || undefined,
+        schema_version: schemaVersion || '1.0',
+        event_id: generatedEvtId,
+        trace_id: generatedTraceId,
+        event_type: eventType.trim(),
+        source: source.trim(),
+        subject: subjectRef.trim() || undefined,
         timestamp: new Date().toISOString(),
-        data_classification: 'NonPII',
-        data: parsedData,
+        data_classification: dataClassification,
+        data: {
+          ...parsedData,
+          ...(workflowId.trim() ? { workflow_id: workflowId.trim() } : {}),
+        },
       });
 
       onFireToast(
         ToastMessageType.SUCCESS,
         'Event Emitted Successfully',
-        `Emitted event '${eventType}' (${eventId}) to ingress topic & waiting workflows.`
+        `Emitted event '${eventType}' (${generatedEvtId}) to ingress topic & waiting workflows.`
       );
     } catch (err: any) {
       onFireToast(
@@ -285,19 +321,19 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
               <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
                 <span>Event Ingress & Signal Simulator</span>
                 <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 rounded-none">
-                  KAFKA / WEBMCP
+                  EVENT ENVELOPE v1.0
                 </span>
               </h3>
               <p className="text-xs text-[#908fa0] mt-0.5">
-                Emit custom inbound events (<code className="text-[#4cd7f6] bg-[#111520] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[10px]">POST /api/v1/events/emit</code>) to signal waiting workflows.
+                Emit custom inbound events (<code className="text-[#4cd7f6] bg-[#111520] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[10px]">POST /api/v1/events/emit</code>) with all required schema envelope attributes.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
-                Event Type (Matches WaitForEvent node)
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+                Event Type <span className="text-rose-400">*</span>
               </label>
               <input
                 type="text"
@@ -306,12 +342,46 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 placeholder="order.completed"
                 data-testid="dev-event-type-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-3 py-2 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+                Source <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                placeholder="web_control_panel"
+                data-testid="dev-event-source-input"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+                Data Classification <span className="text-rose-400">*</span>
+              </label>
+              <select
+                value={dataClassification}
+                onChange={(e) => setDataClassification(e.target.value as 'NonPII' | 'PII' | 'Sensitive')}
+                data-testid="dev-data-classification-select"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#4cd7f6] font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all cursor-pointer"
+              >
+                <option value="NonPII">NonPII</option>
+                <option value="PII">PII</option>
+                <option value="Sensitive">Sensitive</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
                 Subject / Customer ID (Optional)
               </label>
               <input
@@ -321,14 +391,76 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
                 placeholder="usr_gold_varA_event"
                 data-testid="dev-subject-ref-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-3 py-2 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+                Target Workflow ID (Optional)
+              </label>
+              <input
+                type="text"
+                value={workflowId}
+                onChange={(e) => setWorkflowId(e.target.value)}
+                placeholder="wf-draft-1786135080506-..."
+                data-testid="dev-workflow-id-input"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#c0c1ff] font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+                Schema Version
+              </label>
+              <input
+                type="text"
+                value={schemaVersion}
+                onChange={(e) => setSchemaVersion(e.target.value)}
+                placeholder="1.0"
+                data-testid="dev-schema-version-input"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] font-mono text-xs rounded-none outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+                Event ID (Auto-generated if blank)
+              </label>
+              <input
+                type="text"
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
+                placeholder="evt-dev-..."
+                data-testid="dev-event-id-input"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] font-mono text-xs rounded-none outline-none placeholder-[#464554]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+                Trace ID (Auto-generated if blank)
+              </label>
+              <input
+                type="text"
+                value={traceId}
+                onChange={(e) => setTraceId(e.target.value)}
+                placeholder="trace-..."
+                data-testid="dev-trace-id-input"
+                style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] font-mono text-xs rounded-none outline-none placeholder-[#464554]"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
-              Event Payload Attributes (JSON)
+              Event Payload Data (JSON) <span className="text-rose-400">*</span>
             </label>
             <textarea
               rows={3}
