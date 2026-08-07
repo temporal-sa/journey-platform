@@ -223,14 +223,8 @@ export function StaticListUploadModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Static List CSV Upload"
-      subtitle="Upload target test recipients for isolated static test-run execution (`is_test = true`)."
       icon="upload_file"
       iconAccentColor="#4cd7f6"
-      badge={
-        <Badge variant="cyan" testId="test-mode-badge">
-          TEST MODE ACTIVE
-        </Badge>
-      }
       maxWidth="3xl"
       testId="static-list-upload-modal"
       ariaLabelledBy="static-list-upload-title"

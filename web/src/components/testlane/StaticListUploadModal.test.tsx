@@ -39,12 +39,11 @@ describe('StaticListUploadModal Component', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders modal with explicit TEST MODE badge and default form elements when isOpen is true', () => {
+  it('renders modal with default form elements when isOpen is true', () => {
     render(<StaticListUploadModal isOpen={true} onClose={() => {}} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Static List CSV Upload' })).toBeInTheDocument();
-    expect(screen.getByTestId('test-mode-badge')).toHaveTextContent('TEST MODE');
     expect(screen.getByLabelText('List ID (Target Identifier)')).toBeInTheDocument();
     expect(screen.getByLabelText('Immutable List Version')).toBeInTheDocument();
     expect(screen.getByLabelText('Expiry Duration (TTL)')).toBeInTheDocument();
