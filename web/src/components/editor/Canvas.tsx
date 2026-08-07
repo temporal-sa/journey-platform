@@ -38,8 +38,8 @@ function getBranchLabel(sourceHandle?: string | null): string | undefined {
   if (sourceHandle === 'false') return 'False';
   if (sourceHandle === 'event') return 'Event';
   if (sourceHandle === 'timeout') return 'Timeout';
-  if (sourceHandle.startsWith('variant_')) {
-    const variantName = sourceHandle.replace('variant_', '');
+  if (sourceHandle.startsWith('variant_') || sourceHandle.startsWith('variant-')) {
+    const variantName = sourceHandle.replace(/^variant[_-]/, '');
     return `Variant ${variantName.toUpperCase()}`;
   }
   return sourceHandle;
@@ -466,7 +466,7 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
   const edges: Edge[] = useMemo(() => {
     if (!currentDraft?.edges) return [];
     return currentDraft.edges.map((e) => {
-      const resolvedSourceHandle =
+      let resolvedSourceHandle =
         e.sourceHandle ||
         (e.condition === 'true' || e.id.includes('-true-')
           ? 'true'
@@ -477,6 +477,10 @@ export function CanvasInner({ onSaveDraft, onSimulateConflict, onPublish, onTest
           : e.condition === 'timeout' || e.id.includes('-timeout-')
           ? 'timeout'
           : e.condition || undefined);
+
+      if (resolvedSourceHandle && resolvedSourceHandle.startsWith('variant-')) {
+        resolvedSourceHandle = resolvedSourceHandle.replace('variant-', 'variant_');
+      }
 
       const isSelected = selectedEdgeIds.includes(e.id) || e.id === selectedEdgeId;
       const edgeLabel = e.label || getBranchLabel(resolvedSourceHandle);
