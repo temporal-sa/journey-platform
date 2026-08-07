@@ -130,11 +130,6 @@ export function TestRunModal({
         </>
       }
     >
-          {/* Target Journey Draft Header Info */}
-          <div className="p-3.5 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/20 text-[#4cd7f6] text-xs flex items-center gap-2 font-['Outfit',sans-serif]">
-            <span className="material-symbols-outlined text-base">info</span>
-            <span>Target Journey Draft: <strong className="text-white">{draftId}</strong> (Isolated Sandbox Mode)</span>
-          </div>
           {/* Execution Mode Selector */}
           <div>
             <label className="block text-[10px] font-semibold text-[#908fa0] uppercase tracking-wider mb-2 font-['Outfit',sans-serif]">
