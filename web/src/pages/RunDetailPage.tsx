@@ -322,7 +322,10 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
               variant={isSelected ? 'emerald' : 'secondary-dark'}
               size="sm"
               icon={isSelected ? 'visibility' : 'query_stats'}
-              onClick={() => setSelectedSubRunId(sr.sub_run_id)}
+              onClick={() => {
+                setSelectedSubRunId(sr.sub_run_id);
+                setViewMode('graph');
+              }}
               className={isSelected ? 'bg-emerald-500/30 text-emerald-200 border-emerald-400 font-bold' : ''}
               data-testid={`view-subrun-trace-${sr.sub_run_id}`}
             >
@@ -659,7 +662,11 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
             </div>
 
             {viewMode === 'graph' ? (
-              <div className="w-full h-[540px] rounded-none border border-[#464554]/50 bg-[#0B0F19] overflow-hidden" data-testid="execution-graph-container">
+              <div
+                className="w-full h-[540px] min-h-[540px] rounded-none border border-[#464554]/50 bg-[#0B0F19] overflow-hidden"
+                style={{ height: '540px', minHeight: '540px' }}
+                data-testid="execution-graph-container"
+              >
                 <ExecutionGraphView
                   nodes={graphNodesAndEdges.nodes}
                   edges={graphNodesAndEdges.edges}

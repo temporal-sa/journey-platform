@@ -266,8 +266,8 @@ function ExecutionGraphViewInner({
   return (
     <div
       data-testid="execution-graph-view"
-      className="relative w-full overflow-hidden bg-[#0B0F19] border border-[#464554]/40"
-      style={{ height }}
+      className="relative w-full h-full min-h-[480px] overflow-hidden bg-[#0B0F19] border border-[#464554]/40"
+      style={{ height: height || '540px' }}
     >
       <ReactFlow
         nodes={flowNodes}
