@@ -178,43 +178,96 @@ function ExecutionGraphViewInner({
   status,
   height = '600px',
 }: ExecutionGraphViewProps) {
-  // Determine active node ID
+  const isCompleted = useMemo(() => {
+    const s = (status || '').toLowerCase();
+    return s === 'completed' || s === 'passed' || s === 'success' || s === 'succeeded';
+  }, [status]);
+
+  // Determine active node ID (only active while run is running)
   const activeNodeId = useMemo(() => {
+    if (isCompleted) return undefined;
     if (currentNodeId) return currentNodeId;
     if (status === 'running' && visitSteps.length > 0) {
       return visitSteps[visitSteps.length - 1].nodeId;
     }
     return undefined;
-  }, [currentNodeId, status, visitSteps]);
+  }, [currentNodeId, status, visitSteps, isCompleted]);
 
-  // Map of nodeId -> stepIndex
-  const nodeStepMap = useMemo(() => {
-    const map = new Map<string, number>();
-    visitSteps.forEach((step) => {
-      if (!map.has(step.nodeId)) {
-        map.set(step.nodeId, step.stepIndex);
-      }
-    });
-    return map;
-  }, [visitSteps]);
+  // Helper to find visit step matching a graph node
+  const findMatchingStep = useMemo(() => {
+    return (node: GraphNode, index: number): NodeVisitStep | undefined => {
+      if (!visitSteps || visitSteps.length === 0) return undefined;
+
+      const sanitize = (str?: string) => (str || '').toLowerCase().replace(/[-_\s]/g, '');
+      const normId = sanitize(node.id);
+      const normName = sanitize(node.name);
+      const normType = sanitize(node.type);
+
+      // 1. Direct ID match
+      const directMatch = visitSteps.find((s) => sanitize(s.nodeId) === normId && normId.length > 0);
+      if (directMatch) return directMatch;
+
+      // 2. Name or Type match
+      const nameOrTypeMatch = visitSteps.find((s) => {
+        const stepNormId = sanitize(s.nodeId);
+        const stepNormName = sanitize(s.nodeName);
+        const stepNormType = sanitize(s.nodeType);
+
+        return (
+          (normName.length > 0 && (stepNormId === normName || stepNormName === normName)) ||
+          (normType.length > 0 && (stepNormId === normType || stepNormType === normType))
+        );
+      });
+      if (nameOrTypeMatch) return nameOrTypeMatch;
+
+      // 3. Fallback match by step index
+      const indexMatch = visitSteps.find((s) => {
+        if (s.stepIndex === index + 1) return true;
+        if (sanitize(s.nodeId) === `node${index + 1}` || sanitize(s.nodeId) === `step${index + 1}`) return true;
+        return false;
+      });
+      if (indexMatch && (visitSteps.length === nodes.length || nodes.length <= 3)) return indexMatch;
+
+      return undefined;
+    };
+  }, [visitSteps, nodes]);
 
   // Set of traversed edge keys: "sourceId->targetId"
   const traversedEdgePairs = useMemo(() => {
     const pairs = new Set<string>();
+
+    const visitedNodeIds = new Set<string>();
+    nodes.forEach((n, idx) => {
+      const step = findMatchingStep(n, idx);
+      if (step || isCompleted) {
+        visitedNodeIds.add(n.id);
+      }
+    });
+
     for (let i = 0; i < visitSteps.length - 1; i++) {
       const from = visitSteps[i].nodeId;
       const to = visitSteps[i + 1].nodeId;
       pairs.add(`${from}->${to}`);
     }
+
+    edges.forEach((edge) => {
+      const sourceVisited = visitedNodeIds.has(edge.source);
+      const targetVisited = visitedNodeIds.has(edge.target);
+      if (sourceVisited && targetVisited) {
+        pairs.add(`${edge.source}->${edge.target}`);
+      }
+    });
+
     return pairs;
-  }, [visitSteps]);
+  }, [visitSteps, nodes, edges, findMatchingStep, isCompleted]);
 
   // Map input nodes to ReactFlow nodes
   const flowNodes: Node[] = useMemo(() => {
     return nodes.map((node, index) => {
-      const isVisited = nodeStepMap.has(node.id);
-      const isActive = activeNodeId !== undefined && node.id === activeNodeId;
-      const stepIndex = nodeStepMap.get(node.id);
+      const stepMatch = findMatchingStep(node, index);
+      const isVisited = Boolean(stepMatch) || isCompleted;
+      const isActive = activeNodeId !== undefined && (node.id === activeNodeId || Boolean(stepMatch && stepMatch.nodeId === activeNodeId));
+      const stepIndex = stepMatch ? stepMatch.stepIndex : (isCompleted ? index + 1 : undefined);
 
       return {
         id: node.id,
@@ -234,8 +287,7 @@ function ExecutionGraphViewInner({
         },
       };
     });
-  }, [nodes, nodeStepMap, activeNodeId]);
-
+  }, [nodes, findMatchingStep, isCompleted, activeNodeId]);
   // Map input edges to ReactFlow edges
   const flowEdges: Edge[] = useMemo(() => {
     return edges.map((edge) => {

@@ -190,12 +190,17 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
 
   const currentNodeId = React.useMemo(() => {
     if (visitSteps.length === 0) return undefined;
+    const isCompleted = ['completed', 'passed', 'success', 'succeeded'].includes(
+      (parameters.status || '').toLowerCase()
+    );
+    if (isCompleted) return undefined;
+
     const runningStep = visitSteps.find((s) => s.status === 'running');
     if (runningStep) return runningStep.nodeId;
     const failedStep = visitSteps.find((s) => s.status === 'failed');
     if (failedStep) return failedStep.nodeId;
-    return visitSteps[visitSteps.length - 1]?.nodeId;
-  }, [visitSteps]);
+    return undefined;
+  }, [visitSteps, parameters.status]);
 
   const graphNodesAndEdges = React.useMemo(() => {
     if (journeyDraft?.nodes && journeyDraft.nodes.length > 0) {
