@@ -23,6 +23,7 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { validateConnection } from './CanvasValidation';
 import { getNodeValidationCounts, getNodeIssues } from '../inspector/validationMapping';
 import { CloseButton } from '../common/CloseButton';
+import { CustomMiniMapNode } from './CustomMiniMapNode';
 
 const edgeTypes = {
   labeled: LabeledEdge,
@@ -45,43 +46,6 @@ function getBranchLabel(sourceHandle?: string | null): string | undefined {
   return sourceHandle;
 }
 
-const NODE_TYPE_COLOR_MAP: Record<string, { bg: string; stroke: string; text: string; icon: string; label: string }> = {
-  EventStart: { bg: '#032b36', stroke: '#4cd7f6', text: '#4cd7f6', icon: 'electric_bolt', label: 'Trigger' },
-  EventStartNode: { bg: '#032b36', stroke: '#4cd7f6', text: '#4cd7f6', icon: 'electric_bolt', label: 'Trigger' },
-  trigger: { bg: '#032b36', stroke: '#4cd7f6', text: '#4cd7f6', icon: 'electric_bolt', label: 'Trigger' },
-
-  Condition: { bg: '#2a1c02', stroke: '#f59e0b', text: '#f59e0b', icon: 'call_split', label: 'Condition' },
-  ConditionNode: { bg: '#2a1c02', stroke: '#f59e0b', text: '#f59e0b', icon: 'call_split', label: 'Condition' },
-  condition: { bg: '#2a1c02', stroke: '#f59e0b', text: '#f59e0b', icon: 'call_split', label: 'Condition' },
-
-  Delay: { bg: '#2a1c02', stroke: '#f59e0b', text: '#f59e0b', icon: 'schedule', label: 'Delay' },
-  DelayNode: { bg: '#2a1c02', stroke: '#f59e0b', text: '#f59e0b', icon: 'schedule', label: 'Delay' },
-  delay: { bg: '#2a1c02', stroke: '#f59e0b', text: '#f59e0b', icon: 'schedule', label: 'Delay' },
-
-  WaitForEvent: { bg: '#071a38', stroke: '#3b82f6', text: '#60a5fa', icon: 'hourglass_top', label: 'Wait Event' },
-  WaitForEventNode: { bg: '#071a38', stroke: '#3b82f6', text: '#60a5fa', icon: 'hourglass_top', label: 'Wait Event' },
-  wait_for_event: { bg: '#071a38', stroke: '#3b82f6', text: '#60a5fa', icon: 'hourglass_top', label: 'Wait Event' },
-
-  Experiment: { bg: '#200738', stroke: '#ddb7ff', text: '#ddb7ff', icon: 'science', label: 'Experiment' },
-  ExperimentNode: { bg: '#200738', stroke: '#ddb7ff', text: '#ddb7ff', icon: 'science', label: 'Experiment' },
-  experiment: { bg: '#200738', stroke: '#ddb7ff', text: '#ddb7ff', icon: 'science', label: 'Experiment' },
-
-  Email: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'mail', label: 'Email Action' },
-  EmailNode: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'mail', label: 'Email Action' },
-  action: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'mail', label: 'Action' },
-
-  SMS: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'sms', label: 'SMS Action' },
-  SMSNode: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'sms', label: 'SMS Action' },
-
-  Push: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'notifications_active', label: 'Push Action' },
-  PushNode: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'notifications_active', label: 'Push Action' },
-
-  InApp: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'smartphone', label: 'In-App Action' },
-  InAppNode: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'smartphone', label: 'In-App Action' },
-
-  Webhook: { bg: '#121330', stroke: '#c0c1ff', text: '#c0c1ff', icon: 'webhook', label: 'Webhook' },
-  exit: { bg: '#36080b', stroke: '#ffb4ab', text: '#ffb4ab', icon: 'flag', label: 'Exit' },
-};
 
 const nodeDataCache = new Map<string, { key: string; data: Record<string, unknown> }>();
 const nodePositionCache = new Map<string, { x: number; y: number }>();
@@ -209,155 +173,6 @@ function getMemoizedEdgeObject(
 }
 
 
-function CustomMiniMapNode({
-  x,
-  y,
-  width,
-  height,
-  color,
-  borderRadius,
-  id,
-}: {
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  color?: string;
-  strokeColor?: string;
-  strokeWidth?: number;
-  borderRadius?: number;
-  id?: string;
-}) {
-  const { getNode } = useReactFlow();
-  const { currentDraft } = useEditorStore();
-  const node = id ? getNode(id) : null;
-  if (!node) return null;
-
-  const type = node.type || 'default';
-  const colorConfig = NODE_TYPE_COLOR_MAP[type] || {
-    bg: '#171b26',
-    stroke: color || '#c0c1ff',
-    text: color || '#c0c1ff',
-    icon: 'extension',
-    label: (node.data?.label as string) || (node.data?.name as string) || type,
-  };
-
-  const w = (node.measured?.width as number) || (width && width > 0 ? width : 260);
-  const h = (node.measured?.height as number) || (height && height > 0 ? height : 90);
-  const displayName = (node.data?.name as string) || (node.data?.label as string) || type;
-
-  const isAction = ['Email', 'SMS', 'Push', 'InApp', 'Webhook', 'action'].includes(type);
-  const rx = isAction ? h / 2 : (borderRadius || 12);
-
-  const outgoingEdges = currentDraft?.edges.filter((e) => e.source === id) || [];
-
-  return (
-    <g className="react-flow__minimap-node cursor-pointer">
-      {/* Edge Lines connecting to target nodes on the MiniMap */}
-      {outgoingEdges.map((edge) => {
-        const targetNode = getNode(edge.target);
-        if (!targetNode) return null;
-
-        const targetW = (targetNode.measured?.width as number) || 260;
-
-        const x1 = x + w / 2;
-        const y1 = y + h;
-        const x2 = x + (targetNode.position.x - node.position.x) + targetW / 2;
-        const y2 = y + (targetNode.position.y - node.position.y);
-
-        const dy = Math.max(30, Math.abs(y2 - y1) * 0.5);
-        const pathD = `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
-
-        return (
-          <g key={`minimap-edge-${edge.id}`}>
-            <path
-              d={pathD}
-              fill="none"
-              stroke="#6366f1"
-              strokeWidth={4}
-              strokeOpacity={0.4}
-              style={{ pointerEvents: 'none' }}
-            />
-            <path
-              d={pathD}
-              fill="none"
-              stroke="#c0c1ff"
-              strokeWidth={2}
-              strokeDasharray="4 2"
-              style={{ pointerEvents: 'none' }}
-            />
-          </g>
-        );
-      })}
-
-      {/* Mini Node Card Background with Category Color Fill Tint & Border */}
-      <rect
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        rx={rx}
-        ry={rx}
-        fill={colorConfig.bg}
-        stroke={colorConfig.stroke}
-        strokeWidth={3}
-        fillOpacity={0.95}
-      />
-
-      {/* Mini Icon Circle */}
-      <circle
-        cx={x + 36}
-        cy={y + h / 2}
-        r={Math.min(h / 3, 20)}
-        fill={colorConfig.stroke}
-        fillOpacity={0.25}
-        stroke={colorConfig.stroke}
-        strokeWidth={1.5}
-      />
-      <text
-        x={x + 36}
-        y={y + h / 2 + 1}
-        fill={colorConfig.text}
-        fontSize={22}
-        fontFamily="Material Symbols Outlined"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontWeight="bold"
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
-      >
-        {colorConfig.icon}
-      </text>
-
-      {/* Mini Node Title Label */}
-      <text
-        x={x + 68}
-        y={y + h / 2 - 6}
-        fill="#dfe2f1"
-        fontSize={16}
-        fontFamily="Outfit, sans-serif"
-        fontWeight="600"
-        dominantBaseline="central"
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
-      >
-        {displayName.length > 18 ? displayName.slice(0, 16) + '…' : displayName}
-      </text>
-
-      {/* Mini Category Subtitle */}
-      <text
-        x={x + 68}
-        y={y + h / 2 + 14}
-        fill={colorConfig.text}
-        fontSize={12}
-        fontFamily="JetBrains Mono, monospace"
-        fontWeight="700"
-        dominantBaseline="central"
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
-      >
-        {colorConfig.label.toUpperCase()}
-      </text>
-    </g>
-  );
-}
 
 interface CanvasProps {
   onSaveDraft?: () => void;
