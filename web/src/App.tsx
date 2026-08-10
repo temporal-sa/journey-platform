@@ -528,8 +528,10 @@ export function DashboardContent() {
         }
       }
 
+      let launchedRunId: string | undefined;
+
       // 1. Execute test run API request
-      await client.startTestRun(
+      const res = await client.startTestRun(
         {
           draft_id: draftId,
           static_list_id: _config.staticListId,
@@ -544,6 +546,10 @@ export function DashboardContent() {
         { 'X-Tenant-ID': tenantId }
       );
 
+      if (res && typeof res === 'object') {
+        launchedRunId = res.test_run_id || res.run_id;
+      }
+
       setToastState({
         isOpen: true,
         messageType: ToastMessageType.SUCCESS,
@@ -551,6 +557,13 @@ export function DashboardContent() {
         message: `Launched execution scenario for "${currentDraft?.name || draftId}".`,
       });
       announce('Test run started successfully', 'polite');
+
+      if (launchedRunId) {
+        setSelectedRunId(launchedRunId);
+        setActiveRoute('run-detail');
+      } else {
+        setActiveRoute('runs');
+      }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Could not launch execution run.';
       setToastState({
@@ -565,7 +578,6 @@ export function DashboardContent() {
       closeModal();
       queryClient.invalidateQueries({ queryKey: ['runs'] });
       queryClient.refetchQueries({ queryKey: ['runs'] });
-      setActiveRoute('runs');
     }
   };
 
