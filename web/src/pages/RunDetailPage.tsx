@@ -293,9 +293,9 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
         key: 'sub_run_id',
         header: 'Sub-Run ID',
         cell: (sr: SubRunSummary) => (
-          <code className="font-mono text-[#4cd7f6] text-[11px] bg-[#4cd7f6]/10 px-1.5 py-0.5 border border-[#4cd7f6]/20">
+          <span className="font-mono text-[#dfe2f1] text-xs">
             {sr.sub_run_id}
-          </code>
+          </span>
         ),
       },
       {
@@ -635,34 +635,30 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
 
               {/* View Segment Toggle */}
               <div
-                className="flex items-center bg-[#171b26] p-1 border border-[#464554]"
+                className="flex items-center gap-2"
                 role="group"
                 aria-label="Execution Trace View Mode"
               >
-                <button
+                <Button
                   type="button"
+                  variant={viewMode === 'graph' ? 'primary-teal' : 'secondary-dark'}
+                  size="sm"
+                  icon="account_tree"
                   onClick={() => setViewMode('graph')}
                   data-testid="view-toggle-graph"
-                  className={`px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
-                    viewMode === 'graph'
-                      ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/40 font-bold shadow-sm'
-                      : 'text-[#908fa0] hover:text-white border border-transparent'
-                  }`}
                 >
                   Visual Graph Trace
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant={viewMode === 'timeline' ? 'primary-teal' : 'secondary-dark'}
+                  size="sm"
+                  icon="schema"
                   onClick={() => setViewMode('timeline')}
                   data-testid="view-toggle-timeline"
-                  className={`px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
-                    viewMode === 'timeline'
-                      ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/40 font-bold shadow-sm'
-                      : 'text-[#908fa0] hover:text-white border border-transparent'
-                  }`}
                 >
                   Timeline List
-                </button>
+                </Button>
               </div>
             </div>
 

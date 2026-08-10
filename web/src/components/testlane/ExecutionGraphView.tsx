@@ -301,7 +301,7 @@ function ExecutionGraphViewInner({
         sourceHandle: edge.sourceHandle,
         targetHandle: edge.targetHandle,
         type: 'labeled',
-        animated: isTraversed,
+        animated: false,
         style: {
           stroke: isTraversed ? '#4cd7f6' : '#464554',
           strokeWidth: isTraversed ? 2.5 : 1.5,
@@ -338,13 +338,17 @@ function ExecutionGraphViewInner({
         <Background color="#464554" variant={BackgroundVariant.Dots} gap={20} size={1} />
         <Controls className="!bg-[#171b26] !border-[#464554] !fill-[#dfe2f1] !text-[#dfe2f1]" />
         <MiniMap
+          pannable={true}
+          zoomable={true}
           nodeColor={(n) => {
             if (n.data?.isActive) return '#4cd7f6';
             if (n.data?.isVisited) return '#34d399';
             return '#464554';
           }}
           maskColor="rgba(11, 15, 25, 0.7)"
-          className="!bg-[#171b26] !border-[#464554]"
+          maskStrokeColor="#4cd7f6"
+          maskStrokeWidth={1.5}
+          className="!bg-[#171b26] !border-[#464554] cursor-pointer"
         />
       </ReactFlow>
     </div>
