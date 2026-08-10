@@ -85,8 +85,7 @@ export function CustomMiniMapNode({
   const h = (node.measured?.height as number) || (height && height > 0 ? height : 90);
   const displayName = (node.data?.name as string) || (node.data?.label as string) || type;
 
-  const isAction = ['Email', 'SMS', 'Push', 'InApp', 'Webhook', 'action'].includes(type);
-  const rx = isAction ? h / 2 : (borderRadius || 12);
+  const rx = 0;
 
   const allEdges = getEdges();
   const outgoingEdges = allEdges.filter((e) => e.source === id);
@@ -137,8 +136,8 @@ export function CustomMiniMapNode({
         y={y}
         width={w}
         height={h}
-        rx={rx}
-        ry={rx}
+        rx={0}
+        ry={0}
         fill={colorConfig.bg}
         stroke={strokeColor}
         strokeWidth={isActive || isVisited ? 4 : 3}
