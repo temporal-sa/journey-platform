@@ -267,9 +267,9 @@ function ExecutionGraphViewInner({
   const flowNodes: Node[] = useMemo(() => {
     return nodes.map((node, index) => {
       const stepMatch = findMatchingStep(node, index);
-      const isVisited = Boolean(stepMatch) || isCompleted;
+      const isVisited = Boolean(stepMatch);
       const isActive = activeNodeId !== undefined && (node.id === activeNodeId || Boolean(stepMatch && stepMatch.nodeId === activeNodeId));
-      const stepIndex = stepMatch ? stepMatch.stepIndex : (isCompleted ? index + 1 : undefined);
+      const stepIndex = stepMatch ? stepMatch.stepIndex : undefined;
 
       return {
         id: node.id,

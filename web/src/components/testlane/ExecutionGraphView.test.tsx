@@ -124,6 +124,21 @@ describe('ExecutionGraphView Component', () => {
     expect(nodeUnvisited).toHaveAttribute('data-active', 'false');
     expect(nodeUnvisited).toHaveClass('opacity-45');
   });
+  it('keeps unvisited branch nodes as data-visited=false and dimmed even when status=passed or status=completed is provided', () => {
+    render(
+      <ExecutionGraphView
+        nodes={sampleNodes}
+        edges={sampleEdges}
+        visitSteps={sampleVisitSteps}
+        status="passed"
+      />
+    );
+
+    const nodeUnvisited = screen.getByTestId('execution-node-node-unvisited-action');
+    expect(nodeUnvisited).toHaveAttribute('data-visited', 'false');
+    expect(nodeUnvisited).toHaveAttribute('data-active', 'false');
+    expect(nodeUnvisited).toHaveClass('opacity-45');
+  });
 
   it('calculates active currentNodeId state with active badge and pulsing indicator', () => {
     render(

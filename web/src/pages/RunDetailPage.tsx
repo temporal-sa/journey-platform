@@ -129,6 +129,36 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
   const actions: ActionResult[] = (runDetailData?.ledger?.actions as ActionResult[]) || (rawTimeline && 'actions' in rawTimeline && Array.isArray(rawTimeline.actions) ? rawTimeline.actions : []);
   const suppressions: SuppressionRecord[] = (runDetailData?.ledger?.suppressions as unknown as SuppressionRecord[]) || (rawTimeline && 'suppressions' in rawTimeline && Array.isArray(rawTimeline.suppressions) ? rawTimeline.suppressions : []);
 
+  // Derive execution status directly from recorded timeline events / projections
+  const derivedExecutionStatus = React.useMemo(() => {
+    if (!timelineEvents || timelineEvents.length === 0) {
+      return runDetailData?.ledger?.status || runDetailData?.timeline?.status || 'completed';
+    }
+
+    const hasTerminalEvent = timelineEvents.some((evt) => {
+      const type = (evt.event_type || '').toLowerCase();
+      const status = (evt.status || '').toLowerCase();
+      return (
+        type.includes('succeeded') ||
+        type.includes('completed') ||
+        type.includes('failed') ||
+        type.includes('suppressed') ||
+        status === 'completed' ||
+        status === 'passed' ||
+        status === 'failed'
+      );
+    });
+
+    if (hasTerminalEvent) {
+      const lastEvent = timelineEvents[timelineEvents.length - 1];
+      const lastStatus = (lastEvent?.status || '').toLowerCase();
+      if (lastStatus === 'failed' || (lastEvent?.event_type || '').includes('failed')) return 'failed';
+      return 'completed';
+    }
+
+    return 'running';
+  }, [timelineEvents, runDetailData]);
+
   const parameters = {
     tenant_id: runDetailData?.ledger?.tenant_id || runDetailData?.timeline?.tenant_id || 'tenant-default',
     workflow_id: runDetailData?.ledger?.workflow_id || runDetailData?.timeline?.workflow_id || `wf-${activeRunId}`,
@@ -139,7 +169,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
       : 0,
     started_at: runDetailData?.ledger?.started_at || runDetailData?.timeline?.started_at || new Date().toISOString(),
     completed_at: runDetailData?.ledger?.completed_at || runDetailData?.timeline?.completed_at,
-    status: runDetailData?.ledger?.status || runDetailData?.timeline?.status || 'completed',
+    status: derivedExecutionStatus,
   };
   const workflowId = runDetailData?.timeline?.workflow_id || runDetailData?.ledger?.workflow_id || parameters.workflow_id;
 
@@ -190,17 +220,11 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
 
   const currentNodeId = React.useMemo(() => {
     if (visitSteps.length === 0) return undefined;
-    const isCompleted = ['completed', 'passed', 'success', 'succeeded'].includes(
-      (parameters.status || '').toLowerCase()
-    );
-    if (isCompleted) return undefined;
+    if (derivedExecutionStatus === 'completed' || derivedExecutionStatus === 'passed') return undefined;
 
-    const runningStep = visitSteps.find((s) => s.status === 'running');
-    if (runningStep) return runningStep.nodeId;
-    const failedStep = visitSteps.find((s) => s.status === 'failed');
-    if (failedStep) return failedStep.nodeId;
-    return undefined;
-  }, [visitSteps, parameters.status]);
+    const latestStep = visitSteps[visitSteps.length - 1];
+    return latestStep?.nodeId;
+  }, [visitSteps, derivedExecutionStatus]);
 
   const graphNodesAndEdges = React.useMemo(() => {
     if (journeyDraft?.nodes && journeyDraft.nodes.length > 0) {

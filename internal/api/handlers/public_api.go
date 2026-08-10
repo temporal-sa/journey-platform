@@ -318,7 +318,19 @@ func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request)
 			var completedAt *time.Time
 
 			if errEvt == nil && len(events) > 0 {
+				hasCompleted := false
+				hasFailed := false
+				hasRunning := false
+
 				for _, ev := range events {
+					if ev.EventName == "workflow_succeeded" || ev.EventName == "workflow_completed" {
+						hasCompleted = true
+					} else if ev.EventName == "workflow_failed" {
+						hasFailed = true
+					} else if ev.EventName == "workflow_started" || ev.EventName == "node_entered" {
+						hasRunning = true
+					}
+
 					if ev.EventName == "node_entered" {
 						if strings.Contains(ev.EventID, "email") || strings.Contains(strings.ToLower(ev.EventID), "email") {
 							branch = "email"
@@ -326,11 +338,16 @@ func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request)
 							branch = "sms"
 						}
 					}
-					if ev.EventName == "workflow_failed" {
-						status = "failed"
-					}
 					t := ev.CreatedAt
 					completedAt = &t
+				}
+
+				if hasFailed {
+					status = "failed"
+				} else if hasCompleted {
+					status = "completed"
+				} else if hasRunning {
+					status = "running"
 				}
 			}
 
