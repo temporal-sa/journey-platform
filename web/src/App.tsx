@@ -37,8 +37,18 @@ const queryClient = new QueryClient({
 });
 export type NavigationRoute = 'journeys' | 'catalog' | 'history' | 'runs' | 'run-detail' | 'canvas' | 'experiments' | 'static-lists';
 
-export function getRouteFromHash(): NavigationRoute {
-  const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0].split('?')[0];
+export interface ParsedRouteParams {
+  route: NavigationRoute;
+  runId?: string;
+  subRunId?: string;
+}
+
+export function parseHashRoute(): ParsedRouteParams {
+  if (typeof window === 'undefined') return { route: 'journeys' };
+  const rawHash = window.location.hash.replace(/^#\/?/, '');
+  const [pathPart, queryPart] = rawHash.split('?');
+  const pathSegments = pathPart.split('/').filter(Boolean);
+
   const validRoutes: NavigationRoute[] = [
     'journeys',
     'catalog',
@@ -49,7 +59,24 @@ export function getRouteFromHash(): NavigationRoute {
     'experiments',
     'static-lists',
   ];
-  return validRoutes.includes(hash as NavigationRoute) ? (hash as NavigationRoute) : 'journeys';
+
+  const candidate = pathSegments[0] as NavigationRoute;
+  const route = validRoutes.includes(candidate) ? candidate : 'journeys';
+
+  let runId = pathSegments[1];
+  let subRunId = pathSegments[2];
+
+  if (queryPart) {
+    const searchParams = new URLSearchParams(queryPart);
+    if (searchParams.has('runId')) runId = searchParams.get('runId') || runId;
+    if (searchParams.has('subRunId')) subRunId = searchParams.get('subRunId') || subRunId;
+  }
+
+  return { route, runId, subRunId };
+}
+
+export function getRouteFromHash(): NavigationRoute {
+  return parseHashRoute().route;
 }
 
 export function InlineJourneyName({
@@ -200,25 +227,44 @@ export function DashboardContent() {
     deleteElements,
   } = useEditorStore();
   const queryClient = useQueryClient();
-  const [activeRoute, setActiveRoute] = useState<NavigationRoute>(getRouteFromHash);
+  const initialRouteParsed = parseHashRoute();
+  const [activeRoute, setActiveRoute] = useState<NavigationRoute>(initialRouteParsed.route);
+  const [selectedRunId, setSelectedRunId] = useState<string>(initialRouteParsed.runId || 'run-601');
+  const [selectedSubRunId, setSelectedSubRunId] = useState<string | undefined>(initialRouteParsed.subRunId);
 
   useEffect(() => {
-    const currentHashRoute = getRouteFromHash();
-    if (currentHashRoute !== activeRoute || window.location.hash !== `#/${activeRoute}`) {
-      window.location.hash = `#/${activeRoute}`;
+    if (typeof window === 'undefined') return;
+    let newHash = `#/${activeRoute}`;
+    if (activeRoute === 'run-detail' && selectedRunId) {
+      newHash = `#/${activeRoute}?runId=${encodeURIComponent(selectedRunId)}`;
+      if (selectedSubRunId) {
+        newHash += `&subRunId=${encodeURIComponent(selectedSubRunId)}`;
+      }
     }
-  }, [activeRoute]);
+
+    const currentNorm = decodeURIComponent(window.location.hash);
+    const newNorm = decodeURIComponent(newHash);
+
+    if (currentNorm !== newNorm) {
+      window.history.replaceState(null, '', newHash);
+    }
+  }, [activeRoute, selectedRunId, selectedSubRunId]);
 
   useEffect(() => {
     const handleHashChange = () => {
-      const route = getRouteFromHash();
-      setActiveRoute(route);
+      const parsed = parseHashRoute();
+      setActiveRoute(parsed.route);
+      if (parsed.runId) setSelectedRunId(parsed.runId);
+      if (parsed.subRunId !== undefined) setSelectedSubRunId(parsed.subRunId);
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
   }, []);
-
   useEffect(() => {
     if (!currentDraft) {
       setDraft({
@@ -232,7 +278,6 @@ export function DashboardContent() {
       });
     }
   }, [currentDraft, setDraft]);
-  const [selectedRunId, setSelectedRunId] = useState<string>('run-601');
 
   // Save Progress State
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -884,6 +929,7 @@ export function DashboardContent() {
             <RunListPage
               onSelectRun={(runId) => {
                 setSelectedRunId(runId);
+                setSelectedSubRunId(undefined);
                 setActiveRoute('run-detail');
               }}
             />
@@ -892,7 +938,9 @@ export function DashboardContent() {
           {activeRoute === 'run-detail' && (
             <RunDetailPage
               runId={selectedRunId}
+              subRunId={selectedSubRunId}
               onBackToList={() => setActiveRoute('runs')}
+              onSubRunSelect={(subId) => setSelectedSubRunId(subId)}
             />
           )}
           {activeRoute === 'experiments' && <ExperimentReportView />}

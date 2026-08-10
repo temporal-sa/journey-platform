@@ -9,7 +9,9 @@ export function useRouteParams<T extends Record<string, string>>(defaults: T) {
 
   const getSearchParams = useCallback((): T => {
     if (typeof window === 'undefined') return defaultsRef.current;
-    const search = new URLSearchParams(window.location.search);
+    const rawHash = window.location.hash.replace(/^#\/?/, '');
+    const [, queryPart] = rawHash.split('?');
+    const search = new URLSearchParams(queryPart !== undefined ? queryPart : window.location.search);
     const result = { ...defaultsRef.current };
     for (const key of Object.keys(defaultsRef.current)) {
       const val = search.get(key);
@@ -42,18 +44,24 @@ export function useRouteParams<T extends Record<string, string>>(defaults: T) {
           }
         }
       }
-      if (!hasChange) return prev;
-
       if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        Object.entries(next).forEach(([k, v]) => {
+        const rawHash = window.location.hash.replace(/^#\/?/, '');
+        const [pathPart, queryPart] = rawHash.split('?');
+        const search = new URLSearchParams(queryPart || '');
+
+        Object.entries(newParams).forEach(([k, v]) => {
           if (v !== undefined && v !== '') {
-            url.searchParams.set(k, v as string);
+            search.set(k, v as string);
           } else {
-            url.searchParams.delete(k);
+            search.delete(k);
           }
         });
-        window.history.pushState({}, '', url.toString());
+
+        const newQuery = search.toString();
+        const newHash = `#/${pathPart}${newQuery ? '?' + newQuery : ''}`;
+        if (window.location.hash !== newHash) {
+          window.history.replaceState(null, '', newHash);
+        }
       }
       return next;
     });

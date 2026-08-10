@@ -21,17 +21,40 @@ export interface SuppressionRecord {
 
 interface RunDetailPageProps {
   runId?: string;
+  subRunId?: string;
   onBackToList?: () => void;
+  onSubRunSelect?: (subRunId: string) => void;
 }
 
-export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, onBackToList }) => {
-  const [params] = useRouteParams({
+export const RunDetailPage: React.FC<RunDetailPageProps> = ({
+  runId: propRunId,
+  subRunId: propSubRunId,
+  onBackToList,
+  onSubRunSelect,
+}) => {
+  const [params, setParams] = useRouteParams({
     runId: propRunId || 'run-601',
+    subRunId: propSubRunId || '',
   });
 
-  const activeRunId = propRunId || params.runId || 'run-601';
+  const activeRunId = (params.runId && params.runId !== 'run-601' ? params.runId : propRunId) || params.runId || propRunId || 'run-601';
+  const activeSubRunIdParam = (params.subRunId && params.subRunId !== '' ? params.subRunId : propSubRunId) || propSubRunId || undefined;
 
-  const [selectedSubRunId, setSelectedSubRunId] = React.useState<string | undefined>(undefined);
+  const [selectedSubRunId, setSelectedSubRunId] = React.useState<string | undefined>(activeSubRunIdParam);
+
+  React.useEffect(() => {
+    if (activeSubRunIdParam && activeSubRunIdParam !== selectedSubRunId) {
+      setSelectedSubRunId(activeSubRunIdParam);
+    }
+  }, [activeSubRunIdParam]);
+
+  const handleSelectSubRun = (id: string) => {
+    setSelectedSubRunId(id);
+    setParams({ runId: activeRunId, subRunId: id });
+    if (onSubRunSelect) {
+      onSubRunSelect(id);
+    }
+  };
   const [viewMode, setViewMode] = React.useState<'graph' | 'timeline'>('graph');
   const [subRunParams, setSubRunParams] = React.useState<{ page: string; search: string; status: string }>({
     page: '1',
@@ -357,7 +380,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
               size="sm"
               icon={isSelected ? 'visibility' : 'query_stats'}
               onClick={() => {
-                setSelectedSubRunId(sr.sub_run_id);
+                handleSelectSubRun(sr.sub_run_id);
                 setViewMode('graph');
               }}
               className={isSelected ? 'bg-emerald-500/30 text-emerald-200 border-emerald-400 font-bold' : ''}
