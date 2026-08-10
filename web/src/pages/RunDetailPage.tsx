@@ -207,15 +207,20 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({ runId: propRunId, 
       suppressed: 'suppressed',
     };
 
-    return timelineEvents.map((evt, idx) => ({
-      stepIndex: idx + 1,
-      nodeId: evt.node_id || `node-${idx + 1}`,
-      nodeName: evt.node_id ? `Step ${idx + 1}: ${evt.node_id}` : `Step ${idx + 1}`,
-      nodeType: evt.event_type || 'action',
-      status: statusMap[evt.status?.toLowerCase()] || 'completed',
-      timestamp: evt.timestamp,
-      output: evt.payload,
-    }));
+    return timelineEvents.map((evt, idx) => {
+      const rawNodeId = evt.node_id || (evt.payload && typeof evt.payload === 'object' && 'node_id' in evt.payload ? String((evt.payload as Record<string, unknown>).node_id) : '');
+      const nodeId = rawNodeId || `node-${idx + 1}`;
+
+      return {
+        stepIndex: idx + 1,
+        nodeId,
+        nodeName: nodeId ? `Step ${idx + 1}: ${nodeId}` : `Step ${idx + 1}`,
+        nodeType: evt.event_type || 'action',
+        status: statusMap[evt.status?.toLowerCase()] || 'completed',
+        timestamp: evt.timestamp,
+        output: evt.payload,
+      };
+    });
   }, [timelineEvents]);
 
   const currentNodeId = React.useMemo(() => {

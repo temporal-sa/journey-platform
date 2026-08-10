@@ -200,7 +200,7 @@ function ExecutionGraphViewInner({
     return (node: GraphNode, index: number): NodeVisitStep | undefined => {
       if (!visitSteps || visitSteps.length === 0) return undefined;
 
-      const sanitize = (str?: string) => (str || '').toLowerCase().replace(/[-_\s]/g, '');
+      const sanitize = (str?: string) => (str || '').replace(/^ir-/, '').toLowerCase().replace(/[-_\s]/g, '');
       const normId = sanitize(node.id);
       const normName = sanitize(node.name);
       const normType = sanitize(node.type);

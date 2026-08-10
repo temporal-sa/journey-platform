@@ -139,6 +139,27 @@ describe('ExecutionGraphView Component', () => {
     expect(nodeUnvisited).toHaveAttribute('data-active', 'false');
     expect(nodeUnvisited).toHaveClass('opacity-45');
   });
+  it('correctly matches visit steps with ir- prefixed node IDs emitted by the engine', () => {
+    const irVisitSteps: NodeVisitStep[] = [
+      { stepIndex: 1, nodeId: 'ir-node-start', status: 'passed' },
+      { stepIndex: 2, nodeId: 'ir-node-cond', status: 'passed' },
+    ];
+
+    render(
+      <ExecutionGraphView
+        nodes={sampleNodes}
+        edges={sampleEdges}
+        visitSteps={irVisitSteps}
+        status="running"
+      />
+    );
+
+    const nodeStart = screen.getByTestId('execution-node-node-start');
+    expect(nodeStart).toHaveAttribute('data-visited', 'true');
+
+    const nodeCond = screen.getByTestId('execution-node-node-cond');
+    expect(nodeCond).toHaveAttribute('data-visited', 'true');
+  });
 
   it('calculates active currentNodeId state with active badge and pulsing indicator', () => {
     render(
