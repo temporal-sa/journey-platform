@@ -396,12 +396,13 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
               type="button"
               variant="secondary-dark"
               size="sm"
-              icon="query_stats"
+              icon="visibility"
               onClick={(e) => {
                 e.stopPropagation();
                 handleSelectSubRun(sr.sub_run_id);
                 setViewMode('graph');
               }}
+              className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
               data-testid={`view-subrun-trace-${sr.sub_run_id}`}
             >
               Inspect Trace
