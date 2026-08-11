@@ -420,7 +420,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                 }}
                 data-testid={`link-subrun-temporal-${sr.sub_run_id}`}
               >
-                Temporal
+                Temporal History
               </Button>
             </div>
           );
@@ -627,7 +627,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
 
       {/* Audience Sub-Run Execution Directory Panel (Scalable 1,000+ Contacts) */}
       <div className="p-5 rounded-none bg-[#0F131D]/90 backdrop-blur-xl border border-[#464554] shadow-xl space-y-4">
-        <div className="flex items-center justify-between gap-4 flex-wrap border-b border-[#464554] pb-3">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-[#4cd7f6] text-xl">groups</span>
             <div>
@@ -637,11 +637,6 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
               <p className="text-xs text-[#908fa0] mt-0.5">
                 Search, filter, and inspect individual target contact execution traces across static lists or test runs.
               </p>
-              <div className="mt-2">
-                <span className="px-2 py-0.5 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-xs font-bold inline-block">
-                  {subRunsData?.total || 0} Contacts Evaluated
-                </span>
-              </div>
             </div>
           </div>
 
