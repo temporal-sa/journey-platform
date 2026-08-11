@@ -380,33 +380,49 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
           const isSelected =
             effectiveActiveSubRunId === sr.sub_run_id ||
             (!selectedSubRunId && runDetailData?.timeline?.sub_run_id === sr.sub_run_id);
-
-          if (isSelected) {
-            return (
-              <span
-                data-testid={`active-subrun-indicator-${sr.sub_run_id}`}
-                className="w-2.5 h-2.5 rounded-full bg-[#4cd7f6] animate-pulse inline-block"
-                title="Currently Viewing Trace"
-              />
-            );
-          }
+          const temporalWfId = sr.sub_run_id.startsWith('wf-')
+            ? sr.sub_run_id
+            : `wf-${parameters.workflow_id}-${sr.sub_run_id}`;
 
           return (
-            <Button
-              type="button"
-              variant="secondary-dark"
-              size="sm"
-              icon="visibility"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelectSubRun(sr.sub_run_id);
-                setViewMode('graph');
-              }}
-              className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
-              data-testid={`view-subrun-trace-${sr.sub_run_id}`}
-            >
-              Inspect Trace
-            </Button>
+            <div className="flex items-center gap-2">
+              {!isSelected && (
+                <Button
+                  type="button"
+                  variant="secondary-dark"
+                  size="sm"
+                  icon="visibility"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectSubRun(sr.sub_run_id);
+                    setViewMode('graph');
+                  }}
+                  className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
+                  data-testid={`view-subrun-trace-${sr.sub_run_id}`}
+                >
+                  Inspect Trace
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                variant="secondary-dark"
+                size="sm"
+                icon="schedule"
+                aria-label="Open Temporal Workflow Execution"
+                title={`Open Temporal Workflow Execution: ${temporalWfId}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(
+                    `http://localhost:8233/namespaces/default/workflows/${encodeURIComponent(temporalWfId)}`,
+                    '_blank'
+                  );
+                }}
+                data-testid={`link-subrun-temporal-${sr.sub_run_id}`}
+              >
+                Temporal
+              </Button>
+            </div>
           );
         },
       },
