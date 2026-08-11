@@ -385,22 +385,27 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             return (
               <span
                 data-testid={`active-subrun-indicator-${sr.sub_run_id}`}
-                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#4cd7f6] select-none"
-              >
-                <span className="w-2.5 h-2.5 rounded-full bg-[#4cd7f6] animate-pulse" />
-                Active Trace
-              </span>
+                className="w-2.5 h-2.5 rounded-full bg-[#4cd7f6] animate-pulse inline-block"
+                title="Currently Viewing Trace"
+              />
             );
           }
 
           return (
-            <span
+            <Button
+              type="button"
+              variant="secondary-dark"
+              size="sm"
+              icon="query_stats"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelectSubRun(sr.sub_run_id);
+                setViewMode('graph');
+              }}
               data-testid={`view-subrun-trace-${sr.sub_run_id}`}
-              className="text-xs font-mono text-[#908fa0] flex items-center gap-1 select-none hover:text-[#4cd7f6] transition-colors"
             >
-              <span className="material-symbols-outlined text-sm">query_stats</span>
               Inspect Trace
-            </span>
+            </Button>
           );
         },
       },
