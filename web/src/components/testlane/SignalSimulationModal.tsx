@@ -173,7 +173,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
         )}
 
         {/* Quick Signal Presets */}
-        <div className="space-y-2 mb-6 pb-2 border-b border-[#464554]/30">
+        <div className="space-y-2 mb-4">
           <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider font-semibold">
             Quick Preset Signal Types
           </label>
@@ -196,10 +196,10 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                     setPayloadJson(PRESET_PAYLOADS[preset.type]);
                   }
                 }}
-                className={`font-mono text-xs rounded-none ${
+                className={`text-xs rounded-none font-['Outfit',sans-serif] ${
                   eventType === preset.type
                     ? 'bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/60 font-bold shadow-sm'
-                    : 'bg-[#171b26] hover:bg-[#202533] text-[#908fa0] hover:text-white border border-[#464554]/60'
+                    : 'bg-[#171b26] hover:bg-[#202533] text-[#908fa0] hover:text-white border border-[#464554]/60 font-medium'
                 }`}
               >
                 {preset.label}
@@ -207,7 +207,6 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
             ))}
           </div>
         </div>
-
         {/* Main Form Parameters */}
         <div className="p-4 bg-[#090D16] space-y-4 rounded-none">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
