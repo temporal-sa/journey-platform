@@ -372,7 +372,15 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         key: 'actions',
         header: 'Action',
         cell: (sr: SubRunSummary) => {
-          const isSelected = selectedSubRunId === sr.sub_run_id || (!selectedSubRunId && runDetailData?.timeline?.sub_run_id === sr.sub_run_id);
+          const effectiveActiveSubRunId =
+            selectedSubRunId ||
+            (subRunsData?.sub_runs && subRunsData.sub_runs.length > 0
+              ? subRunsData.sub_runs[0].sub_run_id
+              : undefined);
+          const isSelected =
+            effectiveActiveSubRunId === sr.sub_run_id ||
+            (!selectedSubRunId && runDetailData?.timeline?.sub_run_id === sr.sub_run_id);
+
           return (
             <Button
               type="button"
@@ -392,7 +400,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         },
       },
     ],
-    [selectedSubRunId, runDetailData?.timeline?.sub_run_id]
+    [selectedSubRunId, subRunsData?.sub_runs, runDetailData?.timeline?.sub_run_id]
   );
 
   return (
