@@ -43,8 +43,6 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
   const [traceId, setTraceId] = useState<string>(`trace-${runId}`);
   const [payloadJson, setPayloadJson] = useState<string>('{\n  "amount": 149.99,\n  "currency": "USD"\n}');
   const [isEmitting, setIsEmitting] = useState<boolean>(false);
-  const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
-  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -53,19 +51,13 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
       setTargetWorkflowId(wfId);
       setTraceId(`trace-${runId}`);
       setEventId(`evt-sig-${Date.now().toString().slice(-4)}`);
-      setFeedbackSuccess(null);
-      setFeedbackError(null);
     }
   }, [isOpen, runId, propWorkflowId, propSubjectId]);
 
   const handleEmitEvent = async () => {
-    setFeedbackError(null);
-    setFeedbackSuccess(null);
-
     if (!eventType.trim()) {
       const err = 'Event Type (event_type) is required per schema.';
-      setFeedbackError(err);
-      if (onFireToast) onFireToast(ToastMessageType.ERROR, 'Missing Required Field', err);
+      if (onFireToast) onFireToast(ToastMessageType.ERROR, 'Signal Emission Failed', err);
       return;
     }
 
@@ -75,13 +67,11 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
         parsedData = JSON.parse(payloadJson);
       } else {
         const err = 'Event Data Payload (data) is required per schema.';
-        setFeedbackError(err);
-        if (onFireToast) onFireToast(ToastMessageType.ERROR, 'Missing Required Field', err);
+        if (onFireToast) onFireToast(ToastMessageType.ERROR, 'Signal Emission Failed', err);
         return;
       }
     } catch {
       const err = 'Please enter a valid JSON object payload.';
-      setFeedbackError(err);
       if (onFireToast) onFireToast(ToastMessageType.ERROR, 'Invalid Event Payload JSON', err);
       return;
     }
@@ -106,10 +96,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
           ...(targetWorkflowId.trim() ? { workflow_id: targetWorkflowId.trim() } : {}),
         },
       });
-
-      const successMsg = `Successfully emitted event '${eventType.trim()}' (${generatedEvtId}) to ingress topic & waiting workflows!`;
-      setFeedbackSuccess(successMsg);
-
+      const successMsg = `Emitted signal '${eventType.trim()}' (${generatedEvtId}) to waiting workflows.`;
       if (onFireToast) {
         onFireToast(
           ToastMessageType.SUCCESS,
@@ -117,13 +104,13 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
           successMsg
         );
       }
+      onClose();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Failed to emit signal event.';
-      setFeedbackError(errMsg);
       if (onFireToast) {
         onFireToast(
           ToastMessageType.ERROR,
-          'Signal Event Emission Failed',
+          'Signal Emission Failed',
           errMsg
         );
       }
@@ -162,17 +149,6 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
       }
     >
       <div className="space-y-5 text-[#DFE2F1] font-['Outfit',sans-serif]" data-testid="signal-simulation-content">
-        {feedbackSuccess && (
-          <div role="status" className="p-3.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-['Outfit']">
-            {feedbackSuccess}
-          </div>
-        )}
-
-        {feedbackError && (
-          <div role="alert" className="p-3.5 bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-['Outfit']">
-            {feedbackError}
-          </div>
-        )}
 
         {/* Quick Signal Presets */}
         <div className="space-y-2 mb-4">

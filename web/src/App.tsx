@@ -941,6 +941,14 @@ export function DashboardContent() {
               subRunId={selectedSubRunId}
               onBackToList={() => setActiveRoute('runs')}
               onSubRunSelect={(subId) => setSelectedSubRunId(subId)}
+              onFireToast={(type, title, message) => {
+                setToastState({
+                  isOpen: true,
+                  messageType: type,
+                  title,
+                  message,
+                });
+              }}
             />
           )}
           {activeRoute === 'experiments' && <ExperimentReportView />}

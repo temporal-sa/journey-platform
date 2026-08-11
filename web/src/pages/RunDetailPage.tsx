@@ -5,6 +5,7 @@ import { Skeleton } from '../components/Skeleton';
 import { DegradedStateView } from '../components/DegradedStateView';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
+import { ToastMessageType } from '../components/common/Toast';
 import { PaginatedTable } from '../components/common/PaginatedTable';
 import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown';
 import { useRouteParams } from '../hooks/useRouteParams';
@@ -24,6 +25,7 @@ interface RunDetailPageProps {
   subRunId?: string;
   onBackToList?: () => void;
   onSubRunSelect?: (subRunId: string) => void;
+  onFireToast?: (type: ToastMessageType, title: string, message: string) => void;
 }
 
 export const RunDetailPage: React.FC<RunDetailPageProps> = ({
@@ -31,6 +33,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
   subRunId: propSubRunId,
   onBackToList,
   onSubRunSelect,
+  onFireToast,
 }) => {
   const [params, setParams] = useRouteParams({
     runId: propRunId || 'run-601',
@@ -938,6 +941,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         runId={activeRunId}
         workflowId={activeSignalWfId || `wf-${parameters.workflow_id}-${activeRunId}`}
         subjectId={activeSignalSubjectId || runDetailData?.timeline?.subject_id}
+        onFireToast={onFireToast}
       />
     </div>
   );
