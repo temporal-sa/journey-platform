@@ -381,20 +381,32 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             effectiveActiveSubRunId === sr.sub_run_id ||
             (!selectedSubRunId && runDetailData?.timeline?.sub_run_id === sr.sub_run_id);
 
+          if (isSelected) {
+            return (
+              <span
+                data-testid={`active-subrun-indicator-${sr.sub_run_id}`}
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#4cd7f6] px-2.5 py-1 bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 select-none"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#4cd7f6] animate-pulse" />
+                Active Trace
+              </span>
+            );
+          }
+
           return (
             <Button
               type="button"
-              variant={isSelected ? 'emerald' : 'secondary-dark'}
+              variant="secondary-dark"
               size="sm"
-              icon={isSelected ? 'visibility' : 'query_stats'}
-              onClick={() => {
+              icon="query_stats"
+              onClick={(e) => {
+                e.stopPropagation();
                 handleSelectSubRun(sr.sub_run_id);
                 setViewMode('graph');
               }}
-              className={isSelected ? 'bg-emerald-500/30 text-emerald-200 border-emerald-400 font-bold' : ''}
               data-testid={`view-subrun-trace-${sr.sub_run_id}`}
             >
-              {isSelected ? 'Active Trace' : 'View Trace'}
+              View Trace
             </Button>
           );
         },
@@ -647,6 +659,20 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             data={subRunsData?.sub_runs || []}
             columns={subRunColumns}
             getRowKey={(sr) => sr.sub_run_id}
+            getRowClassName={(sr) => {
+              const effectiveActiveSubRunId =
+                selectedSubRunId ||
+                (subRunsData?.sub_runs && subRunsData.sub_runs.length > 0
+                  ? subRunsData.sub_runs[0].sub_run_id
+                  : undefined);
+              return sr.sub_run_id === effectiveActiveSubRunId
+                ? 'bg-[#4cd7f6]/15 border-l-4 border-l-[#4cd7f6] text-white shadow-md'
+                : '';
+            }}
+            onRowClick={(sr) => {
+              handleSelectSubRun(sr.sub_run_id);
+              setViewMode('graph');
+            }}
             currentPage={subRunsData?.page || 1}
             pageSize={subRunsData?.limit || 10}
             totalItems={subRunsData?.total || 0}

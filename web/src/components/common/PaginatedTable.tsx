@@ -14,6 +14,8 @@ export interface PaginatedTableProps<T> {
   columns: ColumnDef<T>[];
   getRowKey: (item: T) => string;
   getRowTestId?: (item: T) => string;
+  getRowClassName?: (item: T) => string;
+  onRowClick?: (item: T) => void;
   currentPage: number;
   pageSize: number;
   totalItems: number;
@@ -30,6 +32,8 @@ export function PaginatedTable<T>({
   columns,
   getRowKey,
   getRowTestId,
+  getRowClassName,
+  onRowClick,
   currentPage,
   pageSize,
   totalItems,
@@ -68,19 +72,25 @@ export function PaginatedTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {data.map((item) => (
-              <tr
-                key={getRowKey(item)}
-                data-testid={getRowTestId ? getRowTestId(item) : undefined}
-                className="hover:bg-[#171b26]/50 transition-colors"
-              >
-                {columns.map((col) => (
-                  <td key={col.key} className={`p-4 ${col.cellClassName || ''}`}>
-                    {col.cell(item)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((item) => {
+              const customRowClass = getRowClassName ? getRowClassName(item) : '';
+              return (
+                <tr
+                  key={getRowKey(item)}
+                  data-testid={getRowTestId ? getRowTestId(item) : undefined}
+                  onClick={() => onRowClick && onRowClick(item)}
+                  className={`transition-all ${onRowClick ? 'cursor-pointer' : ''} ${
+                    customRowClass || 'hover:bg-[#171b26]/50'
+                  }`}
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className={`p-4 ${col.cellClassName || ''}`}>
+                      {col.cell(item)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
