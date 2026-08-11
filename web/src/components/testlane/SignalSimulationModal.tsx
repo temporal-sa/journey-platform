@@ -136,7 +136,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Signal & Ingress Event Simulation"
+      title="Signal Simulation"
       subtitle="Emit custom simulated signals directly to waiting workflow state machines and ingress event topic"
       icon="sensors"
       iconAccentColor="#4cd7f6"

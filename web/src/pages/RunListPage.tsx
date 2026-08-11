@@ -101,9 +101,9 @@ export const RunListPage: React.FC<RunListPageProps> = ({ onSelectRun }) => {
         key: 'run_id',
         header: 'Run ID',
         cell: (run) => (
-          <code className="px-2 py-1 rounded-none bg-[#171b26] border border-[#464554] text-[#dfe2f1] font-mono text-xs">
+          <span className="font-mono text-[#dfe2f1] text-xs">
             {run.run_id}
-          </code>
+          </span>
         ),
       },
       {

@@ -644,7 +644,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             <span className="material-symbols-outlined text-[#4cd7f6] text-xl">groups</span>
             <div>
               <h2 className="text-base font-bold text-white font-['Outfit']">
-                Subruns
+                Sub-runs
               </h2>
               <p className="text-xs text-[#908fa0] mt-0.5">
                 Search, filter, and inspect individual target contact execution traces across static lists or test runs.
