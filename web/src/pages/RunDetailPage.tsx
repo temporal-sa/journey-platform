@@ -449,7 +449,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3 font-['Outfit']">
             <span className="material-symbols-outlined text-emerald-400 text-2xl">account_tree</span>
             <span>Run Execution Detail:</span>
-            <code className="text-[#4cd7f6] font-mono bg-[#4cd7f6]/10 px-2 py-0.5 border border-[#4cd7f6]/30 text-base">
+            <code className="text-[#4cd7f6] font-mono text-base font-semibold">
               {activeRunId}
             </code>
           </h1>
@@ -631,15 +631,17 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-[#4cd7f6] text-xl">groups</span>
             <div>
-              <h2 className="text-base font-bold text-white font-['Outfit'] flex items-center gap-2">
-                Audience Execution Sub-Runs Directory
-                <span className="px-2 py-0.5 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-xs font-bold">
-                  {subRunsData?.total || 0} Contacts Evaluated
-                </span>
+              <h2 className="text-base font-bold text-white font-['Outfit']">
+                Subruns
               </h2>
-              <p className="text-xs text-[#908fa0]">
+              <p className="text-xs text-[#908fa0] mt-0.5">
                 Search, filter, and inspect individual target contact execution traces across static lists or test runs.
               </p>
+              <div className="mt-2">
+                <span className="px-2 py-0.5 rounded-none bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 font-mono text-xs font-bold inline-block">
+                  {subRunsData?.total || 0} Contacts Evaluated
+                </span>
+              </div>
             </div>
           </div>
 
@@ -691,7 +693,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   ? subRunsData.sub_runs[0].sub_run_id
                   : undefined);
               return sr.sub_run_id === effectiveActiveSubRunId
-                ? 'border-l-4 border-l-[#4cd7f6] text-white shadow-xl font-medium'
+                ? 'border-l-4 border-l-[#4cd7f6] text-white font-medium'
                 : '';
             }}
             onRowClick={(sr) => {
