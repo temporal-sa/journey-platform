@@ -9,7 +9,7 @@ import { PaginatedTable } from '../components/common/PaginatedTable';
 import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown';
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { TimelineEvent, ActionResult, SubRunSummary, GraphNode, GraphEdge } from '../types/api';
-import { ExecutionGraphView, NodeVisitStep } from '../components/testlane/ExecutionGraphView';
+import { ExecutionGraphView, NodeVisitStep, SignalSimulationModal } from '../components/testlane';
 const apiClient = new JourneyApiClient();
 
 export interface SuppressionRecord {
@@ -56,6 +56,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
     }
   };
   const [viewMode, setViewMode] = React.useState<'graph' | 'timeline'>('graph');
+  const [isSignalModalOpen, setIsSignalModalOpen] = React.useState(false);
   const [subRunParams, setSubRunParams] = React.useState<{ page: string; search: string; status: string }>({
     page: '1',
     search: '',
@@ -458,19 +459,16 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         {/* Action Button Bar: External Dev Tools, Outcome Simulators, & Trigger Replay */}
         <div className="flex items-center gap-2">
           {/* External Dev Tool Icons */}
+          {/* Signal Simulation Modal Trigger Icon */}
           <Button
             type="button"
             variant="secondary-dark"
-            icon="schedule"
-            aria-label="Open Temporal UI"
-            title="Open Temporal UI (:8233)"
-            data-testid="link-temporal-ui"
-            onClick={() =>
-              window.open(
-                `http://localhost:8233/namespaces/default/workflows/${parameters.workflow_id}/${activeRunId}`,
-                '_blank'
-              )
-            }
+            icon="rss_feed"
+            aria-label="Signal Simulation"
+            title="Signal & Ingress Event Simulation Modal"
+            data-testid="open-signal-simulation-modal"
+            className="bg-[#4cd7f6]/10 hover:bg-[#4cd7f6]/25 text-[#4cd7f6] border-[#4cd7f6]/40 font-bold"
+            onClick={() => setIsSignalModalOpen(true)}
           />
           <Button
             type="button"
@@ -905,6 +903,14 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
           </div>
         </div>
       )}
+
+      <SignalSimulationModal
+        isOpen={isSignalModalOpen}
+        onClose={() => setIsSignalModalOpen(false)}
+        runId={activeRunId}
+        workflowId={parameters.workflow_id}
+        subjectId={runDetailData?.timeline?.subject_id}
+      />
     </div>
   );
 };
