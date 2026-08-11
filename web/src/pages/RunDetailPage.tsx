@@ -394,7 +394,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             : `wf-${parameters.workflow_id}-${sr.sub_run_id}`;
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
               {isSelected ? (
                 <Button
                   type="button"
@@ -403,7 +403,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   icon="visibility"
                   disabled={true}
                   title="Currently Viewing Active Trace"
-                  className="opacity-50 cursor-not-allowed bg-[#171b26] text-[#908fa0] border-[#464554] font-medium"
+                  className="opacity-50 cursor-not-allowed bg-[#171b26] text-[#908fa0] border-[#464554] font-semibold shrink-0 whitespace-nowrap"
                   data-testid={`active-subrun-trace-${sr.sub_run_id}`}
                 >
                   Inspect Trace
@@ -419,7 +419,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                     handleSelectSubRun(sr.sub_run_id);
                     setViewMode('graph');
                   }}
-                  className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
+                  className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold shrink-0 whitespace-nowrap"
                   data-testid={`view-subrun-trace-${sr.sub_run_id}`}
                 >
                   Inspect Trace
@@ -441,6 +441,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   );
                 }}
                 data-testid={`link-subrun-temporal-${sr.sub_run_id}`}
+                className="shrink-0 whitespace-nowrap"
               >
                 Temporal History
               </Button>
@@ -457,7 +458,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   handleOpenSignalModal(temporalWfId, sr.recipient || sr.subject_id);
                 }}
                 data-testid={`signal-subrun-${sr.sub_run_id}`}
-                className="bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/40 text-[#4cd7f6] border-[#4cd7f6]/30 font-semibold"
+                className="bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/40 text-[#4cd7f6] border-[#4cd7f6]/30 font-semibold shrink-0 whitespace-nowrap"
               >
                 Signal
               </Button>
@@ -703,7 +704,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   ? subRunsData.sub_runs[0].sub_run_id
                   : undefined);
               return sr.sub_run_id === effectiveActiveSubRunId
-                ? { backgroundColor: '#043d4d', color: '#ffffff' }
+                ? { backgroundColor: '#043d4d', color: '#ffffff', boxShadow: 'inset 4px 0 0 #4cd7f6' }
                 : {};
             }}
             getRowClassName={(sr) => {
@@ -713,7 +714,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   ? subRunsData.sub_runs[0].sub_run_id
                   : undefined);
               return sr.sub_run_id === effectiveActiveSubRunId
-                ? 'border-l-4 border-l-[#4cd7f6] text-white font-medium'
+                ? 'text-white font-medium shadow-xl'
                 : '';
             }}
             onRowClick={(sr) => {
