@@ -666,7 +666,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   ? subRunsData.sub_runs[0].sub_run_id
                   : undefined);
               return sr.sub_run_id === effectiveActiveSubRunId
-                ? 'bg-[#4cd7f6]/15 border-l-4 border-l-[#4cd7f6] text-white shadow-md'
+                ? 'bg-[#16273b] !bg-[#16273b] border-l-4 border-l-[#4cd7f6] text-white shadow-md'
                 : '';
             }}
             onRowClick={(sr) => {
