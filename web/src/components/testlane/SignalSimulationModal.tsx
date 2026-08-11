@@ -16,6 +16,14 @@ export interface SignalSimulationModalProps {
 
 const apiClient = new JourneyApiClient();
 
+const PRESET_PAYLOADS: Record<string, string> = {
+  'order.completed': '{\n  "amount": 149.99,\n  "currency": "USD"\n}',
+  'user_converted': '{\n  "conversion_type": "signup_upgrade",\n  "value": 99.00,\n  "plan": "pro_tier"\n}',
+  'email_opened': '{\n  "email_id": "email-welcome-01",\n  "device": "mobile_ios",\n  "client": "apple_mail"\n}',
+  'email_clicked': '{\n  "email_id": "email-welcome-01",\n  "link_url": "https://example.com/onboarding/start",\n  "target_button": "cta_primary"\n}',
+  'cart_abandoned': '{\n  "cart_id": "cart-88421",\n  "item_count": 3,\n  "total_value": 219.50\n}',
+};
+
 export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
   isOpen,
   onClose,
@@ -128,13 +136,8 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
       onClose={onClose}
       title="Signal & Ingress Event Simulation"
       subtitle="Emit custom simulated signals directly to waiting workflow state machines and ingress event topic"
-      icon="rss_feed"
+      icon="sensors"
       iconAccentColor="#4cd7f6"
-      badge={
-        <Badge variant="cyan" testId="signal-simulation-badge">
-          SIGNAL SIMULATOR
-        </Badge>
-      }
       maxWidth="lg"
       testId="signal-simulation-modal"
       footer={
@@ -146,7 +149,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
             type="button"
             variant="primary-teal"
             size="md"
-            icon="rss_feed"
+            icon="sensors"
             onClick={handleEmitEvent}
             isLoading={isEmitting}
             data-testid="emit-signal-event-btn"
@@ -170,7 +173,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
         )}
 
         {/* Quick Signal Presets */}
-        <div className="space-y-1.5">
+        <div className="space-y-2 mb-6 pb-2 border-b border-[#464554]/30">
           <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider font-semibold">
             Quick Preset Signal Types
           </label>
@@ -187,7 +190,12 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 type="button"
                 size="sm"
                 variant={eventType === preset.type ? 'primary-cyan' : 'secondary-dark'}
-                onClick={() => setEventType(preset.type)}
+                onClick={() => {
+                  setEventType(preset.type);
+                  if (PRESET_PAYLOADS[preset.type]) {
+                    setPayloadJson(PRESET_PAYLOADS[preset.type]);
+                  }
+                }}
                 className={`font-mono text-xs rounded-none ${
                   eventType === preset.type
                     ? 'bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/60 font-bold shadow-sm'
@@ -201,7 +209,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
         </div>
 
         {/* Main Form Parameters */}
-        <div className="p-4 bg-[#090D16] border border-[#464554]/60 space-y-4 shadow-md">
+        <div className="p-4 bg-[#090D16] space-y-4 rounded-none">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
               <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">

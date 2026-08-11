@@ -463,7 +463,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
           <Button
             type="button"
             variant="secondary-dark"
-            icon="rss_feed"
+            icon="sensors"
             aria-label="Signal Simulation"
             title="Signal & Ingress Event Simulation Modal"
             data-testid="open-signal-simulation-modal"
