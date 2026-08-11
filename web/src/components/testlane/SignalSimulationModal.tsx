@@ -37,7 +37,8 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
   const [schemaVersion, setSchemaVersion] = useState<string>('1.0');
   const [dataClassification, setDataClassification] = useState<'NonPII' | 'PII' | 'Sensitive'>('NonPII');
   const [subjectRef, setSubjectRef] = useState<string>(propSubjectId);
-  const [targetWorkflowId, setTargetWorkflowId] = useState<string>(`wf-${propWorkflowId}-${runId}`);
+  const initialWfId = propWorkflowId.startsWith('wf-') ? propWorkflowId : `wf-${propWorkflowId}-${runId}`;
+  const [targetWorkflowId, setTargetWorkflowId] = useState<string>(initialWfId);
   const [eventId, setEventId] = useState<string>('');
   const [traceId, setTraceId] = useState<string>(`trace-${runId}`);
   const [payloadJson, setPayloadJson] = useState<string>('{\n  "amount": 149.99,\n  "currency": "USD"\n}');
@@ -48,7 +49,8 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setSubjectRef(propSubjectId || 'usr_001');
-      setTargetWorkflowId(`wf-${propWorkflowId}-${runId}`);
+      const wfId = propWorkflowId.startsWith('wf-') ? propWorkflowId : `wf-${propWorkflowId}-${runId}`;
+      setTargetWorkflowId(wfId);
       setTraceId(`trace-${runId}`);
       setEventId(`evt-sig-${Date.now().toString().slice(-4)}`);
       setFeedbackSuccess(null);

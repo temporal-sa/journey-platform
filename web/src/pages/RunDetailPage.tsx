@@ -57,6 +57,14 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
   };
   const [viewMode, setViewMode] = React.useState<'graph' | 'timeline'>('graph');
   const [isSignalModalOpen, setIsSignalModalOpen] = React.useState(false);
+  const [activeSignalWfId, setActiveSignalWfId] = React.useState<string>('');
+  const [activeSignalSubjectId, setActiveSignalSubjectId] = React.useState<string>('');
+
+  const handleOpenSignalModal = (wfId: string, subjectId?: string) => {
+    setActiveSignalWfId(wfId);
+    setActiveSignalSubjectId(subjectId || '');
+    setIsSignalModalOpen(true);
+  };
   const [subRunParams, setSubRunParams] = React.useState<{ page: string; search: string; status: string }>({
     page: '1',
     search: '',
@@ -423,6 +431,23 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
               >
                 Temporal History
               </Button>
+
+              <Button
+                type="button"
+                variant="secondary-dark"
+                size="sm"
+                icon="sensors"
+                aria-label="Simulate Signal for Workflow"
+                title={`Simulate Signal for Workflow: ${temporalWfId}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenSignalModal(temporalWfId, sr.recipient || sr.subject_id);
+                }}
+                data-testid={`signal-subrun-${sr.sub_run_id}`}
+                className="bg-[#4cd7f6]/10 hover:bg-[#4cd7f6]/25 text-[#4cd7f6] border-[#4cd7f6]/40 font-semibold"
+              >
+                Signal
+              </Button>
             </div>
           );
         },
@@ -459,17 +484,6 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         {/* Action Button Bar: External Dev Tools, Outcome Simulators, & Trigger Replay */}
         <div className="flex items-center gap-2">
           {/* External Dev Tool Icons */}
-          {/* Signal Simulation Modal Trigger Icon */}
-          <Button
-            type="button"
-            variant="secondary-dark"
-            icon="sensors"
-            aria-label="Signal Simulation"
-            title="Signal & Ingress Event Simulation Modal"
-            data-testid="open-signal-simulation-modal"
-            className="bg-[#4cd7f6]/10 hover:bg-[#4cd7f6]/25 text-[#4cd7f6] border-[#4cd7f6]/40 font-bold"
-            onClick={() => setIsSignalModalOpen(true)}
-          />
           <Button
             type="button"
             variant="secondary-dark"
@@ -908,8 +922,8 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         isOpen={isSignalModalOpen}
         onClose={() => setIsSignalModalOpen(false)}
         runId={activeRunId}
-        workflowId={parameters.workflow_id}
-        subjectId={runDetailData?.timeline?.subject_id}
+        workflowId={activeSignalWfId || `wf-${parameters.workflow_id}-${activeRunId}`}
+        subjectId={activeSignalSubjectId || runDetailData?.timeline?.subject_id}
       />
     </div>
   );
