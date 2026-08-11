@@ -182,18 +182,20 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
               { type: 'email_clicked', label: 'Email Clicked' },
               { type: 'cart_abandoned', label: 'Cart Abandoned' },
             ].map((preset) => (
-              <button
+              <Button
                 key={preset.type}
                 type="button"
+                size="sm"
+                variant={eventType === preset.type ? 'primary-cyan' : 'secondary-dark'}
                 onClick={() => setEventType(preset.type)}
-                className={`px-2.5 py-1 text-xs font-mono transition-all cursor-pointer ${
+                className={`font-mono text-xs rounded-none ${
                   eventType === preset.type
-                    ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/50 font-bold'
-                    : 'bg-[#171b26] text-[#908fa0] border border-[#464554]/60 hover:text-white'
+                    ? 'bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/60 font-bold shadow-sm'
+                    : 'bg-[#171b26] hover:bg-[#202533] text-[#908fa0] hover:text-white border border-[#464554]/60'
                 }`}
               >
                 {preset.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

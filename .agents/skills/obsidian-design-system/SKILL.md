@@ -111,3 +111,19 @@ The **Clear Filters** control across ALL tables must be an **always-present icon
 3. **Enforce 0px Sharp Borders**: Apply `rounded-none` to all interactive components, cards, dropdowns, and modals.
 4. **Use Approved Typography**: Use `'Outfit', sans-serif` for headers/labels and `font-mono` for IDs and code tokens.
 5. **Always Present Icon-Only Clear Filters**: Render `filter_alt_off` icon button with `title="Clear all active table filters"` on all table filter bars.
+---
+
+## 8. Dark Mode Toggle & Preset Button Rules (Mandatory)
+
+### A. Zero Light Mode / White Background Exception
+- **NEVER use solid white, light grey, or unstyled light mode backgrounds** (`#ffffff`, `bg-white`, `bg-slate-100`, `bg-gray-100`, `bg-gray-200`) for active toggles, preset signal buttons, category chips, or filter buttons anywhere in the application.
+- **Whole Website Dark Theme Enforcement**: The entire application is built exclusively in Obsidian Dark Mode. Light mode buttons or unstyled browser defaults are prohibited.
+
+### B. Standardized Active vs Inactive Toggle Tokens
+- **Active State Tokens**: Active toggle & preset buttons MUST use dark theme 20% accent fill tints with matching 50-60% accent borders and bright text:
+  - **Cyan Active Preset**: `bg-[#4cd7f6]/20 text-[#4cd7f6] border border-[#4cd7f6]/60 font-bold shadow-sm`
+  - **Lavender / Action Active Preset**: `bg-[#c0c1ff]/20 text-[#c0c1ff] border border-[#c0c1ff]/60 font-bold shadow-sm`
+  - **Emerald Active Preset**: `bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 font-bold shadow-sm`
+  - **Amber Active Preset**: `bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/60 font-bold shadow-sm`
+- **Inactive State Tokens**: Inactive toggle & preset buttons MUST use dark slate surface (`bg-[#171b26]`), muted text (`text-[#908fa0]`), and dark slate borders (`border border-[#464554]/60 hover:text-white hover:border-[#dfe2f1]/40`).
+- **Button Component**: When rendering interactive toggles in modals or forms, always wrap or use the `<Button>` component (`variant="secondary-dark"` for inactive, dark accent fill tint for active).
