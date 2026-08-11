@@ -61,7 +61,6 @@ export function CustomMiniMapNode({
   width,
   height,
   color,
-  borderRadius,
   id,
 }: CustomMiniMapNodeProps) {
   const { getNode, getEdges } = useReactFlow();
