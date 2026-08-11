@@ -15,6 +15,7 @@ export interface PaginatedTableProps<T> {
   getRowKey: (item: T) => string;
   getRowTestId?: (item: T) => string;
   getRowClassName?: (item: T) => string;
+  getRowStyle?: (item: T) => React.CSSProperties;
   onRowClick?: (item: T) => void;
   currentPage: number;
   pageSize: number;
@@ -33,6 +34,7 @@ export function PaginatedTable<T>({
   getRowKey,
   getRowTestId,
   getRowClassName,
+  getRowStyle,
   onRowClick,
   currentPage,
   pageSize,
@@ -74,11 +76,13 @@ export function PaginatedTable<T>({
           <tbody className="divide-y divide-white/5">
             {data.map((item) => {
               const customRowClass = getRowClassName ? getRowClassName(item) : '';
+              const customRowStyle = getRowStyle ? getRowStyle(item) : undefined;
               return (
                 <tr
                   key={getRowKey(item)}
                   data-testid={getRowTestId ? getRowTestId(item) : undefined}
                   onClick={() => onRowClick && onRowClick(item)}
+                  style={customRowStyle}
                   className={`transition-all ${onRowClick ? 'cursor-pointer' : ''} ${
                     customRowClass || 'hover:bg-[#171b26]/50'
                   }`}

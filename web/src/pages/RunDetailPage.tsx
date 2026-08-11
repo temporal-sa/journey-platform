@@ -385,29 +385,22 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             return (
               <span
                 data-testid={`active-subrun-indicator-${sr.sub_run_id}`}
-                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#4cd7f6] px-2.5 py-1 bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 select-none"
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#4cd7f6] select-none"
               >
-                <span className="w-2 h-2 rounded-full bg-[#4cd7f6] animate-pulse" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4cd7f6] animate-pulse" />
                 Active Trace
               </span>
             );
           }
 
           return (
-            <Button
-              type="button"
-              variant="secondary-dark"
-              size="sm"
-              icon="query_stats"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelectSubRun(sr.sub_run_id);
-                setViewMode('graph');
-              }}
+            <span
               data-testid={`view-subrun-trace-${sr.sub_run_id}`}
+              className="text-xs font-mono text-[#908fa0] flex items-center gap-1 select-none hover:text-[#4cd7f6] transition-colors"
             >
-              View Trace
-            </Button>
+              <span className="material-symbols-outlined text-sm">query_stats</span>
+              Inspect Trace
+            </span>
           );
         },
       },
@@ -659,6 +652,16 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             data={subRunsData?.sub_runs || []}
             columns={subRunColumns}
             getRowKey={(sr) => sr.sub_run_id}
+            getRowStyle={(sr) => {
+              const effectiveActiveSubRunId =
+                selectedSubRunId ||
+                (subRunsData?.sub_runs && subRunsData.sub_runs.length > 0
+                  ? subRunsData.sub_runs[0].sub_run_id
+                  : undefined);
+              return sr.sub_run_id === effectiveActiveSubRunId
+                ? { backgroundColor: '#043d4d', color: '#ffffff' }
+                : {};
+            }}
             getRowClassName={(sr) => {
               const effectiveActiveSubRunId =
                 selectedSubRunId ||
@@ -666,7 +669,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   ? subRunsData.sub_runs[0].sub_run_id
                   : undefined);
               return sr.sub_run_id === effectiveActiveSubRunId
-                ? 'bg-[#16273b] !bg-[#16273b] border-l-4 border-l-[#4cd7f6] text-white shadow-md'
+                ? 'border-l-4 border-l-[#4cd7f6] text-white shadow-xl font-medium'
                 : '';
             }}
             onRowClick={(sr) => {
