@@ -60,7 +60,7 @@ describe('RunDetailPage Component', () => {
     expect(graphToggle).toBeInTheDocument();
     expect(timelineToggle).toBeInTheDocument();
 
-    expect(screen.getByText('Visual Journey Execution Trace Graph')).toBeInTheDocument();
+    expect(screen.getAllByText('Trace Graph').length).toBeGreaterThan(0);
     expect(screen.getByTestId('execution-graph-container')).toBeInTheDocument();
 
     fireEvent.click(timelineToggle);
@@ -73,7 +73,7 @@ describe('RunDetailPage Component', () => {
     fireEvent.click(graphToggle);
 
     await waitFor(() => {
-      expect(screen.getByText('Visual Journey Execution Trace Graph')).toBeInTheDocument();
+      expect(screen.getAllByText('Trace Graph').length).toBeGreaterThan(0);
       expect(screen.getByTestId('execution-graph-container')).toBeInTheDocument();
     });
   });

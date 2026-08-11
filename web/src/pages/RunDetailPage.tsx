@@ -395,7 +395,20 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
 
           return (
             <div className="flex items-center gap-2">
-              {!isSelected && (
+              {isSelected ? (
+                <Button
+                  type="button"
+                  variant="secondary-dark"
+                  size="sm"
+                  icon="visibility"
+                  disabled={true}
+                  title="Currently Viewing Active Trace"
+                  className="opacity-50 cursor-not-allowed bg-[#171b26] text-[#908fa0] border-[#464554] font-medium"
+                  data-testid={`active-subrun-trace-${sr.sub_run_id}`}
+                >
+                  Inspect Trace
+                </Button>
+              ) : (
                 <Button
                   type="button"
                   variant="secondary-dark"
@@ -444,7 +457,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   handleOpenSignalModal(temporalWfId, sr.recipient || sr.subject_id);
                 }}
                 data-testid={`signal-subrun-${sr.sub_run_id}`}
-                className="bg-[#4cd7f6]/10 hover:bg-[#4cd7f6]/25 text-[#4cd7f6] border-[#4cd7f6]/40 font-semibold"
+                className="bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/40 text-[#4cd7f6] border-[#4cd7f6]/30 font-semibold"
               >
                 Signal
               </Button>
@@ -749,7 +762,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   {viewMode === 'graph' ? 'account_tree' : 'schema'}
                 </span>
                 {viewMode === 'graph'
-                  ? 'Visual Journey Execution Trace Graph'
+                  ? 'Trace Graph'
                   : `Node Visits & Outcome Timeline (${timelineEvents.length} Steps)`}
               </h2>
 
@@ -767,7 +780,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                   onClick={() => setViewMode('graph')}
                   data-testid="view-toggle-graph"
                 >
-                  Visual Graph Trace
+                  Trace Graph
                 </Button>
                 <Button
                   type="button"
