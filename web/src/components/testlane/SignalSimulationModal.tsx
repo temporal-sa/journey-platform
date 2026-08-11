@@ -174,7 +174,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
 
         {/* Quick Signal Presets */}
         <div className="space-y-2 mb-4">
-          <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider font-semibold">
+          <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider font-semibold font-['Outfit',sans-serif]">
             Quick Preset Signal Types
           </label>
           <div className="flex items-center gap-2 flex-wrap">
@@ -211,7 +211,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
         <div className="p-4 bg-[#090D16] space-y-4 rounded-none">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-semibold font-['Outfit',sans-serif]">
                 Event Type <span className="text-rose-400">*</span>
               </label>
               <input
@@ -221,12 +221,12 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="order.completed"
                 data-testid="signal-event-type-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554] font-['Outfit',sans-serif]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-semibold font-['Outfit',sans-serif]">
                 Source <span className="text-rose-400">*</span>
               </label>
               <input
@@ -236,12 +236,12 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="web_control_center"
                 data-testid="signal-event-source-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554] font-['Outfit',sans-serif]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-semibold font-['Outfit',sans-serif]">
                 Data Classification <span className="text-rose-400">*</span>
               </label>
               <select
@@ -249,7 +249,7 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 onChange={(e) => setDataClassification(e.target.value as 'NonPII' | 'PII' | 'Sensitive')}
                 data-testid="signal-data-classification-select"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#4cd7f6] font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all cursor-pointer"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#4cd7f6] text-xs rounded-none focus:border-[#4cd7f6] transition-all cursor-pointer font-['Outfit',sans-serif]"
               >
                 <option value="NonPII">NonPII</option>
                 <option value="PII">PII</option>
@@ -257,10 +257,9 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
               </select>
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-semibold font-['Outfit',sans-serif]">
                 Subject / Customer ID
               </label>
               <input
@@ -270,12 +269,12 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="usr_001"
                 data-testid="signal-subject-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-white text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554] font-['Outfit',sans-serif]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-semibold font-['Outfit',sans-serif]">
                 Target Workflow ID
               </label>
               <input
@@ -285,14 +284,14 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="wf-draft-..."
                 data-testid="signal-workflow-id-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#c0c1ff] font-mono text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#c0c1ff] text-xs rounded-none focus:border-[#4cd7f6] transition-all placeholder-[#464554] font-['Outfit',sans-serif]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-['Outfit',sans-serif]">
                 Schema Version
               </label>
               <input
@@ -302,12 +301,12 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="1.0"
                 data-testid="signal-schema-version-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] font-mono text-xs rounded-none outline-none"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] text-xs rounded-none outline-none font-['Outfit',sans-serif]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-['Outfit',sans-serif]">
                 Event ID
               </label>
               <input
@@ -317,12 +316,12 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="evt-sig-..."
                 data-testid="signal-event-id-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] font-mono text-xs rounded-none outline-none placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] text-xs rounded-none outline-none placeholder-[#464554] font-['Outfit',sans-serif]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1 font-['Outfit',sans-serif]">
                 Trace ID
               </label>
               <input
@@ -332,13 +331,13 @@ export const SignalSimulationModal: React.FC<SignalSimulationModalProps> = ({
                 placeholder="trace-..."
                 data-testid="signal-trace-id-input"
                 style={{ background: '#111520', border: '1px solid #464554', outline: 'none' }}
-                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] font-mono text-xs rounded-none outline-none placeholder-[#464554]"
+                className="w-full px-2.5 py-1.5 bg-[#111520] border border-[#464554] text-[#908fa0] text-xs rounded-none outline-none placeholder-[#464554] font-['Outfit',sans-serif]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] font-mono text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold">
+            <label className="block text-[10px] text-[#908fa0] uppercase tracking-wider mb-1.5 font-semibold font-['Outfit',sans-serif]">
               Event Payload Data (JSON) <span className="text-rose-400">*</span>
             </label>
             <textarea
