@@ -287,6 +287,12 @@ func (h *Handlers) executeWebMCPTool(ctx context.Context, tenantID, name string,
 		if err != nil {
 			return nil, fmt.Errorf("failed to save journey draft: %w", err)
 		}
+		if saved != nil && len(saved.Nodes) > 0 {
+			var graphNodes []domain.GraphNode
+			if err := json.Unmarshal(saved.Nodes, &graphNodes); err == nil && len(graphNodes) > 0 {
+				syncDraftExperiments(ctx, h.repo, tenantID, graphNodes)
+			}
+		}
 		return saved, nil
 
 	case "trigger_test_run":

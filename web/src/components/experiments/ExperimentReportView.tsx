@@ -21,23 +21,43 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
   onRefresh,
   onExportCSV,
 }) => {
-  const targetExpId = experimentId || report?.experiment_id;
+  const [selectedExpId, setSelectedExpId] = useState<string>(experimentId || '');
 
-  const { data: fetchedReportData } = useQuery({
-    queryKey: ['aggregateReport', targetExpId],
+  // Fetch available experiment definitions
+  const { data: experimentsList = [] } = useQuery({
+    queryKey: ['experimentsList'],
     queryFn: async () => {
-      const data = await apiClient.getAggregateReport({ experimentId: targetExpId });
-      return data as unknown as AggregateReportData;
+      try {
+        const list = await apiClient.listExperiments();
+        return list || [];
+      } catch (err) {
+        console.error('Failed to fetch experiments list:', err);
+        return [];
+      }
     },
-    enabled: Boolean(targetExpId || !report),
   });
 
+  const activeExpId =
+    selectedExpId ||
+    experimentId ||
+    report?.experiment_id ||
+    (experimentsList.length > 0 ? experimentsList[0].experiment_id : '');
+
+  const { data: fetchedReportData } = useQuery({
+    queryKey: ['aggregateReport', activeExpId],
+    queryFn: async () => {
+      if (!activeExpId) return null;
+      const data = await apiClient.getAggregateReport({ experimentId: activeExpId });
+      return data as unknown as AggregateReportData;
+    },
+    enabled: Boolean(activeExpId),
+  });
   const mergedReport: AggregateReportData = useMemo(() => {
     const base: AggregateReportData = fetchedReportData || {
       schema_version: '1.0',
       report_id: 'rep-301',
       tenant_id: 'tenant-default',
-      experiment_id: targetExpId || 'exp-101',
+      experiment_id: activeExpId || 'exp-101',
       experiment_name: 'Experiment Aggregate Analytics',
       period_start: new Date(Date.now() - 7 * 86400000).toISOString(),
       period_end: new Date().toISOString(),
@@ -57,7 +77,7 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
         ? report.variant_metrics
         : base.variant_metrics || [],
     };
-  }, [fetchedReportData, report, targetExpId]);
+  }, [fetchedReportData, report, activeExpId]);
 
   const handleExportCSV = async () => {
     if (onExportCSV) {
@@ -155,6 +175,27 @@ const ExperimentReportViewInner: React.FC<ExperimentReportViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Experiment Selector Dropdown */}
+          {experimentsList.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="experiment-selector" className="text-xs text-[#908fa0] font-mono">
+                Experiment:
+              </label>
+              <select
+                id="experiment-selector"
+                data-testid="experiment-selector-dropdown"
+                value={activeExpId}
+                onChange={(e) => setSelectedExpId(e.target.value)}
+                className="bg-[#171b26] border border-[#464554] text-[#dfe2f1] text-xs font-['Outfit',sans-serif] px-3 py-1.5 rounded-none focus:outline-none focus:border-[#c0c1ff] cursor-pointer"
+              >
+                {experimentsList.map((exp) => (
+                  <option key={exp.experiment_id} value={exp.experiment_id}>
+                    {exp.name || exp.experiment_id} ({exp.experiment_id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {/* Raw vs Filtered Indicator / Toggle */}
           <div
             data-testid="raw-vs-filtered-toggle"

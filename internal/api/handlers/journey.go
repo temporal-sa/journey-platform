@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/validated-pattern/journey-platform/internal/api/middleware"
@@ -39,6 +42,97 @@ func computeDraftETag(dbDraft *postgres.JourneyDraft) string {
 	}
 	raw := fmt.Sprintf("%s:%s:%d:%s:%s", dbDraft.DraftID, dbDraft.Name, dbDraft.Version, string(dbDraft.Nodes), string(dbDraft.Edges))
 	return middleware.GenerateETag([]byte(raw))
+}
+func syncDraftExperiments(ctx context.Context, repo postgres.Repository, tenantID string, nodes []domain.GraphNode) {
+	if repo == nil || len(nodes) == 0 {
+		return
+	}
+	for _, n := range nodes {
+		nodeType := strings.ToLower(strings.TrimSpace(n.Type))
+		if nodeType == "experiment" || nodeType == "ab_test" || nodeType == "split" || nodeType == "multivariate" {
+			expID := ""
+			if n.Config != nil {
+				if v, ok := n.Config["experiment_id"].(string); ok && v != "" {
+					expID = v
+				} else if v, ok := n.Config["experiment_key"].(string); ok && v != "" {
+					expID = v
+				}
+			}
+			if expID == "" {
+				expID = n.ID
+			}
+
+			var variants []domain.ExperimentVariant
+			if n.Config != nil {
+				if rawVars, ok := n.Config["variants"].([]interface{}); ok {
+					for _, rv := range rawVars {
+						if vm, ok := rv.(map[string]interface{}); ok {
+							vID, _ := vm["variant_id"].(string)
+							if vID == "" {
+								vID, _ = vm["key"].(string)
+							}
+							if vID == "" {
+								continue
+							}
+							weightVal := int(5000)
+							if w, ok := vm["weight"].(float64); ok {
+								weightVal = int(w)
+							} else if w, ok := vm["weight_basis_points"].(float64); ok {
+								weightVal = int(w)
+							}
+							vName, _ := vm["name"].(string)
+							variants = append(variants, domain.ExperimentVariant{
+								VariantID:         vID,
+								Name:              vName,
+								WeightBasisPoints: weightVal,
+							})
+						}
+					}
+				}
+			}
+
+			if len(variants) < 2 {
+				variants = []domain.ExperimentVariant{
+					{VariantID: "control", Name: "Control", WeightBasisPoints: 5000},
+					{VariantID: "treatment", Name: "Treatment", WeightBasisPoints: 5000},
+				}
+			}
+			expName := n.Name
+			if expName == "" {
+				expName = expID
+			}
+			variantsBytes, _ := json.Marshal(variants)
+			hashSum := sha256.Sum256(variantsBytes)
+			hash := hex.EncodeToString(hashSum[:])
+
+			existing, err := repo.GetExperimentDefinition(ctx, tenantID, expID)
+			if (err != nil || existing == nil) && tenantID != "default" {
+				existing, _ = repo.GetExperimentDefinition(ctx, "default", expID)
+			}
+
+			now := time.Now().UTC()
+			if existing == nil {
+				newExp := &postgres.ExperimentDefinition{
+					TenantID:       tenantID,
+					ExperimentID:   expID,
+					Name:           expName,
+					Description:    fmt.Sprintf("Auto-registered from journey node %s", n.ID),
+					Status:         "active",
+					Variants:       variantsBytes,
+					TargetAudience: "all",
+					ContentHash:    hash,
+					CreatedAt:      now,
+					UpdatedAt:      now,
+				}
+				_, _ = repo.CreateExperimentDefinition(ctx, newExp)
+			} else if existing.ContentHash != hash {
+				existing.Variants = variantsBytes
+				existing.ContentHash = hash
+				existing.UpdatedAt = now
+				_, _ = repo.UpdateExperimentDefinition(ctx, existing)
+			}
+		}
+	}
 }
 
 // CreateDraft handles POST /api/v1/journeys and /api/v1/journeys/drafts
@@ -101,6 +195,8 @@ func (h *Handlers) CreateDraft(w http.ResponseWriter, r *http.Request) {
 		middleware.WriteError(w, r, http.StatusInternalServerError, fmt.Sprintf("failed to save journey draft: %v", err))
 		return
 	}
+
+	syncDraftExperiments(r.Context(), h.repo, tenantID, draft.Nodes)
 
 	etag := computeDraftETag(created)
 	w.Header().Set("ETag", etag)
@@ -288,12 +384,13 @@ func (h *Handlers) UpdateDraft(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	syncDraftExperiments(r.Context(), h.repo, tenantID, incoming.Nodes)
+
 	newETag := computeDraftETag(saved)
 	w.Header().Set("ETag", newETag)
 
 	middleware.WriteJSON(w, http.StatusOK, incoming)
 }
-
 // ValidateDraft handles POST /api/v1/journeys/{id}/validate and /api/v1/journeys/drafts/{id}/validate
 func (h *Handlers) ValidateDraft(w http.ResponseWriter, r *http.Request) {
 	draftID := getDraftIDFromRequest(r)
