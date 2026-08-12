@@ -238,14 +238,48 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
     return 'running';
   }, [timelineEvents, runDetailData]);
 
+  const derivedDurationMs = React.useMemo(() => {
+    if (timelineEvents && timelineEvents.length > 0) {
+      const firstTimestamp = new Date(timelineEvents[0].timestamp).getTime();
+      const lastEvent = timelineEvents[timelineEvents.length - 1];
+
+      let endTimestamp = new Date(lastEvent.timestamp).getTime();
+      if (derivedExecutionStatus === 'running') {
+        endTimestamp = Date.now();
+      } else if (runDetailData?.timeline?.completed_at) {
+        endTimestamp = new Date(runDetailData.timeline.completed_at).getTime();
+      }
+
+      if (!isNaN(firstTimestamp) && !isNaN(endTimestamp)) {
+        return Math.max(0, endTimestamp - firstTimestamp);
+      }
+    }
+
+    if (runDetailData?.timeline?.started_at && runDetailData?.timeline?.completed_at) {
+      const start = new Date(runDetailData.timeline.started_at).getTime();
+      const end = new Date(runDetailData.timeline.completed_at).getTime();
+      if (!isNaN(start) && !isNaN(end)) {
+        return Math.max(0, end - start);
+      }
+    }
+
+    if (runDetailData?.ledger?.started_at && runDetailData?.ledger?.completed_at) {
+      const start = new Date(runDetailData.ledger.started_at).getTime();
+      const end = new Date(runDetailData.ledger.completed_at).getTime();
+      if (!isNaN(start) && !isNaN(end)) {
+        return Math.max(0, end - start);
+      }
+    }
+
+    return 0;
+  }, [timelineEvents, runDetailData, derivedExecutionStatus]);
+
   const parameters = {
     tenant_id: runDetailData?.ledger?.tenant_id || runDetailData?.timeline?.tenant_id || 'tenant-default',
     workflow_id: runDetailData?.ledger?.workflow_id || runDetailData?.timeline?.workflow_id || `wf-${activeRunId}`,
     execution_mode: (runDetailData?.ledger?.execution_mode || runDetailData?.timeline?.execution_mode || 'production') as 'production' | 'test',
     data_classification: 'NonPII',
-    duration_ms: (runDetailData?.timeline?.started_at && runDetailData?.timeline?.completed_at)
-      ? Math.max(0, new Date(runDetailData.timeline.completed_at).getTime() - new Date(runDetailData.timeline.started_at).getTime())
-      : 0,
+    duration_ms: derivedDurationMs,
     started_at: runDetailData?.ledger?.started_at || runDetailData?.timeline?.started_at || new Date().toISOString(),
     completed_at: runDetailData?.ledger?.completed_at || runDetailData?.timeline?.completed_at,
     status: derivedExecutionStatus,
@@ -693,7 +727,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             Total Duration
           </span>
           <strong className="text-xs font-mono text-[#6ee7b7]">
-            {(parameters.duration_ms || 5000).toLocaleString()} ms
+            {(parameters.duration_ms ?? 0).toLocaleString()} ms
           </strong>
         </div>
       </div>
