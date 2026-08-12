@@ -41,10 +41,16 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
     subRunId: propSubRunId || '',
   });
 
-  const activeRunId = (params.runId && params.runId !== 'run-601' ? params.runId : propRunId) || params.runId || propRunId || 'run-601';
-  const activeSubRunIdParam = (params.subRunId && params.subRunId !== '' ? params.subRunId : propSubRunId) || propSubRunId || undefined;
+  const activeRunId = propRunId || params.runId || 'run-601';
+  const activeSubRunIdParam = propSubRunId || (params.subRunId !== '' ? params.subRunId : undefined);
 
   const [selectedSubRunId, setSelectedSubRunId] = React.useState<string | undefined>(activeSubRunIdParam);
+
+  React.useEffect(() => {
+    if (propRunId && propRunId !== params.runId) {
+      setParams({ runId: propRunId, subRunId: propSubRunId || '' });
+    }
+  }, [propRunId, propSubRunId]);
 
   React.useEffect(() => {
     if (activeSubRunIdParam && activeSubRunIdParam !== selectedSubRunId) {
