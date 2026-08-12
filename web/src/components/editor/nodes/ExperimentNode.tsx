@@ -94,7 +94,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         <div className="flex-grow min-w-0 text-left">
           <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
           <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
-          <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-amber-300 text-left">
+          <div className="flex items-center gap-2 mt-1 text-[10px] font-['Outfit',sans-serif] text-amber-300 text-left">
             <span><span>Variant A</span>: <strong data-testid="experiment-node-pct-a">{variantAPct}%</strong></span>
             <span className="text-slate-500">|</span>
             <span><span>Variant B</span>: <strong data-testid="experiment-node-pct-b" className="text-slate-400">{variantBPct}%</strong></span>
@@ -122,7 +122,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
           marginBottom: '4px',
           boxSizing: 'border-box',
         }}
-        className="shrink-0 select-none shadow-md"
+        className="shrink-0 select-none shadow-md font-['Outfit',sans-serif]"
       >
         <div
           data-testid="experiment-node-bar-a"

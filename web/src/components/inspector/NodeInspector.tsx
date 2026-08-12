@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import { useEditorStore } from '../../stores/editorStore';
@@ -14,7 +14,143 @@ export interface NodeInspectorProps {
   nodeId: string | null;
   onClose?: () => void;
 }
+export interface SearchableTemplateOption {
+  id: string;
+  name: string;
+  defaultSubject?: string;
+  description?: string;
+}
 
+export interface SearchableTemplateInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchableTemplateOption[];
+  onSelectTemplate?: (template: SearchableTemplateOption) => void;
+  hasError?: boolean;
+}
+
+export function SearchableTemplateInput({
+  value,
+  onChange,
+  options,
+  onSelectTemplate,
+  hasError,
+}: SearchableTemplateInputProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery.trim()) return options;
+    const q = searchQuery.toLowerCase();
+    return options.filter(
+      (opt) =>
+        opt.name.toLowerCase().includes(q) ||
+        opt.id.toLowerCase().includes(q) ||
+        (opt.description && opt.description.toLowerCase().includes(q))
+    );
+  }, [options, searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const selectedTemplate = options.find((o) => o.id === value);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={isOpen ? searchQuery : value}
+          onFocus={() => {
+            setSearchQuery(value);
+            setIsOpen(true);
+          }}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            onChange(e.target.value);
+            setIsOpen(true);
+          }}
+          placeholder="Search catalog templates or enter template ID..."
+          data-testid="inspector-input-template_id"
+          className={`w-full px-3 py-1.5 pr-8 bg-[#11141d] border ${
+            hasError ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
+          } rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all placeholder-[#64748b]`}
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="absolute right-2 text-[#908fa0] hover:text-[#dfe2f1] cursor-pointer flex items-center justify-center p-0 m-0 bg-transparent border-none"
+        >
+          <span className="material-symbols-outlined text-sm">
+            {isOpen ? 'expand_less' : 'expand_more'}
+          </span>
+        </button>
+      </div>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          className="absolute left-0 right-0 top-full mt-1 z-[100] max-h-56 overflow-y-auto bg-[#171b26] border border-[#464554] shadow-2xl rounded-none py-1 text-xs font-['Outfit',sans-serif]"
+        >
+          {filteredOptions.length === 0 ? (
+            <div className="px-3 py-2 text-[#908fa0] text-xs italic">
+              No catalog templates matching &quot;{searchQuery}&quot;. Custom ID &quot;{searchQuery}&quot; will be used.
+            </div>
+          ) : (
+            filteredOptions.map((opt) => {
+              const isSelected = opt.id === value;
+              return (
+                <div
+                  key={opt.id}
+                  role="option"
+                  aria-selected={isSelected}
+                  data-testid={`template-option-${opt.id}`}
+                  onClick={() => {
+                    onChange(opt.id);
+                    onSelectTemplate?.(opt);
+                    setIsOpen(false);
+                    setSearchQuery('');
+                  }}
+                  className={`px-3 py-2 cursor-pointer flex flex-col justify-center transition-colors ${
+                    isSelected
+                      ? 'bg-[#c0c1ff]/20 text-[#ddb7ff] font-semibold border-l-2 border-[#ddb7ff]'
+                      : 'text-[#dfe2f1] hover:bg-[#262a35] hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold font-['Outfit']">{opt.name}</span>
+                    <code className="text-[10px] font-mono text-[#c0c1ff]">{opt.id}</code>
+                  </div>
+                  {opt.description && (
+                    <div className="text-[10px] text-[#908fa0] truncate mt-0.5">{opt.description}</div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
   const { currentDraft, updateNodes, validationResult, isInspectorOpen, isCanvasLocked } = useEditorStore();
 
@@ -22,6 +158,11 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
     queryKey: ['actionCatalogNodes'],
     queryFn: () => apiClient.getActionCatalog(),
   });
+  const { data: catalogTemplates = [] } = useQuery<CatalogRecord[]>({
+    queryKey: ['catalogTemplates'],
+    queryFn: () => apiClient.getCatalog('templates'),
+  });
+
 
   // Selected Node from store
   const targetNode = currentDraft?.nodes?.find((n) => n.id === nodeId) || null;
@@ -38,23 +179,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
     (schemaDef?.properties?.unit as { default?: string })?.default ??
     (schemaDef?.unit as string);
 
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
-
-  const handleDryRun = async () => {
-    if (!currentDraft?.draft_id || !nodeId) return;
-    setIsSimulating(true);
-    setSimulationStatus(null);
-    try {
-      await apiClient.simulateJourneyDraft(currentDraft.draft_id, { node_id: nodeId });
-      setSimulationStatus('Dry run simulation succeeded!');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Dry run simulation failed';
-      setSimulationStatus(msg);
-    } finally {
-      setIsSimulating(false);
-    }
-  };
   // Isolated Draft Buffer State
   const [localDraft, setLocalDraft] = useState<{
     name: string;
@@ -69,6 +193,42 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
   const [isDirty, setIsDirty] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
   const [activeParamField, setActiveParamField] = useState<string | null>(null);
+  const templateOptions = useMemo(() => {
+    const list: { id: string; name: string; defaultSubject?: string; description?: string }[] = [];
+    const seen = new Set<string>();
+
+    if (catalogTemplates && catalogTemplates.length > 0) {
+      catalogTemplates.forEach((t) => {
+        if (!seen.has(t.record_id)) {
+          seen.add(t.record_id);
+          list.push({
+            id: t.record_id,
+            name: t.name,
+            description: t.description,
+            defaultSubject: (t.schema_definition?.subject as string) || undefined,
+          });
+        }
+      });
+    }
+
+    const defaults = [
+      { id: 'tmpl_welcome', name: 'Welcome Email Template', description: 'Standard welcome email template', defaultSubject: 'Welcome to Acme!' },
+      { id: 'rec_tmpl_welcome_onboarding', name: 'New User Welcome Onboarding', description: 'Pre-built welcome onboarding sequence', defaultSubject: 'Welcome {{subject.first_name}}! Getting started' },
+      { id: 'rec_tmpl_cart_recovery', name: 'Cart Abandonment Recovery Flow', description: 'Cart recovery email notification', defaultSubject: 'You left items in your shopping cart, {{subject.first_name}}!' },
+      { id: 'tmpl_welcome_v2', name: 'Welcome Email Template v2', description: 'Updated welcome email template', defaultSubject: 'Welcome to Acme {{subject.first_name}}!' },
+      { id: 'tmpl_order_confirmation', name: 'Order Confirmation Template', description: 'Order confirmation transactional email', defaultSubject: 'Order Confirmation #{{event.data.order_id}}' },
+      { id: 'tmpl_reengagement', name: 'User Re-engagement Campaign', description: 'Re-engagement nudge series', defaultSubject: 'We miss you {{subject.first_name}}!' },
+    ];
+
+    defaults.forEach((d) => {
+      if (!seen.has(d.id)) {
+        seen.add(d.id);
+        list.push(d);
+      }
+    });
+
+    return list;
+  }, [catalogTemplates]);
   useEffect(() => {
     if (targetNode) {
       setLocalDraft({
@@ -303,7 +463,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {/* Common Section: General Node Settings */}
         <div>
-          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#908fa0] mb-2">
+          <div className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0] mb-2">
             General Node Info
           </div>
 
@@ -320,19 +480,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           </div>
 
           <div className="mb-3">
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center gap-3 mb-1.5">
               <label className="text-xs font-medium text-[#c7c4d7]">
                 Node Label / Display Name
               </label>
-              <button
+              <Button
                 type="button"
+                variant="secondary-dark"
+                size="sm"
+                icon="token"
                 onClick={() => handleOpenParamModal('name')}
                 data-testid="param-btn-name"
-                className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                className="shrink-0 text-[11px] px-2 py-0.5"
               >
-                <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                <span>+ Insert Token</span>
-              </button>
+                + Insert Param
+              </Button>
             </div>
             <input
               type="text"
@@ -352,7 +514,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
         {/* Schema-Driven Config Form based on Node Type */}
         <div>
-          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#908fa0] mb-2">
+          <div className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0] mb-2">
             Type Configuration ({nodeType})
           </div>
 
@@ -360,19 +522,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {(nodeType === 'EventStart' || nodeType === 'EventStartNode' || nodeType === 'trigger') && (
             <>
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Event Name / Type
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('event_name')}
                     data-testid="param-btn-event_name"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Insert Param
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -391,19 +555,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Event Filter Expression
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('event_filter')}
                     data-testid="param-btn-event_filter"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Insert Param
+                  </Button>
                 </div>
                 <textarea
                   ref={(el) => {
@@ -427,19 +593,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {(nodeType === 'Email' || nodeType === 'EmailNode' || (nodeType === 'action' && localDraft.name.toLowerCase().includes('email'))) && (
             <>
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Recipient Address
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('recipient')}
                     data-testid="param-btn-recipient"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Insert Param
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -458,19 +626,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Subject Line
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('subject')}
                     data-testid="param-btn-subject"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Insert Param
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -490,17 +660,18 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
-                  Email Template ID
+                  Email Template Search & Catalog Reference
                 </label>
-                <input
-                  type="text"
+                <SearchableTemplateInput
                   value={(localDraft.config.template_id as string) || ''}
-                  onChange={(e) => handleConfigChange('template_id', e.target.value)}
-                  placeholder="e.g. tmpl_welcome_v2"
-                  data-testid="inspector-input-template_id"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('template_id', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                  onChange={(newVal) => handleConfigChange('template_id', newVal)}
+                  options={templateOptions}
+                  onSelectTemplate={(tmpl) => {
+                    if (tmpl.defaultSubject && !localDraft.config.subject) {
+                      handleConfigChange('subject', tmpl.defaultSubject);
+                    }
+                  }}
+                  hasError={Boolean(getFieldError('template_id', nodeIssues))}
                 />
                 {renderFieldError('template_id')}
               </div>
@@ -510,19 +681,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {/* CONDITION NODE */}
           {(nodeType === 'Condition' || nodeType === 'ConditionNode' || nodeType === 'condition') && (
             <div className="mb-3">
-              <div className="flex justify-between items-center mb-1">
+              <div className="flex justify-between items-center gap-3 mb-1.5">
                 <label className="text-xs font-medium text-[#c7c4d7]">
                   Condition Expression
                 </label>
-                <button
+                <Button
                   type="button"
+                  variant="secondary-dark"
+                  size="sm"
+                  icon="token"
                   onClick={() => handleOpenParamModal('condition_expression')}
                   data-testid="param-btn-condition_expression"
-                  className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                  className="shrink-0 text-[11px] px-2 py-0.5"
                 >
-                  <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                  <span>+ Token</span>
-                </button>
+                  + Insert Param
+                </Button>
               </div>
               <textarea
                 ref={(el) => {
@@ -582,19 +755,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {(nodeType === 'Webhook' || nodeType === 'WebhookNode') && (
             <>
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Webhook URL
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('url')}
                     data-testid="param-btn-url"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Insert Param
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -652,16 +827,15 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               {/* Traffic Flow Split Percentage Controls */}
-              <div className="mb-4 p-3.5 rounded-none bg-[#1c1f2a] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
+              <div className="mb-4 space-y-3 font-['Outfit',sans-serif]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#ddb7ff] uppercase tracking-wider font-mono">
+                  <span className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0]">
                     Traffic Split Allocation
                   </span>
-                  <span className="text-xs font-mono text-[#c0c1ff] font-bold">
+                  <span className="text-xs font-['Outfit',sans-serif] text-[#c0c1ff] font-bold">
                     {((localDraft.config.variant_a_weight as number) ?? 50)}% / {100 - ((localDraft.config.variant_a_weight as number) ?? 50)}%
                   </span>
                 </div>
-
                 {/* Preset Quick-Buttons */}
                 <div className="flex gap-2">
                   {[50, 70, 80, 90].map((pct) => (
@@ -678,7 +852,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                           handleConfigChange('variants', updatedVariants);
                         }
                       }}
-                      className={`flex-1 py-1 rounded-none text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                      className={`flex-1 py-1 rounded-none text-[10px] font-['Outfit',sans-serif] font-bold border transition-all cursor-pointer ${
                         ((localDraft.config.variant_a_weight as number) ?? (Array.isArray(localDraft.config.variants) && localDraft.config.variants[0]?.weight ? Math.round((localDraft.config.variants[0].weight / ((localDraft.config.variants[0].weight + (localDraft.config.variants[1]?.weight || 5000)) || 10000)) * 100) : 50)) === pct
                           ? 'bg-[#ddb7ff]/20 text-[#ddb7ff] border-[#ddb7ff]'
                           : 'bg-[#11141d] text-[#908fa0] border-[#464554] hover:text-white'
@@ -691,7 +865,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
                 {/* Interactive Split Slider */}
                 <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[10px] font-mono text-[#908fa0]">
+                  <div className="flex justify-between text-[10px] font-['Outfit',sans-serif] text-[#908fa0]">
                     <span>Variant A ({((localDraft.config.variant_a_weight as number) ?? 50)}%)</span>
                     <span>Variant B ({100 - ((localDraft.config.variant_a_weight as number) ?? 50)}%)</span>
                   </div>
@@ -733,33 +907,12 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               }}
               placeholder="Internal documentation note..."
               data-testid="inspector-input-description"
-              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]"
+              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all placeholder-[#64748b]"
             />
           </div>
 
-          {/* Dry Run Button */}
-          <div className="pt-2 space-y-2">
-            <Button
-              type="button"
-              onClick={handleDryRun}
-              disabled={isSimulating || !currentDraft?.draft_id}
-              data-testid="dry-run-node-btn"
-              variant="secondary-dark"
-              icon={isSimulating ? undefined : 'play_arrow'}
-              isLoading={isSimulating}
-              fullWidth
-            >
-              {isSimulating ? 'Simulating...' : 'Dry Run This Node'}
-            </Button>
-            {simulationStatus && (
-              <div className="text-[11px] font-mono text-[#c0c1ff] p-2 rounded-none bg-[#11141d] border border-[#464554]">
-                {simulationStatus}
-              </div>
-            )}
-          </div>
         </div>
       </div>
-
       {/* Footer Controls: Isolated Draft Buffer Save and Cancel Semantics */}
       <div className="p-4 bg-[#1c1f2a]/90 border-t border-[#464554] flex items-center gap-3 shrink-0">
         <Button
