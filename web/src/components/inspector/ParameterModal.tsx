@@ -354,17 +354,20 @@ function ParameterModalInner({
                   </div>
                 </div>
 
-                <button
+                <Button
+                  type="button"
+                  variant="secondary-dark"
+                  size="sm"
+                  icon="add_circle"
                   onClick={() => {
                     onSelectToken(param.token);
                     onClose();
                   }}
                   data-testid={`insert-token-btn-${param.key}`}
-                  className="px-3.5 py-2 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] text-[#c0c1ff] hover:text-white font-semibold text-xs border border-[#464554] hover:border-[#c0c1ff]/40 shadow-sm transition-all cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                  className="shrink-0 text-xs px-3.5 py-2"
                 >
-                  <span className="material-symbols-outlined text-sm text-[#c0c1ff]">add_circle</span>
-                  <span>Insert Token</span>
-                </button>
+                  Insert Param
+                </Button>
               </div>
             ))}
           </div>

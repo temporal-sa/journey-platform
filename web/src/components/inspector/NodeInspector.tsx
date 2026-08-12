@@ -333,7 +333,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 data-testid="param-btn-name"
                 className="shrink-0 text-[11px] px-2 py-0.5"
               >
-                + Insert Token
+                + Insert Param
               </Button>
             </div>
             <input
@@ -375,7 +375,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     data-testid="param-btn-event_name"
                     className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    + Token
+                    + Insert Param
                   </Button>
                 </div>
                 <input
@@ -408,7 +408,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     data-testid="param-btn-event_filter"
                     className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    + Token
+                    + Insert Param
                   </Button>
                 </div>
                 <textarea
@@ -446,7 +446,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     data-testid="param-btn-recipient"
                     className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    + Token
+                    + Insert Param
                   </Button>
                 </div>
                 <input
@@ -479,7 +479,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     data-testid="param-btn-subject"
                     className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    + Token
+                    + Insert Param
                   </Button>
                 </div>
                 <input
@@ -533,7 +533,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   data-testid="param-btn-condition_expression"
                   className="shrink-0 text-[11px] px-2 py-0.5"
                 >
-                  + Token
+                  + Insert Param
                 </Button>
               </div>
               <textarea
@@ -607,7 +607,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     data-testid="param-btn-url"
                     className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    + Token
+                    + Insert Param
                   </Button>
                 </div>
                 <input
