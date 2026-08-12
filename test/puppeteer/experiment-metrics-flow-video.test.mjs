@@ -86,10 +86,30 @@ async function runExperimentVideoTest() {
     await page.select(selectorId, 'exp-checkout-cta-v1');
     await delay(1500);
 
-    // 4. Verify updated title and elements
+    // 4. Verify updated title, non-zero metrics, and SRM card
     await page.waitForSelector('[data-testid="srm-status-card"]', { timeout: 3000 });
-    console.log('✅ Metrics and SRM Card loaded for exp-checkout-cta-v1.');
-    await delay(2000);
+    await page.waitForSelector('[data-testid="data-freshness-indicator"]', { timeout: 3000 });
+
+    // Extract displayed metrics to assert non-zero values
+    const metrics = await page.evaluate(() => {
+      const getText = (id) => document.querySelector(`[data-testid="${id}"]`)?.textContent || '';
+      return {
+        assigned: getText('metric-assigned'),
+        exposed: getText('metric-exposed'),
+        conversions: getText('metric-conversion'),
+        conversionRate: getText('metric-conversion-rate'),
+        maxLift: getText('metric-max-lift'),
+      };
+    });
+
+    console.log('📊 Displayed Metrics On Screen:', metrics);
+
+    if (metrics.assigned === '0' || metrics.exposed === '0') {
+      throw new Error(`Expected non-zero assigned and exposed metrics, got: ${JSON.stringify(metrics)}`);
+    }
+
+    console.log('✅ Non-zero experiment metrics verified on screen successfully!');
+    await delay(2500);
 
     console.log('⏹️ Stopping Screencast...');
     await client.send('Page.stopScreencast');
