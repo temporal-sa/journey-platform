@@ -652,9 +652,9 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               {/* Traffic Flow Split Percentage Controls */}
-              <div className="mb-4 p-3.5 rounded-none bg-[#1c1f2a] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
+              <div className="mb-4 space-y-3 font-['Outfit',sans-serif]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#ddb7ff] uppercase tracking-wider font-['Outfit',sans-serif]">
+                  <span className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0]">
                     Traffic Split Allocation
                   </span>
                   <span className="text-xs font-['Outfit',sans-serif] text-[#c0c1ff] font-bold">
@@ -732,7 +732,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               }}
               placeholder="Internal documentation note..."
               data-testid="inspector-input-description"
-              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]"
+              className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all placeholder-[#64748b]"
             />
           </div>
 
@@ -751,14 +751,13 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               {isSimulating ? 'Simulating...' : 'Dry Run This Node'}
             </Button>
             {simulationStatus && (
-              <div className="text-[11px] font-mono text-[#c0c1ff] p-2 rounded-none bg-[#11141d] border border-[#464554]">
+              <div className="text-[11px] font-['Outfit',sans-serif] text-[#c0c1ff] p-2 rounded-none bg-[#11141d] border border-[#464554]">
                 {simulationStatus}
               </div>
             )}
           </div>
         </div>
       </div>
-
       {/* Footer Controls: Isolated Draft Buffer Save and Cancel Semantics */}
       <div className="p-4 bg-[#1c1f2a]/90 border-t border-[#464554] flex items-center gap-3 shrink-0">
         <Button
