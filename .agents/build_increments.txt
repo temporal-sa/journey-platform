@@ -1,7 +1,7 @@
 feat/ui-improvements-obsidian=237
 main=147
 feat/webmcp-local-integration=20
-feat/ui-enhancements-v2=68
+feat/ui-enhancements-v2=103
 fix/run-detail-duration-calc=4
 feat/ui-enhancements=16
 fix/experiments=5
