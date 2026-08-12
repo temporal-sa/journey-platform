@@ -575,3 +575,66 @@ func TestSimulator_SnapshotRedactedPreviews(t *testing.T) {
 		t.Errorf("Snapshot verification failed for preview body.\nExpected: %s\nGot:      %s", expectedBodySnapshot, preview.Body)
 	}
 }
+
+func TestSimulator_DelayNode(t *testing.T) {
+	tc := NewTemplateCompiler()
+	sim := NewSimulator(tc)
+
+	ir := &domain.CompiledIR{
+		EntryNodeID: "start",
+		Nodes: []domain.IRNode{
+			{ID: "start", Type: "trigger"},
+			{
+				ID:   "delay-node-1",
+				Type: "delay",
+				Params: map[string]interface{}{
+					"duration": 10,
+					"unit":     "minutes",
+				},
+			},
+			{
+				ID:   "delay-node-2",
+				Type: "delay",
+				Params: map[string]interface{}{
+					"duration": "24h",
+				},
+			},
+			{ID: "exit", Type: "exit"},
+		},
+		Edges: []domain.IREdge{
+			{ID: "e1", SourceID: "start", TargetID: "delay-node-1"},
+			{ID: "e2", SourceID: "delay-node-1", TargetID: "delay-node-2"},
+			{ID: "e3", SourceID: "delay-node-2", TargetID: "exit"},
+		},
+	}
+
+	res, err := sim.Simulate(ir, nil)
+	if err != nil {
+		t.Fatalf("Simulate failed: %v", err)
+	}
+
+	if len(res.VisitedNodes) != 4 {
+		t.Errorf("expected 4 visited nodes, got %d", len(res.VisitedNodes))
+	}
+
+	foundDelay1 := false
+	foundDelay2 := false
+	for _, dec := range res.Decisions {
+		if dec.NodeID == "delay-node-1" {
+			foundDelay1 = true
+			if !strings.Contains(dec.Reason, "600 seconds") {
+				t.Errorf("expected delay 1 to be 600 seconds, got reason: %s", dec.Reason)
+			}
+		}
+		if dec.NodeID == "delay-node-2" {
+			foundDelay2 = true
+			if !strings.Contains(dec.Reason, "86400 seconds") {
+				t.Errorf("expected delay 2 to be 86400 seconds, got reason: %s", dec.Reason)
+			}
+		}
+	}
+
+	if !foundDelay1 || !foundDelay2 {
+		t.Errorf("expected decisions for both delay nodes, got: %+v", res.Decisions)
+	}
+}

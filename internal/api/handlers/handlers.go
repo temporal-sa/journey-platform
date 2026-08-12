@@ -90,6 +90,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/api/v1/catalogs/parameters", h.ListParameterCatalog)
 	r.Get("/api/v1/catalogs/metrics", h.ListMetricCatalog)
 	r.Get("/api/v1/catalogs/templates", h.ListTemplateCatalog)
+	r.Post("/api/v1/catalogs/{type}", h.CreateCatalog)
 
 	// Journey Draft Endpoints - Standard /api/v1/journeys path family
 	r.Get("/api/v1/journeys", h.ListDrafts)

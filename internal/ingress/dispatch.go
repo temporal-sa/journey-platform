@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/validated-pattern/journey-platform/internal/domain"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -528,19 +529,26 @@ func (d *TargetDispatcher) dispatchSubject(ctx context.Context, tenantID, manife
 	}
 
 	// Input parameters for Temporal workflow
+	runID := fmt.Sprintf("run-%s-%s", journeyVersionID, subjectID)
 	wfInput := map[string]interface{}{
+		"schema_version":     domain.DefaultSchemaVersion,
+		"workflow_id":        workflowID,
+		"run_id":             runID,
 		"tenant_id":          tenantID,
 		"journey_version_id": journeyVersionID,
 		"subject_id":         subjectID,
 		"manifest_id":        manifestID,
+		"trigger_event_id":   spec.EventID,
 		"event_id":           spec.EventID,
 		"event_type":         spec.EventType,
+		"content_hash":       journeyVersionID,
+		"execution_mode":     "production",
 		"lane":               string(lane),
+		"input_payload":      spec.Payload,
 		"payload":            spec.Payload,
 	}
 
-	_, startErr := d.temporalClient.StartWorkflow(ctx, opts, "JourneyWorkflow", wfInput)
-
+	_, startErr := d.temporalClient.StartWorkflow(ctx, opts, "CompiledJourneyWorkflow", wfInput)
 	var status string
 	if startErr == nil {
 		status = StatusAccepted

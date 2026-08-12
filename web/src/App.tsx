@@ -452,44 +452,6 @@ export function DashboardContent() {
     }
   };
 
-  const handleCreateJourneyTop = async () => {
-    try {
-      const client = new JourneyApiClient();
-      const tenantId = 'default';
-      const draftToSave: GraphDraft = {
-        schema_version: '1.0',
-        draft_id: `draft-${Date.now().toString().slice(-4)}`,
-        tenant_id: tenantId,
-        name: 'New Journey',
-        version: 1,
-        nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
-        edges: [],
-      };
-      const res = await client.createJourneyDraft(draftToSave, {
-        'X-Tenant-ID': tenantId,
-      });
-      setDraft(res.draft);
-      queryClient.invalidateQueries({ queryKey: ['journeys', 'list'] });
-      setActiveRoute('canvas');
-      setToastState({
-        isOpen: true,
-        messageType: ToastMessageType.SUCCESS,
-        title: 'New Journey Initialized',
-        message: `Created "${res.draft.name}".`,
-      });
-      announce(`Created new journey ${res.draft.name}`, 'polite');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Could not create new journey.';
-      setToastState({
-        isOpen: true,
-        messageType: ToastMessageType.ERROR,
-        title: 'Failed to Create Journey',
-        message: msg,
-      });
-      console.error('Failed to create new journey:', err);
-      setActiveRoute('canvas');
-    }
-  };
 
   const handleSimulateConflict = () => {
     const draftBase = currentDraft || {
@@ -760,18 +722,6 @@ export function DashboardContent() {
               </div>
             </div>
 
-            {/* Top Create Journey Button */}
-            <Button
-              onClick={handleCreateJourneyTop}
-              data-testid="sidebar-create-journey-btn"
-              variant="primary-purple"
-              size="lg"
-              icon="add"
-              fullWidth
-              className="mb-2"
-            >
-              New Journey
-            </Button>
           </div>
 
           {/* Seamless Nav List (Flush with Sidebar) */}

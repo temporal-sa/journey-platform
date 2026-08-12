@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -212,6 +213,18 @@ func (s *Simulator) Simulate(ir *domain.CompiledIR, opts *SimulationOptions) (*S
 				Reason:   fmt.Sprintf("Assigned experiment '%s' to variant '%s'", expID, chosenVariant),
 			})
 		}
+		// 1.5. Handle Delay / Wait Nodes
+		if nodeTypeLower == "delay" || nodeTypeLower == "delaynode" || nodeTypeLower == "wait" || nodeTypeLower == "timer" {
+			delaySec := extractDelaySeconds(node.Params)
+			evalCtx.NodeOutput[node.ID] = fmt.Sprintf("delayed_%ds", delaySec)
+			result.Decisions = append(result.Decisions, SimulationDecision{
+				NodeID:   node.ID,
+				NodeType: node.Type,
+				Result:   true,
+				Reason:   fmt.Sprintf("Simulated delay of %d seconds", delaySec),
+			})
+		}
+
 
 		// 2. Handle Message / Action / Channel Nodes
 		if isMessagingNode(node) {
@@ -518,4 +531,140 @@ func deduplicateStrings(items []string) []string {
 		}
 	}
 	return res
+}
+
+func extractDelaySeconds(params map[string]interface{}) int64 {
+	if params == nil {
+		return 0
+	}
+
+	// 1. Direct explicit seconds/ms keys
+	if val, ok := params["duration_seconds"]; ok {
+		return parseSecondsFromValue(val, "")
+	}
+	if val, ok := params["delay_seconds"]; ok {
+		return parseSecondsFromValue(val, "")
+	}
+	if val, ok := params["seconds"]; ok {
+		return parseSecondsFromValue(val, "")
+	}
+	if val, ok := params["delay_ms"]; ok {
+		return parseSecondsFromValue(val, "") / 1000
+	}
+
+	// 2. Unit parameter if provided
+	unitStr := ""
+	for _, uKey := range []string{"unit", "time_unit", "duration_unit"} {
+		if uVal, ok := params[uKey]; ok {
+			str := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", uVal)))
+			if str != "" {
+				unitStr = str
+				break
+			}
+		}
+	}
+
+	// 3. Duration / delay keys
+	for _, k := range []string{"duration", "delay", "wait_duration", "wait_time"} {
+		if val, ok := params[k]; ok {
+			sec := parseSecondsFromValue(val, unitStr)
+			if sec > 0 {
+				return sec
+			}
+		}
+	}
+
+	return 0
+}
+
+func parseSecondsFromValue(val interface{}, unitStr string) int64 {
+	if val == nil {
+		return 0
+	}
+
+	switch v := val.(type) {
+	case string:
+		str := strings.ToLower(strings.TrimSpace(v))
+		if str == "" {
+			return 0
+		}
+		if d, err := time.ParseDuration(str); err == nil {
+			return int64(d.Seconds())
+		}
+		num, unit := parseNumberAndUnitString(str)
+		if num > 0 {
+			if unit != "" {
+				return calculateSeconds(num, unit)
+			}
+			if unitStr != "" {
+				return calculateSeconds(num, unitStr)
+			}
+			return int64(num)
+		}
+	case int:
+		return applyUnitMultiplier(float64(v), unitStr)
+	case int64:
+		return applyUnitMultiplier(float64(v), unitStr)
+	case float64:
+		return applyUnitMultiplier(v, unitStr)
+	case float32:
+		return applyUnitMultiplier(float64(v), unitStr)
+	}
+
+	str := fmt.Sprintf("%v", val)
+	if num, err := strconv.ParseFloat(str, 64); err == nil {
+		return applyUnitMultiplier(num, unitStr)
+	}
+
+	return 0
+}
+
+func applyUnitMultiplier(num float64, unitStr string) int64 {
+	if num <= 0 {
+		return 0
+	}
+	if unitStr != "" {
+		return calculateSeconds(num, unitStr)
+	}
+	return int64(num)
+}
+
+func calculateSeconds(num float64, unit string) int64 {
+	unit = strings.ToLower(strings.TrimSpace(unit))
+	switch unit {
+	case "s", "sec", "second", "seconds":
+		return int64(num)
+	case "m", "min", "minute", "minutes":
+		return int64(num * 60)
+	case "h", "hr", "hour", "hours":
+		return int64(num * 3600)
+	case "d", "day", "days":
+		return int64(num * 86400)
+	case "ms", "millisecond", "milliseconds":
+		return int64(num / 1000)
+	default:
+		return int64(num)
+	}
+}
+
+func parseNumberAndUnitString(str string) (float64, string) {
+	str = strings.TrimSpace(strings.ToLower(str))
+	parts := strings.Fields(str)
+	if len(parts) >= 2 {
+		if num, err := strconv.ParseFloat(parts[0], 64); err == nil {
+			return num, parts[1]
+		}
+	}
+	var i int
+	for i = 0; i < len(str); i++ {
+		if (str[i] < '0' || str[i] > '9') && str[i] != '.' {
+			break
+		}
+	}
+	if i > 0 {
+		if num, err := strconv.ParseFloat(str[:i], 64); err == nil {
+			return num, strings.TrimSpace(str[i:])
+		}
+	}
+	return 0, ""
 }

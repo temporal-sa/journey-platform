@@ -49,4 +49,22 @@ describe('CatalogPage Component', () => {
       expect(screen.getByText('JSON Schema Definition')).toBeInTheDocument();
     });
   });
+  it('opens catalog creation modal when Create Component button is clicked', async () => {
+    render(
+      <SafeQueryClientProvider>
+        <CatalogPage />
+      </SafeQueryClientProvider>
+    );
+
+    const createBtn = screen.getByTestId('create-component-btn');
+    expect(createBtn).toBeInTheDocument();
+
+    fireEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('catalog-creation-modal')).toBeInTheDocument();
+      expect(screen.getByText('Create Catalog Component')).toBeInTheDocument();
+      expect(screen.getByTestId('catalog-name-input')).toBeInTheDocument();
+    });
+  });
 });

@@ -276,6 +276,16 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
             icon="filter_alt_off"
             data-testid="journeys-clear-filters-btn"
           />
+
+          <Button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            variant="primary-purple"
+            icon="add"
+            data-testid="create-journey-btn"
+          >
+            New Journey
+          </Button>
         </>
       }
     >

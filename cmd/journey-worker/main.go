@@ -38,7 +38,6 @@ func main() {
 	taskQueue := "journey-engine-task-queue"
 	w := worker.New(c, taskQueue, worker.Options{})
 
-	w.RegisterWorkflow(workflows.JourneyWorkflow)
 	w.RegisterWorkflow(workflows.CompiledJourneyWorkflow)
 
 	dsn := os.Getenv("POSTGRES_DSN")

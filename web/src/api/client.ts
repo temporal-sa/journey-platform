@@ -202,6 +202,13 @@ export class JourneyApiClient {
         return await this.getEventCatalog(headers);
     }
   }
+  async createCatalogItem(category: string, record: Partial<CatalogRecord>, headers?: StandardHeaders): Promise<CatalogRecord> {
+    const res = await this.request<CatalogRecord>(`/catalogs/${category}`, {
+      method: 'POST',
+      body: JSON.stringify(record),
+    }, headers);
+    return res.data;
+  }
 
   // Journey Drafts
   async createJourneyDraft(draft: GraphDraft, headers?: StandardHeaders): Promise<{ draft: GraphDraft; etag: string | null }> {

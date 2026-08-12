@@ -9,6 +9,7 @@ import { DirectoryLayout } from '../components/common/DirectoryLayout';
 import { Modal } from '../components/common/Modal';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
+import { CatalogCreationModal } from '../components/catalog/CatalogCreationModal';
 
 const apiClient = new JourneyApiClient();
 
@@ -65,6 +66,7 @@ const DEFAULT_CATALOG_PARAMS = {
 
 export const CatalogPage: React.FC = () => {
   const [params, setParams] = useRouteParams(DEFAULT_CATALOG_PARAMS);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -204,6 +206,17 @@ export const CatalogPage: React.FC = () => {
       subtitle="Explore event schemas, side-effect actions, subject attributes, parameters, metrics, and templates."
       icon="inventory_2"
       iconAccentColor="#c0c1ff"
+      headerActions={
+        <Button
+          variant="primary-purple"
+          icon="add"
+          onClick={() => setIsCreateModalOpen(true)}
+          data-testid="create-component-btn"
+          className="font-bold cursor-pointer"
+        >
+          Create Component
+        </Button>
+      }
       controls={
         <div className="w-full space-y-4">
           {/* Tabs Navigation Bar */}
@@ -450,6 +463,14 @@ export const CatalogPage: React.FC = () => {
           </div>
         </Modal>
       )}
+      <CatalogCreationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        defaultType={activeTab}
+        onSuccess={() => {
+          refetch();
+        }}
+      />
     </DirectoryLayout>
   );
 };

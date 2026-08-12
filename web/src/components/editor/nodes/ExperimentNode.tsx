@@ -51,9 +51,9 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         width: '346px',
         minWidth: '346px',
         maxWidth: '346px',
-        height: '138px',
-        minHeight: '138px',
-        maxHeight: '138px',
+        height: '112px',
+        minHeight: '112px',
+        maxHeight: '112px',
         boxSizing: 'border-box',
         ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
       }}
@@ -84,7 +84,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
-      <div className="flex items-center gap-4 w-full text-left">
+      <div className="flex items-center gap-5 w-full text-left">
         {/* Primary Experiment Icon Badge */}
         <div className="w-10 h-10 rounded-none bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shrink-0 overflow-hidden">
           <span className="material-symbols-outlined text-lg">science</span>
@@ -140,12 +140,13 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
           style={{
             width: `${variantBPct}%`,
             height: '100%',
-            backgroundColor: '#1e293b',
-            borderLeft: '1.5px solid #f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+            borderLeft: '1.5px solid #fbbf24',
             transition: 'all 300ms ease-in-out',
             flex: 1,
             minWidth: 0,
           }}
+          className="bg-amber-500/20 border-l border-amber-400"
           title={`Variant B: ${variantBPct}%`}
         />
       </div>

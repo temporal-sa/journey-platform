@@ -405,6 +405,32 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 				}
 			}
 
+			// Determine condition evaluation timeout (default 10s if omitted/invalid)
+			timeoutSec := node.TimeoutSeconds
+			if timeoutSec <= 0 {
+				for _, k := range []string{"timeout_seconds", "timeout"} {
+					if v, ok := node.Params[k]; ok {
+						switch val := v.(type) {
+						case float64:
+							timeoutSec = int(val)
+						case int:
+							timeoutSec = val
+						case int64:
+							timeoutSec = int(val)
+						case string:
+							fmt.Sscanf(strings.TrimSpace(val), "%d", &timeoutSec)
+						}
+						if timeoutSec > 0 {
+							break
+						}
+					}
+				}
+			}
+			timeoutDuration := 10 * time.Second
+			if timeoutSec > 0 {
+				timeoutDuration = time.Duration(timeoutSec) * time.Second
+			}
+
 			if nodeExpr != "" {
 				condInput := activities.EvaluateConditionInput{
 					ConditionExpression: nodeExpr,
@@ -413,7 +439,7 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 				var condResult bool
 				condAo := workflow.ActivityOptions{
 					Summary:             fmt.Sprintf("Evaluate condition '%s' on node %s", nodeExpr, node.ID),
-					StartToCloseTimeout: 10 * time.Second,
+					StartToCloseTimeout: timeoutDuration,
 					RetryPolicy: &temporal.RetryPolicy{
 						InitialInterval:    100 * time.Millisecond,
 						BackoffCoefficient: 2.0,
@@ -431,7 +457,8 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 					for i := range outgoing {
 						edge := outgoing[i]
 						edgeIDLower := strings.ToLower(edge.ID)
-						if strings.Contains(edgeIDLower, targetBranch) {
+						condExprLower := strings.ToLower(edge.ConditionExpression)
+						if strings.Contains(edgeIDLower, targetBranch) || condExprLower == targetBranch {
 							chosenEdge = &edge
 							break
 						}
@@ -439,6 +466,35 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 					if chosenEdge == nil && condResult && len(outgoing) > 0 {
 						chosenEdge = &outgoing[0]
 					} else if chosenEdge == nil && !condResult && len(outgoing) > 1 {
+						chosenEdge = &outgoing[1]
+					} else if chosenEdge == nil && len(outgoing) > 0 {
+						chosenEdge = &outgoing[0]
+					}
+				} else {
+					// Condition evaluation timed out or failed! Route to timeout/fallback branch
+					logger.Warn("Condition evaluation timed out or failed", "nodeID", node.ID, "error", err)
+					for i := range outgoing {
+						edge := outgoing[i]
+						edgeIDLower := strings.ToLower(edge.ID)
+						condExprLower := strings.ToLower(edge.ConditionExpression)
+						if strings.Contains(edgeIDLower, "timeout") || strings.Contains(edgeIDLower, "fallback") || strings.Contains(edgeIDLower, "timed_out") ||
+							condExprLower == "timeout" || condExprLower == "fallback" || condExprLower == "timed_out" || strings.Contains(condExprLower, "timeout") {
+							chosenEdge = &edge
+							break
+						}
+					}
+					if chosenEdge == nil {
+						for i := range outgoing {
+							edge := outgoing[i]
+							edgeIDLower := strings.ToLower(edge.ID)
+							condExprLower := strings.ToLower(edge.ConditionExpression)
+							if strings.Contains(edgeIDLower, "false") || condExprLower == "false" {
+								chosenEdge = &edge
+								break
+							}
+						}
+					}
+					if chosenEdge == nil && len(outgoing) > 1 {
 						chosenEdge = &outgoing[1]
 					} else if chosenEdge == nil && len(outgoing) > 0 {
 						chosenEdge = &outgoing[0]
@@ -799,13 +855,136 @@ func extractDelaySeconds(params map[string]interface{}) int64 {
 	if params == nil {
 		return 0
 	}
-	keys := []string{"duration_seconds", "delay_seconds", "duration", "seconds"}
-	for _, k := range keys {
-		if val, ok := params[k]; ok {
-			return toInt64(val)
+
+	// 1. Direct explicit seconds/ms keys
+	if val, ok := params["duration_seconds"]; ok {
+		return parseSecondsFromValue(val, "")
+	}
+	if val, ok := params["delay_seconds"]; ok {
+		return parseSecondsFromValue(val, "")
+	}
+	if val, ok := params["seconds"]; ok {
+		return parseSecondsFromValue(val, "")
+	}
+	if val, ok := params["delay_ms"]; ok {
+		return parseSecondsFromValue(val, "") / 1000
+	}
+
+	// 2. Unit parameter if provided
+	unitStr := ""
+	for _, uKey := range []string{"unit", "time_unit", "duration_unit"} {
+		if uVal, ok := params[uKey]; ok {
+			str := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", uVal)))
+			if str != "" {
+				unitStr = str
+				break
+			}
 		}
 	}
+
+	// 3. Duration / delay keys
+	for _, k := range []string{"duration", "delay", "wait_duration", "wait_time"} {
+		if val, ok := params[k]; ok {
+			sec := parseSecondsFromValue(val, unitStr)
+			if sec > 0 {
+				return sec
+			}
+		}
+	}
+
 	return 0
+}
+
+func parseSecondsFromValue(val interface{}, unitStr string) int64 {
+	if val == nil {
+		return 0
+	}
+
+	switch v := val.(type) {
+	case string:
+		str := strings.ToLower(strings.TrimSpace(v))
+		if str == "" {
+			return 0
+		}
+		if d, err := time.ParseDuration(str); err == nil {
+			return int64(d.Seconds())
+		}
+		num, unit := parseNumberAndUnitString(str)
+		if num > 0 {
+			if unit != "" {
+				return calculateSeconds(num, unit)
+			}
+			if unitStr != "" {
+				return calculateSeconds(num, unitStr)
+			}
+			return int64(num)
+		}
+	case int:
+		return applyUnitMultiplier(float64(v), unitStr)
+	case int64:
+		return applyUnitMultiplier(float64(v), unitStr)
+	case float64:
+		return applyUnitMultiplier(v, unitStr)
+	case float32:
+		return applyUnitMultiplier(float64(v), unitStr)
+	}
+
+	str := fmt.Sprintf("%v", val)
+	if num, err := strconv.ParseFloat(str, 64); err == nil {
+		return applyUnitMultiplier(num, unitStr)
+	}
+
+	return 0
+}
+
+func applyUnitMultiplier(num float64, unitStr string) int64 {
+	if num <= 0 {
+		return 0
+	}
+	if unitStr != "" {
+		return calculateSeconds(num, unitStr)
+	}
+	return int64(num)
+}
+
+func calculateSeconds(num float64, unit string) int64 {
+	unit = strings.ToLower(strings.TrimSpace(unit))
+	switch unit {
+	case "s", "sec", "second", "seconds":
+		return int64(num)
+	case "m", "min", "minute", "minutes":
+		return int64(num * 60)
+	case "h", "hr", "hour", "hours":
+		return int64(num * 3600)
+	case "d", "day", "days":
+		return int64(num * 86400)
+	case "ms", "millisecond", "milliseconds":
+		return int64(num / 1000)
+	default:
+		return int64(num)
+	}
+}
+
+func parseNumberAndUnitString(str string) (float64, string) {
+	str = strings.TrimSpace(strings.ToLower(str))
+	parts := strings.Fields(str)
+	if len(parts) >= 2 {
+		if num, err := strconv.ParseFloat(parts[0], 64); err == nil {
+			return num, parts[1]
+		}
+	}
+	var i int
+	for i = 0; i < len(str); i++ {
+		if (str[i] < '0' || str[i] > '9') && str[i] != '.' {
+			break
+		}
+	}
+	if i > 0 {
+		if num, err := strconv.ParseFloat(str[:i], 64); err == nil {
+			return num, strings.TrimSpace(str[i:])
+		}
+	}
+	return 0, ""
 }
 
 func extractExitStatus(params map[string]interface{}) TerminalStatus {

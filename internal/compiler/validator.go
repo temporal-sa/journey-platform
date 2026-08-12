@@ -3,7 +3,6 @@ package compiler
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/validated-pattern/journey-platform/internal/compiler/expression"
@@ -465,7 +464,7 @@ func (v *Validator) ValidateValidationGraph(graph *ValidationGraph) (*Validation
 
 		// Delay Node Validation
 		if isDelayKind(n.Type) || hasDelayConfig(n) {
-			delaySec, ok := extractDelaySeconds(n)
+			delaySec, ok := extractValidationDelaySeconds(n)
 			if !ok || delaySec <= 0 {
 				addIssue(CodeInvalidDelay, domain.ValidationSeverityError, n.ID, fieldPrefix+".config",
 					fmt.Sprintf("Node '%s' has invalid delay duration (%d seconds). Delay must be > 0. Suggested fix: Specify positive delay seconds in node config.", n.ID, delaySec))
@@ -664,44 +663,13 @@ func hasDelayConfig(n ValidationNode) bool {
 	return false
 }
 
-func extractDelaySeconds(n ValidationNode) (int64, bool) {
+func extractValidationDelaySeconds(n ValidationNode) (int64, bool) {
 	if n.Config == nil {
 		return 0, false
 	}
-	keys := []string{"delay_seconds", "duration_seconds", "delay", "duration", "delay_ms"}
-	for _, k := range keys {
-		if val, ok := n.Config[k]; ok {
-			sec, parsed := parseSecondsValue(val)
-			if parsed {
-				if k == "delay_ms" {
-					sec = sec / 1000
-				}
-				return sec, true
-			}
-		}
-	}
-	return 0, false
-}
-
-func parseSecondsValue(val interface{}) (int64, bool) {
-	if val == nil {
-		return 0, false
-	}
-	switch v := val.(type) {
-	case int:
-		return int64(v), true
-	case int64:
-		return v, true
-	case float64:
-		return int64(v), true
-	case float32:
-		return int64(v), true
-	case string:
-		v = strings.TrimSpace(strings.ToLower(v))
-		v = strings.TrimSuffix(v, "s")
-		if sec, err := strconv.ParseInt(v, 10, 64); err == nil {
-			return sec, true
-		}
+	sec := extractDelaySeconds(n.Config)
+	if sec > 0 {
+		return sec, true
 	}
 	return 0, false
 }
@@ -850,7 +818,7 @@ func computeMaxPathDelay(startID string, nodes []ValidationNode, outgoingEdges m
 		}
 		var currDelay int64
 		if n, ok := nodeMap[curr]; ok {
-			if sec, ok := extractDelaySeconds(*n); ok && sec > 0 {
+			if sec, ok := extractValidationDelaySeconds(*n); ok && sec > 0 {
 				currDelay = sec
 			}
 		}

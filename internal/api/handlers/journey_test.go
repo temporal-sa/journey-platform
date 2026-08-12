@@ -67,6 +67,38 @@ func TestCatalogEndpoints(t *testing.T) {
 		}
 	})
 }
+func TestCreateCatalogEndpoint(t *testing.T) {
+	router, _ := setupTestRouter()
+
+	t.Run("POST /api/v1/catalogs/templates creates catalog record", func(t *testing.T) {
+		body := map[string]interface{}{
+			"name":        "Test Order Confirmation Template",
+			"version":     "1.0.0",
+			"description": "Test order confirmation email template",
+			"schema_definition": map[string]interface{}{
+				"subject": "Order #{{event.data.order_id}} Confirmed",
+				"body":    "Hi {{subject.first_name}}, thanks for your order!",
+				"channel": "email",
+			},
+			"tags": []string{"template", "order"},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/catalogs/templates", bytes.NewReader(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusCreated, rec.Code)
+		var created domain.CatalogRecord
+		err := json.Unmarshal(rec.Body.Bytes(), &created)
+		require.NoError(t, err)
+		assert.Equal(t, "Test Order Confirmation Template", created.Name)
+		assert.Equal(t, domain.ComponentType("template"), created.ComponentType)
+		assert.NotEmpty(t, created.RecordID)
+	})
+}
 
 func TestJourneyDraftCRUDFlow(t *testing.T) {
 	router, _ := setupTestRouter()

@@ -21,7 +21,6 @@ interface CanvasToolbarProps {
   onUploadStaticList?: () => void;
   onLaunchTestRun?: () => void;
   onKeyboardShortcuts?: () => void;
-  onAgyContext?: () => void;
   snapToGridEnabled: boolean;
   onToggleSnapToGrid: () => void;
   onSnapAllNodesToGrid: () => void;
@@ -50,7 +49,6 @@ export function CanvasToolbar({
   onUploadStaticList,
   onLaunchTestRun,
   onKeyboardShortcuts,
-  onAgyContext,
   snapToGridEnabled,
   onToggleSnapToGrid,
   onSnapAllNodesToGrid,
@@ -339,19 +337,6 @@ export function CanvasToolbar({
           </button>
         )}
 
-        {/* Antigravity AI Context Exporter */}
-        {onAgyContext && (
-          <button
-            onClick={onAgyContext}
-            style={baseBtnStyle}
-            className="w-10 h-10 p-0 rounded-none text-[#4cd7f6] hover:text-white hover:bg-[#4cd7f6]/20 flex items-center justify-center transition-colors cursor-pointer flat-icon-btn border border-[#4cd7f6]/30"
-            title="Export AGY Prompt Context (Cmd+Shift+A)"
-            aria-label="Export AGY Prompt Context"
-            data-testid="toolbar-agy-context"
-          >
-            <span className="material-symbols-outlined text-xl">smart_toy</span>
-          </button>
-        )}
       </div>
     </div>
   );

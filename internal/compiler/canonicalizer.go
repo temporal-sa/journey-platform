@@ -183,12 +183,21 @@ func (c *Canonicalizer) CanonicalizeDraft(draft *domain.GraphDraft) (*Canonicali
 	}
 
 	for i, n := range draft.Nodes {
+		timeoutSec := n.TimeoutSeconds
+		if timeoutSec == 0 && n.Config != nil {
+			if val, ok := n.Config["timeout_seconds"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			} else if val, ok := n.Config["timeout"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			}
+		}
 		xyGraph.Nodes[i] = XYFlowNode{
-			ID:       n.ID,
-			Type:     n.Type,
-			Name:     n.Name,
-			Config:   n.Config,
-			Position: n.Position,
+			ID:             n.ID,
+			Type:           n.Type,
+			Name:           n.Name,
+			Config:         n.Config,
+			Position:       n.Position,
+			TimeoutSeconds: timeoutSec,
 		}
 	}
 
@@ -217,13 +226,29 @@ func (c *Canonicalizer) normalizePresentationGraph(graph *XYFlowGraph) (*Normali
 
 	// 1. Normalize Nodes (exclude position, dimensions, selected, dragging)
 	for _, n := range graph.Nodes {
+		timeoutSec := n.TimeoutSeconds
+		if timeoutSec == 0 && n.Config != nil {
+			if val, ok := n.Config["timeout_seconds"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			} else if val, ok := n.Config["timeout"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			}
+		}
+		if timeoutSec == 0 && n.Params != nil {
+			if val, ok := n.Params["timeout_seconds"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			} else if val, ok := n.Params["timeout"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			}
+		}
+
 		normNode := NormalizedNode{
 			ID:             strings.TrimSpace(n.ID),
 			Type:           strings.TrimSpace(n.Type),
 			Name:           strings.TrimSpace(n.Name),
 			CatalogRef:     strings.TrimSpace(n.CatalogRef),
 			TemplateRef:    strings.TrimSpace(n.TemplateRef),
-			TimeoutSeconds: n.TimeoutSeconds,
+			TimeoutSeconds: timeoutSec,
 			RetryPolicy:    n.RetryPolicy,
 		}
 
@@ -387,12 +412,21 @@ func (c *Canonicalizer) compileToIR(raw *XYFlowGraph, norm *NormalizedGraph) (*d
 			actName = n.Type
 		}
 
+		timeoutSec := n.TimeoutSeconds
+		if timeoutSec == 0 && params != nil {
+			if val, ok := params["timeout_seconds"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			} else if val, ok := params["timeout"]; ok {
+				timeoutSec = parseTimeoutSec(val)
+			}
+		}
+
 		irNode := domain.IRNode{
 			ID:             irNodeID,
 			Type:           n.Type,
 			ActivityName:   actName,
 			Params:         c.normalizeMap(params),
-			TimeoutSeconds: n.TimeoutSeconds,
+			TimeoutSeconds: timeoutSec,
 			RetryPolicy:    n.RetryPolicy,
 		}
 		irNodes = append(irNodes, irNode)
@@ -516,4 +550,23 @@ func (c *Canonicalizer) computeCanonicalJSONAndHash(v interface{}) ([]byte, stri
 	}
 	hash := sha256.Sum256(bytes)
 	return bytes, hex.EncodeToString(hash[:]), nil
+}
+
+func parseTimeoutSec(val interface{}) int {
+	switch v := val.(type) {
+	case float64:
+		return int(v)
+	case float32:
+		return int(v)
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case string:
+		var res int
+		fmt.Sscanf(strings.TrimSpace(v), "%d", &res)
+		return res
+	default:
+		return 0
+	}
 }

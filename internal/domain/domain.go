@@ -110,11 +110,12 @@ type NodePosition struct {
 }
 
 type GraphNode struct {
-	ID       string                 `json:"id" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
-	Type     string                 `json:"type" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
-	Name     string                 `json:"name" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
-	Config   map[string]interface{} `json:"config,omitempty" storage:"allowed" logging:"redacted" temporal_history:"allowed" api_exposure:"internal"`
-	Position *NodePosition          `json:"position,omitempty" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
+	ID             string                 `json:"id" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
+	Type           string                 `json:"type" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
+	Name           string                 `json:"name" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
+	Config         map[string]interface{} `json:"config,omitempty" storage:"allowed" logging:"redacted" temporal_history:"allowed" api_exposure:"internal"`
+	Position       *NodePosition          `json:"position,omitempty" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
+	TimeoutSeconds int                    `json:"timeout_seconds,omitempty" storage:"allowed" logging:"allowed" temporal_history:"allowed" api_exposure:"public"`
 }
 
 type GraphEdge struct {

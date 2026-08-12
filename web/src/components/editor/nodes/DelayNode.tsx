@@ -5,7 +5,22 @@ export type CustomNode = Node<CustomNodeData>;
 
 export function DelayNode({ data, selected }: NodeProps<CustomNode>) {
   const displayName = data?.name || data?.label || 'Delay';
-  const duration = (data?.config?.duration as string) || (data?.config?.duration ? `${data.config.duration}` : '1h');
+  const config = data?.config;
+  const rawDuration = config?.duration;
+  const rawUnit = config?.unit as string | undefined;
+
+  let durationText = '1h';
+  if (rawDuration !== undefined && rawDuration !== null && rawDuration !== '') {
+    const durStr = String(rawDuration).trim();
+    if (/[a-zA-Z]/.test(durStr)) {
+      durationText = durStr;
+    } else if (rawUnit) {
+      durationText = `${durStr} ${rawUnit}`;
+    } else {
+      durationText = durStr;
+    }
+  }
+  const duration = durationText;
   const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
 
   return (

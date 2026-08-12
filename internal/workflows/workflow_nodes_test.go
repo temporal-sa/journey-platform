@@ -34,6 +34,10 @@ func setupNodesTestEnvironment(t *testing.T) (*testsuite.WorkflowTestSuite, *tes
 	return s, env, act, repo
 }
 
+func helperCreateAndRegisterIR(act *activities.Activities, nodes []domain.IRNode, edges []domain.IREdge) *domain.CompiledIR {
+	return helperBuildIR(act, "ir-test-"+nodes[0].ID, nodes, edges)
+}
+
 // Test 1: Sticky production assignment retry & exposure recording
 func TestExperimentNode_StickyProductionAssignment(t *testing.T) {
 	_, env, act, repo := setupNodesTestEnvironment(t)

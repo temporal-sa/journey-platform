@@ -77,7 +77,6 @@ func BootstrapWorker(cfg WorkerConfig, repos ...postgres.Repository) (worker.Wor
 	w := worker.New(c, cfg.TaskQueue, workerOpts)
 
 	// Register Workflow
-	w.RegisterWorkflow(JourneyWorkflow)
 	w.RegisterWorkflow(CompiledJourneyWorkflow)
 
 	// Register Activities

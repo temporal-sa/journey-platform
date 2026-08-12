@@ -338,6 +338,25 @@ export const handlers = [
     const reqId = request.headers.get('Request-ID') || 'req-mock';
     return HttpResponse.json(sampleCatalogTemplates, { headers: { 'Request-ID': reqId } });
   }),
+  http.post('*/api/v1/catalogs/:type', async ({ params, request }) => {
+    const reqId = request.headers.get('Request-ID') || 'req-mock';
+    const body = (await request.json()) as Partial<CatalogRecord>;
+    const type = params.type as string;
+    const recordId = body.record_id || `cat-${type}-${Date.now().toString(36)}`;
+    const newRecord: CatalogRecord = {
+      schema_version: '1.0',
+      record_id: recordId,
+      name: body.name || 'New Component',
+      component_type: (body.component_type || type) as CatalogRecord['component_type'],
+      version: body.version || '1.0.0',
+      description: body.description || '',
+      schema_definition: body.schema_definition || {},
+      contentHash: body.contentHash || 'hash-mock',
+      tags: body.tags || [type],
+      is_deprecated: body.is_deprecated || false,
+    };
+    return HttpResponse.json(newRecord, { status: 201, headers: { 'Request-ID': reqId } });
+  }),
 
   // Journey Drafts
   http.get('*/api/v1/journeys/drafts', ({ request }) => {
