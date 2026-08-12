@@ -3,31 +3,44 @@ import type { CustomNodeData } from './EventStartNode';
 
 export type CustomNode = Node<CustomNodeData>;
 
+function getExperimentPercentages(config: Record<string, unknown> | undefined): { aPct: number; bPct: number } {
+  if (!config) return { aPct: 50, bPct: 50 };
+
+  // 1. Check direct top-level fields: variant_a_weight, variant_a_percent, variantAPct
+  const rawA = config.variant_a_weight ?? config.variant_a_percent ?? config.variantAPct;
+  if (typeof rawA === 'number' && !isNaN(rawA)) {
+    const a = Math.max(0, Math.min(100, Math.round(rawA)));
+    return { aPct: a, bPct: 100 - a };
+  }
+  if (typeof rawA === 'string' && !isNaN(parseInt(rawA, 10))) {
+    const a = Math.max(0, Math.min(100, parseInt(rawA, 10)));
+    return { aPct: a, bPct: 100 - a };
+  }
+
+  // 2. Check variants array
+  const variants = config.variants as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(variants) && variants.length >= 2) {
+    const rawWA = variants[0]?.weight ?? variants[0]?.percent ?? variants[0]?.allocation;
+    const rawWB = variants[1]?.weight ?? variants[1]?.percent ?? variants[1]?.allocation;
+
+    const wA = typeof rawWA === 'number' ? rawWA : (typeof rawWA === 'string' ? parseInt(rawWA, 10) : NaN);
+    const wB = typeof rawWB === 'number' ? rawWB : (typeof rawWB === 'string' ? parseInt(rawWB, 10) : NaN);
+
+    if (!isNaN(wA) && !isNaN(wB)) {
+      const total = wA + wB || 10000;
+      const a = Math.max(0, Math.min(100, Math.round((wA / total) * 100)));
+      return { aPct: a, bPct: 100 - a };
+    }
+  }
+
+  return { aPct: 50, bPct: 50 };
+}
+
 export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
   const displayName = data?.name || data?.label || 'Welcome Email Split';
   const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
 
-  // Support both explicit variant_a_weight/percent (from node selector) and nested variants array
-  const rawA = data?.config?.variant_a_weight ?? data?.config?.variant_a_percent;
-  let variantAPct = 50;
-
-  if (typeof rawA === 'number') {
-    variantAPct = rawA;
-  } else if (typeof rawA === 'string' && !isNaN(parseInt(rawA, 10))) {
-    variantAPct = parseInt(rawA, 10);
-  } else {
-    const variants = data?.config?.variants as Array<{ weight?: number; percent?: number }> | undefined;
-    if (Array.isArray(variants) && variants.length >= 2) {
-      const wA = variants[0]?.weight ?? variants[0]?.percent ?? 5000;
-      const wB = variants[1]?.weight ?? variants[1]?.percent ?? 5000;
-      const total = wA + wB || 10000;
-      variantAPct = Math.round((wA / total) * 100);
-    }
-  }
-
-  const rawB = data?.config?.variant_b_weight ?? data?.config?.variant_b_percent;
-  const parsedB = typeof rawB === 'number' ? rawB : (typeof rawB === 'string' && !isNaN(parseInt(rawB, 10)) ? parseInt(rawB, 10) : NaN);
-  const variantBPct = !isNaN(parsedB) ? parsedB : (100 - variantAPct);
+  const { aPct: variantAPct, bPct: variantBPct } = getExperimentPercentages(data?.config);
 
   return (
     <div
@@ -38,13 +51,13 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         width: '346px',
         minWidth: '346px',
         maxWidth: '346px',
-        height: '112px',
-        minHeight: '112px',
-        maxHeight: '112px',
+        height: '118px',
+        minHeight: '118px',
+        maxHeight: '118px',
         boxSizing: 'border-box',
         ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
       }}
-      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex flex-col justify-between shadow-xl transition-all text-left ${
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-2.5 flex flex-col justify-between shadow-xl transition-all text-left ${
         selected
           ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#f59e0b]/10 scale-[1.02]'
           : 'border-[#f59e0b]/60 hover:border-[#f59e0b]'
@@ -71,7 +84,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         className="!w-8 !h-8 !bg-amber-400 !border-3 !border-[#0B0F19] hover:!scale-125 transition-all cursor-crosshair z-20 shadow-xl"
       />
 
-      <div className="flex items-center gap-5 w-full text-left">
+      <div className="flex items-center gap-4 w-full text-left">
         {/* Primary Experiment Icon Badge */}
         <div className="w-10 h-10 rounded-none bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shrink-0 overflow-hidden">
           <span className="material-symbols-outlined text-lg">science</span>
@@ -93,24 +106,20 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         </div>
       </div>
 
-      {/* Percentage Bar reflecting user selected split */}
-      <div className="w-full bg-[#11141d] border border-amber-500/40 h-3.5 rounded-none overflow-hidden flex mt-1 shadow-inner select-none">
+      {/* Fully visible percentage bar filled with Amber outline color (no text inside bar) */}
+      <div className="w-full bg-[#11141d] border border-amber-500/50 h-2.5 rounded-none overflow-hidden flex mt-1.5 select-none shrink-0">
         <div
           data-testid="experiment-node-bar-a"
-          className="bg-amber-400 text-[#0B0F19] h-full flex items-center justify-center transition-all duration-300 text-[9px] font-mono font-bold shrink-0"
+          className="bg-amber-400 h-full transition-all duration-300 shrink-0"
           style={{ width: `${variantAPct}%` }}
           title={`Variant A: ${variantAPct}%`}
-        >
-          {variantAPct >= 18 && <span>{variantAPct}%</span>}
-        </div>
+        />
         <div
           data-testid="experiment-node-bar-b"
-          className="bg-slate-700 text-[#dfe2f1] border-l border-amber-500/30 h-full flex items-center justify-center transition-all duration-300 text-[9px] font-mono font-bold flex-1 min-w-0"
+          className="bg-slate-700 border-l border-amber-500/30 h-full transition-all duration-300 flex-1 min-w-0"
           style={{ width: `${variantBPct}%` }}
           title={`Variant B: ${variantBPct}%`}
-        >
-          {variantBPct >= 18 && <span>{variantBPct}%</span>}
-        </div>
+        />
       </div>
 
       <Handle
