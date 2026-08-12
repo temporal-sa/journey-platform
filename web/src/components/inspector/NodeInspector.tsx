@@ -671,9 +671,15 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                       onClick={() => {
                         handleConfigChange('variant_a_weight', pct);
                         handleConfigChange('variant_b_weight', 100 - pct);
+                        if (Array.isArray(localDraft.config.variants) && localDraft.config.variants.length >= 2) {
+                          const updatedVariants = [...localDraft.config.variants];
+                          updatedVariants[0] = { ...updatedVariants[0], weight: pct * 100, percent: pct };
+                          updatedVariants[1] = { ...updatedVariants[1], weight: (100 - pct) * 100, percent: 100 - pct };
+                          handleConfigChange('variants', updatedVariants);
+                        }
                       }}
                       className={`flex-1 py-1 rounded-none text-[10px] font-mono font-bold border transition-all cursor-pointer ${
-                        ((localDraft.config.variant_a_weight as number) ?? 50) === pct
+                        ((localDraft.config.variant_a_weight as number) ?? (Array.isArray(localDraft.config.variants) && localDraft.config.variants[0]?.weight ? Math.round((localDraft.config.variants[0].weight / ((localDraft.config.variants[0].weight + (localDraft.config.variants[1]?.weight || 5000)) || 10000)) * 100) : 50)) === pct
                           ? 'bg-[#ddb7ff]/20 text-[#ddb7ff] border-[#ddb7ff]'
                           : 'bg-[#11141d] text-[#908fa0] border-[#464554] hover:text-white'
                       }`}
@@ -694,13 +700,18 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                     min={0}
                     max={100}
                     step={5}
-                    value={((localDraft.config.variant_a_weight as number) ?? 50)}
+                    value={((localDraft.config.variant_a_weight as number) ?? (Array.isArray(localDraft.config.variants) && localDraft.config.variants[0]?.weight ? Math.round((localDraft.config.variants[0].weight / ((localDraft.config.variants[0].weight + (localDraft.config.variants[1]?.weight || 5000)) || 10000)) * 100) : 50))}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
                       handleConfigChange('variant_a_weight', val);
                       handleConfigChange('variant_b_weight', 100 - val);
+                      if (Array.isArray(localDraft.config.variants) && localDraft.config.variants.length >= 2) {
+                        const updatedVariants = [...localDraft.config.variants];
+                        updatedVariants[0] = { ...updatedVariants[0], weight: val * 100, percent: val };
+                        updatedVariants[1] = { ...updatedVariants[1], weight: (100 - val) * 100, percent: 100 - val };
+                        handleConfigChange('variants', updatedVariants);
+                      }
                     }}
-                    data-testid="inspector-slider-variant_split"
                     className="w-full h-2 rounded-none appearance-none cursor-pointer bg-slate-800 accent-[#ddb7ff]"
                   />
                 </div>
