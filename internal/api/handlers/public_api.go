@@ -129,6 +129,32 @@ func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if enrollment == nil {
+		sub1ID := fmt.Sprintf("%s-row-1", runID)
+		if subEnr, errSub := h.repo.GetEnrollment(r.Context(), tenantID, sub1ID); errSub == nil && subEnr != nil {
+			enrollment = subEnr
+		} else if subEnrDef, errSubDef := h.repo.GetEnrollment(r.Context(), "default", sub1ID); errSubDef == nil && subEnrDef != nil {
+			enrollment = subEnrDef
+		}
+	}
+	if enrollment == nil {
+		testRun, errTR := h.repo.GetTestRun(r.Context(), tenantID, runID)
+		if (errTR != nil || testRun == nil) && tenantID != "default" {
+			testRun, _ = h.repo.GetTestRun(r.Context(), "default", runID)
+		}
+		if testRun != nil {
+			enrollment = &postgres.Enrollment{
+				TenantID:         testRun.TenantID,
+				EnrollmentID:     testRun.TestRunID,
+				JourneyVersionID: testRun.DraftID,
+				SubjectID:        "static-audience-run",
+				Status:           testRun.Status,
+				CurrentNodeID:    "node-start",
+				EnrolledAt:       testRun.CreatedAt,
+				UpdatedAt:        testRun.UpdatedAt,
+			}
+		}
+	}
+	if enrollment == nil {
 		middleware.WriteError(w, r, http.StatusNotFound, fmt.Sprintf("run '%s' not found", runID))
 		return
 	}
