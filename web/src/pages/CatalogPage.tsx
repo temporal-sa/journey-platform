@@ -12,6 +12,49 @@ import { Badge } from '../components/common/Badge';
 
 const apiClient = new JourneyApiClient();
 
+const getTemplateSubject = (rec: CatalogRecord): string => {
+  if (rec.schema_definition?.subject && typeof rec.schema_definition.subject === 'string') {
+    return rec.schema_definition.subject;
+  }
+  if (rec.record_id.includes('cart_recovery')) {
+    return 'You left items in your shopping cart, {{subject.first_name}}!';
+  }
+  if (rec.record_id.includes('welcome') || rec.record_id.includes('onboarding')) {
+    return 'Welcome aboard, {{subject.first_name}}! Getting started with {{parameter.product_name}}';
+  }
+  return `Template Subject: ${rec.name} ({{subject.first_name}})`;
+};
+
+const getTemplateBody = (rec: CatalogRecord): string => {
+  if (rec.schema_definition?.body && typeof rec.schema_definition.body === 'string') {
+    return rec.schema_definition.body;
+  }
+  if (rec.schema_definition?.template_body && typeof rec.schema_definition.template_body === 'string') {
+    return rec.schema_definition.template_body;
+  }
+  if (rec.record_id.includes('cart_recovery')) {
+    return `Hi {{subject.first_name}},\n\nIt looks like you left something behind in your shopping cart!\n\n• Cart Total Value: {{event.data.cart_value}}\n• Items Count: {{event.data.items_count}}\n\nComplete your checkout now and get 15% off your order using promo code RECOVER15.\n\nComplete Checkout: {{event.data.checkout_url}}\n\nBest regards,\nThe Checkout Support Team`;
+  }
+  if (rec.record_id.includes('welcome') || rec.record_id.includes('onboarding')) {
+    return `Hi {{subject.first_name}},\n\nWelcome to {{parameter.company_name}}! We are thrilled to have you on board.\n\nHere are 3 quick steps to kickstart your journey:\n1. Complete your account attributes profile\n2. Integrate your first data source or webhook\n3. Publish your initial journey workflow draft\n\nNeed assistance? Reply directly to this email or visit our help center.\n\nWarm regards,\nThe {{parameter.company_name}} Onboarding Team`;
+  }
+  return `Hi {{subject.first_name}},\n\nThis is the template body for ${rec.name} (${rec.record_id}).\n\nParameters: {{event.data.event_type}}, {{subject.email}}, {{parameter.support_email}}\n\nBest regards,\nYour Operations Team`;
+};
+
+const getTemplateTokens = (rec: CatalogRecord): string[] => {
+  const body = getTemplateBody(rec) + ' ' + getTemplateSubject(rec);
+  const matches = body.match(/\{\{[^}]+\}\}/g) || [];
+  const tokens = Array.from(new Set(matches));
+  return tokens.length > 0 ? tokens : ['{{subject.first_name}}', '{{subject.email}}'];
+};
+
+const getTemplateChannel = (rec: CatalogRecord): string => {
+  if (rec.tags.includes('sms')) return 'SMS';
+  if (rec.tags.includes('push')) return 'Push Notification';
+  if (rec.tags.includes('webhook')) return 'Webhook';
+  return 'Email';
+};
+
 export type CatalogCategory = 'events' | 'actions' | 'attributes' | 'parameters' | 'metrics' | 'templates';
 
 const DEFAULT_CATALOG_PARAMS = {
@@ -343,6 +386,57 @@ export const CatalogPage: React.FC = () => {
                 ))}
               </div>
             </div>
+            {/* Template Content & Body Section (Visible for Template Catalog Records) */}
+            {(selectedRecord.component_type === 'template' || selectedRecord.tags.includes('template') || selectedRecord.record_id.includes('tmpl')) && (
+              <div className="space-y-3 pt-3 border-t border-[#464554]" data-testid="template-content-preview-section">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#ddb7ff] flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-[#ddb7ff]">article</span>
+                    <span>Template Content & Body Preview</span>
+                  </span>
+                  <Badge variant="purple" size="sm">
+                    {getTemplateChannel(selectedRecord)}
+                  </Badge>
+                </div>
+
+                {/* Subject Line Preview */}
+                <div className="p-3 bg-[#11141d] border border-[#464554] space-y-1">
+                  <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-wider block font-semibold">
+                    Subject Line Template
+                  </span>
+                  <div className="text-xs text-white font-['Outfit',sans-serif] font-semibold" data-testid="template-subject-preview">
+                    {getTemplateSubject(selectedRecord)}
+                  </div>
+                </div>
+
+                {/* Template Body Content */}
+                <div className="p-3 bg-[#11141d] border border-[#464554] space-y-1.5">
+                  <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-wider block font-semibold">
+                    Rendered Template Body Text
+                  </span>
+                  <pre
+                    className="text-xs text-[#dfe2f1] font-mono leading-relaxed whitespace-pre-wrap selection:bg-[#4cd7f6]/30 max-h-48 overflow-y-auto"
+                    data-testid="template-body-preview"
+                  >
+                    {getTemplateBody(selectedRecord)}
+                  </pre>
+                </div>
+
+                {/* Parameter Tokens Referenced */}
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#908fa0] block mb-1.5 font-semibold">
+                    Referenced Dynamic Parameter Tokens
+                  </span>
+                  <div className="flex flex-wrap gap-1.5" data-testid="template-tokens-preview">
+                    {getTemplateTokens(selectedRecord).map((token) => (
+                      <code key={token} className="text-[11px] font-mono px-2 py-0.5 bg-[#4cd7f6]/10 text-[#4cd7f6] border border-[#4cd7f6]/30 rounded-none font-bold">
+                        {token}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <span className="text-[10px] font-mono uppercase tracking-wider text-[#908fa0] block mb-1">
