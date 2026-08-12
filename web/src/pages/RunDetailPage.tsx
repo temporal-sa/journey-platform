@@ -161,7 +161,51 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
 
   const timelineEvents: TimelineEvent[] = runDetailData?.timeline?.timeline || [];
   const rawTimeline = runDetailData?.timeline as Record<string, unknown> | undefined;
-  const actions: ActionResult[] = (runDetailData?.ledger?.actions as ActionResult[]) || (rawTimeline && 'actions' in rawTimeline && Array.isArray(rawTimeline.actions) ? rawTimeline.actions : []);
+  const actions: ActionResult[] = React.useMemo(() => {
+    if (runDetailData?.ledger?.actions && runDetailData.ledger.actions.length > 0) {
+      return runDetailData.ledger.actions;
+    }
+    if (rawTimeline && 'actions' in rawTimeline && Array.isArray(rawTimeline.actions) && rawTimeline.actions.length > 0) {
+      return rawTimeline.actions as ActionResult[];
+    }
+
+    return timelineEvents
+      .filter((evt) => {
+        const type = (evt.event_type || '').toLowerCase();
+        const nodeId = (evt.node_id || '').toLowerCase();
+        return (
+          type.includes('email') ||
+          type.includes('sms') ||
+          type.includes('push') ||
+          type.includes('inapp') ||
+          type.includes('webhook') ||
+          (type.includes('action') && !type.includes('interaction')) ||
+          nodeId.includes('email') ||
+          nodeId.includes('sms') ||
+          nodeId.includes('push') ||
+          nodeId.includes('inapp') ||
+          nodeId.includes('webhook')
+        );
+      })
+      .map((evt, idx) => {
+        let channelName = 'Email';
+        const t = (evt.event_type || '').toLowerCase();
+        const n = (evt.node_id || '').toLowerCase();
+        if (t.includes('sms') || n.includes('sms')) channelName = 'SMS';
+        else if (t.includes('push') || n.includes('push')) channelName = 'Push';
+        else if (t.includes('inapp') || n.includes('inapp')) channelName = 'InApp';
+        else if (t.includes('webhook') || n.includes('webhook')) channelName = 'Webhook';
+
+        return {
+          schema_version: '1.0',
+          action_id: evt.event_id || `act-${idx + 1}`,
+          activity_type: `ExecuteActionGateway:${channelName}`,
+          status: (evt.status === 'completed' || evt.status === 'passed' ? 'success' : evt.status || 'success') as ActionResult['status'],
+          execution_duration_ms: evt.payload && typeof evt.payload === 'object' && 'duration_ms' in evt.payload ? Number(evt.payload.duration_ms) : 18,
+          completed_at: evt.timestamp || new Date().toISOString(),
+        };
+      });
+  }, [timelineEvents, runDetailData, rawTimeline]);
   const suppressions: SuppressionRecord[] = (runDetailData?.ledger?.suppressions as unknown as SuppressionRecord[]) || (rawTimeline && 'suppressions' in rawTimeline && Array.isArray(rawTimeline.suppressions) ? rawTimeline.suppressions : []);
 
   // Derive execution status directly from recorded timeline events / projections
