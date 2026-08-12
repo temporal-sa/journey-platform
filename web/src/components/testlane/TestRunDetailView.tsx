@@ -4,6 +4,7 @@ import { JourneyApiClient } from '../../api/client';
 import { Skeleton } from '../Skeleton';
 import { Badge } from '../common/Badge';
 import { DegradedStateView } from '../DegradedStateView';
+import { formatDuration } from '../../utils/formatDuration';
 
 export interface NodeVisitStep {
   stepIndex: number;
@@ -225,7 +226,7 @@ function TestRunDetailViewInner({
             {data.status}
           </span>
           <div className="text-xs text-[#908fa0] font-mono mt-1.5">
-            Duration: <strong className="text-[#6ee7b7]">{data.executionTimeMs} ms</strong>
+            Duration: <strong className="text-[#6ee7b7]">{formatDuration(data.executionTimeMs)}</strong>
           </div>
         </div>
       </div>
