@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { JourneyApiClient } from '../../api/client';
 import { useEditorStore } from '../../stores/editorStore';
@@ -22,6 +22,11 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
     queryKey: ['actionCatalogNodes'],
     queryFn: () => apiClient.getActionCatalog(),
   });
+  const { data: catalogTemplates = [] } = useQuery<CatalogRecord[]>({
+    queryKey: ['catalogTemplates'],
+    queryFn: () => apiClient.getCatalog('templates'),
+  });
+
 
   // Selected Node from store
   const targetNode = currentDraft?.nodes?.find((n) => n.id === nodeId) || null;
@@ -52,6 +57,47 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
   const [isDirty, setIsDirty] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
   const [activeParamField, setActiveParamField] = useState<string | null>(null);
+
+  const templateOptions = useMemo(() => {
+    const list: { id: string; name: string; defaultSubject?: string }[] = [];
+    const seen = new Set<string>();
+
+    if (catalogTemplates && catalogTemplates.length > 0) {
+      catalogTemplates.forEach((t) => {
+        if (!seen.has(t.record_id)) {
+          seen.add(t.record_id);
+          list.push({
+            id: t.record_id,
+            name: t.name,
+            defaultSubject: (t.schema_definition?.subject as string) || undefined,
+          });
+        }
+      });
+    }
+
+    const defaults = [
+      { id: 'tmpl_welcome', name: 'tmpl_welcome', defaultSubject: 'Welcome to Acme!' },
+      { id: 'rec_tmpl_welcome_onboarding', name: 'New User Welcome Onboarding', defaultSubject: 'Welcome {{subject.first_name}}! Getting started' },
+      { id: 'rec_tmpl_cart_recovery', name: 'Cart Abandonment Recovery Flow', defaultSubject: 'You left items in your shopping cart, {{subject.first_name}}!' },
+      { id: 'tmpl_welcome_v2', name: 'Welcome Email Template v2', defaultSubject: 'Welcome to Acme {{subject.first_name}}!' },
+      { id: 'tmpl_order_confirmation', name: 'Order Confirmation Template', defaultSubject: 'Order Confirmation #{{event.data.order_id}}' },
+      { id: 'tmpl_reengagement', name: 'User Re-engagement Campaign', defaultSubject: 'We miss you {{subject.first_name}}!' },
+    ];
+
+    defaults.forEach((d) => {
+      if (!seen.has(d.id)) {
+        seen.add(d.id);
+        list.push(d);
+      }
+    });
+
+    const currentVal = (localDraft.config.template_id as string) || '';
+    if (currentVal && !seen.has(currentVal)) {
+      list.unshift({ id: currentVal, name: currentVal });
+    }
+
+    return list;
+  }, [catalogTemplates, localDraft.config.template_id]);
   useEffect(() => {
     if (targetNode) {
       setLocalDraft({
@@ -483,18 +529,32 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
-                  Email Template ID
+                  Email Template Catalog Selector
                 </label>
-                <input
-                  type="text"
+                <select
                   value={(localDraft.config.template_id as string) || ''}
-                  onChange={(e) => handleConfigChange('template_id', e.target.value)}
-                  placeholder="e.g. tmpl_welcome_v2"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleConfigChange('template_id', val);
+                    if (val && !localDraft.config.subject) {
+                      const matched = templateOptions.find((t) => t.id === val);
+                      if (matched?.defaultSubject) {
+                        handleConfigChange('subject', matched.defaultSubject);
+                      }
+                    }
+                  }}
                   data-testid="inspector-input-template_id"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('template_id', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
-                />
+                  } rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all cursor-pointer`}
+                >
+                  <option value="">-- Select Catalog Email Template --</option>
+                  {templateOptions.map((tmpl) => (
+                    <option key={tmpl.id} value={tmpl.id}>
+                      {tmpl.name === tmpl.id ? tmpl.id : `${tmpl.name} (${tmpl.id})`}
+                    </option>
+                  ))}
+                </select>
                 {renderFieldError('template_id')}
               </div>
             </>
