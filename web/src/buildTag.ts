@@ -1,5 +1,5 @@
 // Auto-generated build tag file
-export const BUILD_TAG = 'ui-enhancements-v2-feat/ui-enhancements-v2-103';
-export const WORKTREE_NAME = 'ui-enhancements-v2';
-export const BRANCH_NAME = 'feat/ui-enhancements-v2';
-export const BUILD_INCREMENT = 103;
+export const BUILD_TAG = 'event-driven-workflow-engine-validated-pattern-main-149';
+export const WORKTREE_NAME = 'event-driven-workflow-engine-validated-pattern';
+export const BRANCH_NAME = 'main';
+export const BUILD_INCREMENT = 149;
