@@ -394,14 +394,11 @@ export const CatalogPage: React.FC = () => {
                     <span className="material-symbols-outlined text-sm text-[#ddb7ff]">article</span>
                     <span>Template Content & Body Preview</span>
                   </span>
-                  <Badge variant="purple" size="sm">
-                    {getTemplateChannel(selectedRecord)}
-                  </Badge>
                 </div>
 
                 {/* Subject Line Preview */}
                 <div className="p-3 bg-[#11141d] border border-[#464554] space-y-1">
-                  <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-wider block font-semibold">
+                  <span className="text-[10px] font-['Outfit',sans-serif] text-[#908fa0] uppercase tracking-wider block font-semibold">
                     Subject Line Template
                   </span>
                   <div className="text-xs text-white font-['Outfit',sans-serif] font-semibold" data-testid="template-subject-preview">
@@ -411,11 +408,11 @@ export const CatalogPage: React.FC = () => {
 
                 {/* Template Body Content */}
                 <div className="p-3 bg-[#11141d] border border-[#464554] space-y-1.5">
-                  <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-wider block font-semibold">
+                  <span className="text-[10px] font-['Outfit',sans-serif] text-[#908fa0] uppercase tracking-wider block font-semibold">
                     Rendered Template Body Text
                   </span>
                   <pre
-                    className="text-xs text-[#dfe2f1] font-mono leading-relaxed whitespace-pre-wrap selection:bg-[#4cd7f6]/30 max-h-48 overflow-y-auto"
+                    className="text-xs text-[#dfe2f1] font-['Outfit',sans-serif] leading-relaxed whitespace-pre-wrap selection:bg-[#4cd7f6]/30 max-h-48 overflow-y-auto"
                     data-testid="template-body-preview"
                   >
                     {getTemplateBody(selectedRecord)}
@@ -424,7 +421,7 @@ export const CatalogPage: React.FC = () => {
 
                 {/* Parameter Tokens Referenced */}
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#908fa0] block mb-1.5 font-semibold">
+                  <span className="text-[10px] font-['Outfit',sans-serif] uppercase tracking-wider text-[#908fa0] block mb-1.5 font-semibold">
                     Referenced Dynamic Parameter Tokens
                   </span>
                   <div className="flex flex-wrap gap-1.5" data-testid="template-tokens-preview">
