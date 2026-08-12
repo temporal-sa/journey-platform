@@ -388,7 +388,7 @@ export const CatalogPage: React.FC = () => {
             </div>
             {/* Template Content & Body Section (Visible for Template Catalog Records) */}
             {(selectedRecord.component_type === 'template' || selectedRecord.tags.includes('template') || selectedRecord.record_id.includes('tmpl')) && (
-              <div className="space-y-3 pt-3 border-t border-[#464554]" data-testid="template-content-preview-section">
+              <div className="space-y-3" data-testid="template-content-preview-section">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#ddb7ff] flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm text-[#ddb7ff]">article</span>
