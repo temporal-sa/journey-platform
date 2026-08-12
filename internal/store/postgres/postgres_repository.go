@@ -748,6 +748,26 @@ func (r *PostgresRepository) GetAssignmentByExperimentSubject(ctx context.Contex
 	}
 	return &res, nil
 }
+func (r *PostgresRepository) ListAssignmentsByExperiment(ctx context.Context, tenantID, experimentID string) ([]Assignment, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT tenant_id, assignment_id, experiment_id, subject_id, variant_id, weight_basis_points, assigned_at, created_at
+		FROM assignments WHERE tenant_id = $1 AND experiment_id = $2
+	`, tenantID, experimentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []Assignment
+	for rows.Next() {
+		var a Assignment
+		if err := rows.Scan(&a.TenantID, &a.AssignmentID, &a.ExperimentID, &a.SubjectID, &a.VariantID, &a.WeightBasisPoints, &a.AssignedAt, &a.CreatedAt); err != nil {
+			return nil, err
+		}
+		res = append(res, a)
+	}
+	return res, nil
+}
 
 // 13. Exposures
 func (r *PostgresRepository) CreateExposure(ctx context.Context, ex *Exposure) (*Exposure, error) {
@@ -780,6 +800,26 @@ func (r *PostgresRepository) GetExposure(ctx context.Context, tenantID, exposure
 		return nil, err
 	}
 	return &res, nil
+}
+func (r *PostgresRepository) ListExposuresByExperiment(ctx context.Context, tenantID, experimentID string) ([]Exposure, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT tenant_id, exposure_id, experiment_id, assignment_id, subject_id, variant_id, weight_basis_points, context, exposed_at, created_at
+		FROM exposures WHERE tenant_id = $1 AND experiment_id = $2
+	`, tenantID, experimentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []Exposure
+	for rows.Next() {
+		var ex Exposure
+		if err := rows.Scan(&ex.TenantID, &ex.ExposureID, &ex.ExperimentID, &ex.AssignmentID, &ex.SubjectID, &ex.VariantID, &ex.WeightBasisPoints, &ex.Context, &ex.ExposedAt, &ex.CreatedAt); err != nil {
+			return nil, err
+		}
+		res = append(res, ex)
+	}
+	return res, nil
 }
 
 // 14. Outbox
