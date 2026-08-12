@@ -11,6 +11,7 @@ import { StatusFilterDropdown } from '../components/common/StatusFilterDropdown'
 import { useRouteParams } from '../hooks/useRouteParams';
 import type { TimelineEvent, ActionResult, SubRunSummary, GraphNode, GraphEdge } from '../types/api';
 import { ExecutionGraphView, NodeVisitStep, SignalSimulationModal } from '../components/testlane';
+import { formatDuration } from '../utils/formatDuration';
 const apiClient = new JourneyApiClient();
 
 export interface SuppressionRecord {
@@ -727,7 +728,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
             Total Duration
           </span>
           <strong className="text-xs font-mono text-[#6ee7b7]">
-            {(parameters.duration_ms ?? 0).toLocaleString()} ms
+            {formatDuration(parameters.duration_ms ?? 0)}
           </strong>
         </div>
       </div>
@@ -973,7 +974,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                         </span>
                       </div>
                       <div className="text-[11px] text-[#908fa0] font-mono leading-relaxed px-0.5">
-                        Duration: {act.execution_duration_ms} ms | Completed: {new Date(act.completed_at).toLocaleTimeString()}
+                        Duration: {formatDuration(act.execution_duration_ms)} | Completed: {new Date(act.completed_at).toLocaleTimeString()}
                       </div>
                     </div>
                   ))

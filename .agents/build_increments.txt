@@ -3,4 +3,4 @@ main=147
 feat/webmcp-local-integration=20
 feat/ui-enhancements-v2=68
 fix/run-detail-duration-calc=4
-feat/ui-enhancements=15
+feat/ui-enhancements=16
