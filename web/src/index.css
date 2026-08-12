@@ -22,6 +22,11 @@
   padding: 0;
 }
 
+button {
+  border: none;
+  outline: none;
+}
+
 html, body, #root {
   background-color: var(--bg-dark);
   color: #DFE2F1;
@@ -349,6 +354,10 @@ code, pre, .font-mono {
 .border-r { border-right-width: 1px; border-right-style: solid; }
 .border-l { border-left-width: 1px; border-left-style: solid; }
 .border-dashed { border-style: dashed; }
+.border-none { border: none !important; border-style: none !important; border-width: 0 !important; }
+.border-0 { border: 0 !important; border-width: 0 !important; }
+.shadow-none { box-shadow: none !important; }
+.outline-none { outline: none !important; }
 
 /* Colors & Surfaces */
 .bg-\[\#0B0F19\] { background-color: #0B0F19; }

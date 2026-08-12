@@ -26,11 +26,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const VARIANT_STYLES: Record<ButtonVariant, { className: string; style?: React.CSSProperties }> = {
   'primary-purple': {
     className: 'bg-[#b76dff] text-[#400071] hover:brightness-110 border-none shadow-none font-bold',
-    style: { backgroundColor: '#b76dff', color: '#400071' },
+    style: { backgroundColor: '#b76dff', color: '#400071', border: 'none', boxShadow: 'none', outline: 'none' },
   },
   'primary-cyan': {
     className: 'bg-[#4cd7f6] text-[#400071] hover:brightness-110 border-none shadow-none font-bold',
-    style: { backgroundColor: '#4cd7f6', color: '#400071' },
+    style: { backgroundColor: '#4cd7f6', color: '#400071', border: 'none', boxShadow: 'none', outline: 'none' },
   },
   'primary-teal': {
     className: 'bg-[#4cd7f6] text-[#003640] hover:brightness-110 border border-[#4cd7f6]/40 shadow-lg shadow-[#4cd7f6]/20 font-bold',
@@ -53,7 +53,8 @@ const VARIANT_STYLES: Record<ButtonVariant, { className: string; style?: React.C
     className: 'bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/50 shadow-md font-bold',
   },
   'ghost': {
-    className: 'bg-transparent text-[#908fa0] hover:text-white hover:bg-white/10 border-none',
+    className: 'bg-transparent text-[#908fa0] hover:text-white hover:bg-white/10 border-none shadow-none',
+    style: { border: 'none', boxShadow: 'none', outline: 'none' },
   },
 };
 
