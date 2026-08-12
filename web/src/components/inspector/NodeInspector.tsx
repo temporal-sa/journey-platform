@@ -303,7 +303,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {/* Common Section: General Node Settings */}
         <div>
-          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#908fa0] mb-2">
+          <div className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0] mb-2">
             General Node Info
           </div>
 
@@ -352,7 +352,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
         {/* Schema-Driven Config Form based on Node Type */}
         <div>
-          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#908fa0] mb-2">
+          <div className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0] mb-2">
             Type Configuration ({nodeType})
           </div>
 
@@ -654,14 +654,13 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               {/* Traffic Flow Split Percentage Controls */}
               <div className="mb-4 p-3.5 rounded-none bg-[#1c1f2a] border border-[#464554] space-y-3 font-['Outfit',sans-serif]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#ddb7ff] uppercase tracking-wider font-mono">
+                  <span className="text-xs font-bold text-[#ddb7ff] uppercase tracking-wider font-['Outfit',sans-serif]">
                     Traffic Split Allocation
                   </span>
-                  <span className="text-xs font-mono text-[#c0c1ff] font-bold">
+                  <span className="text-xs font-['Outfit',sans-serif] text-[#c0c1ff] font-bold">
                     {((localDraft.config.variant_a_weight as number) ?? 50)}% / {100 - ((localDraft.config.variant_a_weight as number) ?? 50)}%
                   </span>
                 </div>
-
                 {/* Preset Quick-Buttons */}
                 <div className="flex gap-2">
                   {[50, 70, 80, 90].map((pct) => (
@@ -678,7 +677,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                           handleConfigChange('variants', updatedVariants);
                         }
                       }}
-                      className={`flex-1 py-1 rounded-none text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                      className={`flex-1 py-1 rounded-none text-[10px] font-['Outfit',sans-serif] font-bold border transition-all cursor-pointer ${
                         ((localDraft.config.variant_a_weight as number) ?? (Array.isArray(localDraft.config.variants) && localDraft.config.variants[0]?.weight ? Math.round((localDraft.config.variants[0].weight / ((localDraft.config.variants[0].weight + (localDraft.config.variants[1]?.weight || 5000)) || 10000)) * 100) : 50)) === pct
                           ? 'bg-[#ddb7ff]/20 text-[#ddb7ff] border-[#ddb7ff]'
                           : 'bg-[#11141d] text-[#908fa0] border-[#464554] hover:text-white'
@@ -691,7 +690,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
                 {/* Interactive Split Slider */}
                 <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[10px] font-mono text-[#908fa0]">
+                  <div className="flex justify-between text-[10px] font-['Outfit',sans-serif] text-[#908fa0]">
                     <span>Variant A ({((localDraft.config.variant_a_weight as number) ?? 50)}%)</span>
                     <span>Variant B ({100 - ((localDraft.config.variant_a_weight as number) ?? 50)}%)</span>
                   </div>

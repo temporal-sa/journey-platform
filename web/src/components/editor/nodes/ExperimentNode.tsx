@@ -112,7 +112,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         <div className="flex-grow min-w-0 text-left">
           <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
           <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
-          <div className="text-[10px] font-mono text-amber-300/80 mt-1 truncate text-left">Variant Split</div>
+          <div className="text-[10px] font-['Outfit',sans-serif] text-amber-300/80 mt-1 truncate text-left">Variant Split</div>
         </div>
 
         <div className="pr-1 text-amber-400 opacity-80 shrink-0">
@@ -121,7 +121,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
       </div>
 
       {/* Configurable Variant Percentage Bar */}
-      <div className="w-full bg-[#11141d] border border-amber-500/40 h-5 rounded-none overflow-hidden flex items-center mt-1 text-[10px] font-mono font-bold select-none shadow-inner">
+      <div className="w-full bg-[#11141d] border border-amber-500/40 h-5 rounded-none overflow-hidden flex items-center mt-1 text-[10px] font-['Outfit',sans-serif] font-bold select-none shadow-inner">
         <div
           data-testid="experiment-node-bar-a"
           className="bg-amber-400 text-[#0B0F19] h-full flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0"

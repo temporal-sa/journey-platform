@@ -188,8 +188,7 @@ export function Palette({ onAddNode }: PaletteProps) {
           </div>
           <button
             onClick={toggleAll}
-            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-[#c0c1ff]/10 text-[#c0c1ff] hover:bg-[#c0c1ff]/20 border border-[#c0c1ff]/20 transition-colors cursor-pointer"
-            title={isAllCollapsed ? 'Expand All Sections' : 'Collapse All Sections'}
+            className="text-[10px] font-['Outfit',sans-serif] font-bold px-2 py-0.5 rounded-none bg-[#c0c1ff]/10 text-[#c0c1ff] hover:bg-[#c0c1ff]/20 border border-[#c0c1ff]/20 transition-colors cursor-pointer"
           >
             {isAllCollapsed ? 'EXPAND ALL' : 'COLLAPSE ALL'}
           </button>
@@ -245,7 +244,7 @@ export function Palette({ onAddNode }: PaletteProps) {
                 className="w-fit cursor-pointer select-none group focus:outline-none"
               >
                 <span
-                  className={`text-xs font-mono font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-none border flex items-center gap-2 transition-all hover:opacity-90 ${styles.labelBg}`}
+                  className={`text-xs font-['Outfit',sans-serif] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-none border flex items-center gap-2 transition-all hover:opacity-90 ${styles.labelBg}`}
                 >
                   <span>
                     {category} ({items.length})
