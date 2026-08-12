@@ -51,13 +51,13 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         width: '346px',
         minWidth: '346px',
         maxWidth: '346px',
-        height: '118px',
-        minHeight: '118px',
-        maxHeight: '118px',
+        height: '138px',
+        minHeight: '138px',
+        maxHeight: '138px',
         boxSizing: 'border-box',
         ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
       }}
-      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-2.5 flex flex-col justify-between shadow-xl transition-all text-left ${
+      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex flex-col justify-between shadow-xl transition-all text-left ${
         selected
           ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#f59e0b]/10 scale-[1.02]'
           : 'border-[#f59e0b]/60 hover:border-[#f59e0b]'
@@ -106,18 +106,46 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         </div>
       </div>
 
-      {/* Fully visible percentage bar filled with Amber outline color (no text inside bar) */}
-      <div className="w-full bg-[#11141d] border border-amber-500/50 h-2.5 rounded-none overflow-hidden flex mt-1.5 select-none shrink-0">
+      {/* Prominent Amber Fill Split Bar (No internal text, guaranteed rendering via explicit inline styles) */}
+      <div
+        style={{
+          width: '100%',
+          height: '14px',
+          minHeight: '14px',
+          maxHeight: '14px',
+          backgroundColor: '#0f172a',
+          border: '1.5px solid #f59e0b',
+          borderRadius: '0px',
+          overflow: 'hidden',
+          display: 'flex',
+          marginTop: '6px',
+          marginBottom: '4px',
+          boxSizing: 'border-box',
+        }}
+        className="shrink-0 select-none shadow-md"
+      >
         <div
           data-testid="experiment-node-bar-a"
-          className="bg-amber-400 h-full transition-all duration-300 shrink-0"
-          style={{ width: `${variantAPct}%` }}
+          style={{
+            width: `${variantAPct}%`,
+            height: '100%',
+            backgroundColor: '#f59e0b',
+            transition: 'all 300ms ease-in-out',
+            flexShrink: 0,
+          }}
           title={`Variant A: ${variantAPct}%`}
         />
         <div
           data-testid="experiment-node-bar-b"
-          className="bg-slate-700 border-l border-amber-500/30 h-full transition-all duration-300 flex-1 min-w-0"
-          style={{ width: `${variantBPct}%` }}
+          style={{
+            width: `${variantBPct}%`,
+            height: '100%',
+            backgroundColor: '#1e293b',
+            borderLeft: '1.5px solid #f59e0b',
+            transition: 'all 300ms ease-in-out',
+            flex: 1,
+            minWidth: 0,
+          }}
           title={`Variant B: ${variantBPct}%`}
         />
       </div>
