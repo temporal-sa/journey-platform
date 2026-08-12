@@ -38,23 +38,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
     (schemaDef?.properties?.unit as { default?: string })?.default ??
     (schemaDef?.unit as string);
 
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
-
-  const handleDryRun = async () => {
-    if (!currentDraft?.draft_id || !nodeId) return;
-    setIsSimulating(true);
-    setSimulationStatus(null);
-    try {
-      await apiClient.simulateJourneyDraft(currentDraft.draft_id, { node_id: nodeId });
-      setSimulationStatus('Dry run simulation succeeded!');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Dry run simulation failed';
-      setSimulationStatus(msg);
-    } finally {
-      setIsSimulating(false);
-    }
-  };
   // Isolated Draft Buffer State
   const [localDraft, setLocalDraft] = useState<{
     name: string;
@@ -750,26 +733,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
             />
           </div>
 
-          {/* Dry Run Button */}
-          <div className="pt-2 space-y-2">
-            <Button
-              type="button"
-              onClick={handleDryRun}
-              disabled={isSimulating || !currentDraft?.draft_id}
-              data-testid="dry-run-node-btn"
-              variant="secondary-dark"
-              icon={isSimulating ? undefined : 'play_arrow'}
-              isLoading={isSimulating}
-              fullWidth
-            >
-              {isSimulating ? 'Simulating...' : 'Dry Run This Node'}
-            </Button>
-            {simulationStatus && (
-              <div className="text-[11px] font-['Outfit',sans-serif] text-[#c0c1ff] p-2 rounded-none bg-[#11141d] border border-[#464554]">
-                {simulationStatus}
-              </div>
-            )}
-          </div>
         </div>
       </div>
       {/* Footer Controls: Isolated Draft Buffer Save and Cancel Semantics */}
