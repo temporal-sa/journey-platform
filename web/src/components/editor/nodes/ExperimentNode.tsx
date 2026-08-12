@@ -7,12 +7,59 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
   const displayName = data?.name || data?.label || 'Welcome Email Split';
   const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
 
-  const rawA = data?.config?.variant_a_weight ?? data?.config?.variant_a_percent;
-  const variantAPct = typeof rawA === 'number' ? rawA : (typeof rawA === 'string' && !isNaN(parseInt(rawA, 10)) ? parseInt(rawA, 10) : 50);
-  const rawB = data?.config?.variant_b_weight ?? data?.config?.variant_b_percent;
-  const parsedB = typeof rawB === 'number' ? rawB : (typeof rawB === 'string' && !isNaN(parseInt(rawB, 10)) ? parseInt(rawB, 10) : NaN);
-  const variantBPct = !isNaN(parsedB) ? parsedB : (100 - variantAPct);
+  const variants = data?.config?.variants as Array<{ weight?: number; percent?: number }> | undefined;
+  let variantAPct = 50;
+  let variantBPct = 50;
 
+  if (Array.isArray(variants) && variants.length >= 2) {
+    const wA = variants[0]?.weight ?? variants[0]?.percent ?? 5000;
+    const wB = variants[1]?.weight ?? variants[1]?.percent ?? 5000;
+    const total = wA + wB || 10000;
+    variantAPct = Math.round((wA / total) * 100);
+    variantBPct = 100 - variantAPct;
+  } else {
+    const rawA = data?.config?.variant_a_weight ?? data?.config?.variant_a_percent;
+    variantAPct = typeof rawA === 'number' ? rawA : (typeof rawA === 'string' && !isNaN(parseInt(rawA, 10)) ? parseInt(rawA, 10) : 50);
+    const rawB = data?.config?.variant_b_weight ?? data?.config?.variant_b_percent;
+    const parsedB = typeof rawB === 'number' ? rawB : (typeof rawB === 'string' && !isNaN(parseInt(rawB, 10)) ? parseInt(rawB, 10) : NaN);
+    variantBPct = !isNaN(parsedB) ? parsedB : (100 - variantAPct);
+  }
+
+  const getVariantContentA = (pct: number) => {
+    if (pct >= 30) {
+      return (
+        <span data-testid="experiment-node-pct-a" className="flex items-center gap-1 truncate px-1">
+          <span>Variant A</span>
+          <span>({pct}%)</span>
+        </span>
+      );
+    }
+    if (pct >= 15) {
+      return <span data-testid="experiment-node-pct-a" className="truncate px-1">A: {pct}%</span>;
+    }
+    if (pct >= 8) {
+      return <span data-testid="experiment-node-pct-a" className="truncate px-1">{pct}%</span>;
+    }
+    return <span data-testid="experiment-node-pct-a" />;
+  };
+
+  const getVariantContentB = (pct: number) => {
+    if (pct >= 30) {
+      return (
+        <span data-testid="experiment-node-pct-b" className="flex items-center gap-1 truncate px-1">
+          <span>Variant B</span>
+          <span>({pct}%)</span>
+        </span>
+      );
+    }
+    if (pct >= 15) {
+      return <span data-testid="experiment-node-pct-b" className="truncate px-1">B: {pct}%</span>;
+    }
+    if (pct >= 8) {
+      return <span data-testid="experiment-node-pct-b" className="truncate px-1">{pct}%</span>;
+    }
+    return <span data-testid="experiment-node-pct-b" />;
+  };
   return (
     <div
       role="group"
@@ -65,11 +112,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         <div className="flex-grow min-w-0 text-left">
           <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
           <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
-          <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-amber-300 text-left">
-            <span><span>Variant A</span>: <strong data-testid="experiment-node-pct-a">{variantAPct}%</strong></span>
-            <span className="text-slate-500">|</span>
-            <span><span>Variant B</span>: <strong data-testid="experiment-node-pct-b" className="text-slate-400">{variantBPct}%</strong></span>
-          </div>
+          <div className="text-[10px] font-mono text-amber-300/80 mt-1 truncate text-left">Variant Split</div>
         </div>
 
         <div className="pr-1 text-amber-400 opacity-80 shrink-0">
@@ -77,9 +120,24 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
         </div>
       </div>
 
-      <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden flex mt-1">
-        <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${variantAPct}%` }} />
-        <div className="bg-slate-500 h-full transition-all duration-300" style={{ width: `${variantBPct}%` }} />
+      {/* Configurable Variant Percentage Bar */}
+      <div className="w-full bg-[#11141d] border border-amber-500/40 h-5 rounded-none overflow-hidden flex items-center mt-1 text-[10px] font-mono font-bold select-none shadow-inner">
+        <div
+          data-testid="experiment-node-bar-a"
+          className="bg-amber-400 text-[#0B0F19] h-full flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0"
+          style={{ width: `${variantAPct}%` }}
+          title={`Variant A: ${variantAPct}%`}
+        >
+          {getVariantContentA(variantAPct)}
+        </div>
+        <div
+          data-testid="experiment-node-bar-b"
+          className="bg-[#1f2433] text-amber-300 border-l border-amber-500/30 h-full flex items-center justify-center transition-all duration-300 overflow-hidden flex-1 min-w-0"
+          style={{ width: `${variantBPct}%` }}
+          title={`Variant B: ${variantBPct}%`}
+        >
+          {getVariantContentB(variantBPct)}
+        </div>
       </div>
 
       <Handle
