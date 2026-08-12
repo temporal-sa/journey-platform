@@ -320,19 +320,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           </div>
 
           <div className="mb-3">
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center gap-3 mb-1.5">
               <label className="text-xs font-medium text-[#c7c4d7]">
                 Node Label / Display Name
               </label>
-              <button
+              <Button
                 type="button"
+                variant="secondary-dark"
+                size="sm"
+                icon="token"
                 onClick={() => handleOpenParamModal('name')}
                 data-testid="param-btn-name"
-                className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                className="shrink-0 text-[11px] px-2 py-0.5"
               >
-                <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                <span>+ Insert Token</span>
-              </button>
+                + Insert Token
+              </Button>
             </div>
             <input
               type="text"
@@ -360,19 +362,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {(nodeType === 'EventStart' || nodeType === 'EventStartNode' || nodeType === 'trigger') && (
             <>
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Event Name / Type
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('event_name')}
                     data-testid="param-btn-event_name"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Token
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -391,19 +395,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Event Filter Expression
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('event_filter')}
                     data-testid="param-btn-event_filter"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Token
+                  </Button>
                 </div>
                 <textarea
                   ref={(el) => {
@@ -427,19 +433,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {(nodeType === 'Email' || nodeType === 'EmailNode' || (nodeType === 'action' && localDraft.name.toLowerCase().includes('email'))) && (
             <>
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Recipient Address
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('recipient')}
                     data-testid="param-btn-recipient"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Token
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -458,19 +466,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Subject Line
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('subject')}
                     data-testid="param-btn-subject"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Token
+                  </Button>
                 </div>
                 <input
                   type="text"
@@ -510,19 +520,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {/* CONDITION NODE */}
           {(nodeType === 'Condition' || nodeType === 'ConditionNode' || nodeType === 'condition') && (
             <div className="mb-3">
-              <div className="flex justify-between items-center mb-1">
+              <div className="flex justify-between items-center gap-3 mb-1.5">
                 <label className="text-xs font-medium text-[#c7c4d7]">
                   Condition Expression
                 </label>
-                <button
+                <Button
                   type="button"
+                  variant="secondary-dark"
+                  size="sm"
+                  icon="token"
                   onClick={() => handleOpenParamModal('condition_expression')}
                   data-testid="param-btn-condition_expression"
-                  className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                  className="shrink-0 text-[11px] px-2 py-0.5"
                 >
-                  <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                  <span>+ Token</span>
-                </button>
+                  + Token
+                </Button>
               </div>
               <textarea
                 ref={(el) => {
@@ -582,19 +594,21 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           {(nodeType === 'Webhook' || nodeType === 'WebhookNode') && (
             <>
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
                   <label className="text-xs font-medium text-[#c7c4d7]">
                     Webhook URL
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
                     onClick={() => handleOpenParamModal('url')}
                     data-testid="param-btn-url"
-                    className="px-2 py-0.5 rounded-none bg-[#1c1f2a] hover:bg-[#262a35] border border-[#464554] text-[#c0c1ff] hover:text-white text-[11px] font-mono font-medium transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
                   >
-                    <span className="material-symbols-outlined text-xs text-[#c0c1ff]">token</span>
-                    <span>+ Token</span>
-                  </button>
+                    + Token
+                  </Button>
                 </div>
                 <input
                   type="text"
