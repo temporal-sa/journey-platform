@@ -14,7 +14,143 @@ export interface NodeInspectorProps {
   nodeId: string | null;
   onClose?: () => void;
 }
+export interface SearchableTemplateOption {
+  id: string;
+  name: string;
+  defaultSubject?: string;
+  description?: string;
+}
 
+export interface SearchableTemplateInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchableTemplateOption[];
+  onSelectTemplate?: (template: SearchableTemplateOption) => void;
+  hasError?: boolean;
+}
+
+export function SearchableTemplateInput({
+  value,
+  onChange,
+  options,
+  onSelectTemplate,
+  hasError,
+}: SearchableTemplateInputProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery.trim()) return options;
+    const q = searchQuery.toLowerCase();
+    return options.filter(
+      (opt) =>
+        opt.name.toLowerCase().includes(q) ||
+        opt.id.toLowerCase().includes(q) ||
+        (opt.description && opt.description.toLowerCase().includes(q))
+    );
+  }, [options, searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const selectedTemplate = options.find((o) => o.id === value);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={isOpen ? searchQuery : value}
+          onFocus={() => {
+            setSearchQuery(value);
+            setIsOpen(true);
+          }}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            onChange(e.target.value);
+            setIsOpen(true);
+          }}
+          placeholder="Search catalog templates or enter template ID..."
+          data-testid="inspector-input-template_id"
+          className={`w-full px-3 py-1.5 pr-8 bg-[#11141d] border ${
+            hasError ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
+          } rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all placeholder-[#64748b]`}
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="absolute right-2 text-[#908fa0] hover:text-[#dfe2f1] cursor-pointer flex items-center justify-center p-0 m-0 bg-transparent border-none"
+        >
+          <span className="material-symbols-outlined text-sm">
+            {isOpen ? 'expand_less' : 'expand_more'}
+          </span>
+        </button>
+      </div>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          className="absolute left-0 right-0 top-full mt-1 z-[100] max-h-56 overflow-y-auto bg-[#171b26] border border-[#464554] shadow-2xl rounded-none py-1 text-xs font-['Outfit',sans-serif]"
+        >
+          {filteredOptions.length === 0 ? (
+            <div className="px-3 py-2 text-[#908fa0] text-xs italic">
+              No catalog templates matching &quot;{searchQuery}&quot;. Custom ID &quot;{searchQuery}&quot; will be used.
+            </div>
+          ) : (
+            filteredOptions.map((opt) => {
+              const isSelected = opt.id === value;
+              return (
+                <div
+                  key={opt.id}
+                  role="option"
+                  aria-selected={isSelected}
+                  data-testid={`template-option-${opt.id}`}
+                  onClick={() => {
+                    onChange(opt.id);
+                    onSelectTemplate?.(opt);
+                    setIsOpen(false);
+                    setSearchQuery('');
+                  }}
+                  className={`px-3 py-2 cursor-pointer flex flex-col justify-center transition-colors ${
+                    isSelected
+                      ? 'bg-[#c0c1ff]/20 text-[#ddb7ff] font-semibold border-l-2 border-[#ddb7ff]'
+                      : 'text-[#dfe2f1] hover:bg-[#262a35] hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold font-['Outfit']">{opt.name}</span>
+                    <code className="text-[10px] font-mono text-[#c0c1ff]">{opt.id}</code>
+                  </div>
+                  {opt.description && (
+                    <div className="text-[10px] text-[#908fa0] truncate mt-0.5">{opt.description}</div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
   const { currentDraft, updateNodes, validationResult, isInspectorOpen, isCanvasLocked } = useEditorStore();
 
@@ -57,9 +193,8 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
   const [isDirty, setIsDirty] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
   const [activeParamField, setActiveParamField] = useState<string | null>(null);
-
   const templateOptions = useMemo(() => {
-    const list: { id: string; name: string; defaultSubject?: string }[] = [];
+    const list: { id: string; name: string; defaultSubject?: string; description?: string }[] = [];
     const seen = new Set<string>();
 
     if (catalogTemplates && catalogTemplates.length > 0) {
@@ -69,6 +204,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           list.push({
             id: t.record_id,
             name: t.name,
+            description: t.description,
             defaultSubject: (t.schema_definition?.subject as string) || undefined,
           });
         }
@@ -76,12 +212,12 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
     }
 
     const defaults = [
-      { id: 'tmpl_welcome', name: 'tmpl_welcome', defaultSubject: 'Welcome to Acme!' },
-      { id: 'rec_tmpl_welcome_onboarding', name: 'New User Welcome Onboarding', defaultSubject: 'Welcome {{subject.first_name}}! Getting started' },
-      { id: 'rec_tmpl_cart_recovery', name: 'Cart Abandonment Recovery Flow', defaultSubject: 'You left items in your shopping cart, {{subject.first_name}}!' },
-      { id: 'tmpl_welcome_v2', name: 'Welcome Email Template v2', defaultSubject: 'Welcome to Acme {{subject.first_name}}!' },
-      { id: 'tmpl_order_confirmation', name: 'Order Confirmation Template', defaultSubject: 'Order Confirmation #{{event.data.order_id}}' },
-      { id: 'tmpl_reengagement', name: 'User Re-engagement Campaign', defaultSubject: 'We miss you {{subject.first_name}}!' },
+      { id: 'tmpl_welcome', name: 'Welcome Email Template', description: 'Standard welcome email template', defaultSubject: 'Welcome to Acme!' },
+      { id: 'rec_tmpl_welcome_onboarding', name: 'New User Welcome Onboarding', description: 'Pre-built welcome onboarding sequence', defaultSubject: 'Welcome {{subject.first_name}}! Getting started' },
+      { id: 'rec_tmpl_cart_recovery', name: 'Cart Abandonment Recovery Flow', description: 'Cart recovery email notification', defaultSubject: 'You left items in your shopping cart, {{subject.first_name}}!' },
+      { id: 'tmpl_welcome_v2', name: 'Welcome Email Template v2', description: 'Updated welcome email template', defaultSubject: 'Welcome to Acme {{subject.first_name}}!' },
+      { id: 'tmpl_order_confirmation', name: 'Order Confirmation Template', description: 'Order confirmation transactional email', defaultSubject: 'Order Confirmation #{{event.data.order_id}}' },
+      { id: 'tmpl_reengagement', name: 'User Re-engagement Campaign', description: 'Re-engagement nudge series', defaultSubject: 'We miss you {{subject.first_name}}!' },
     ];
 
     defaults.forEach((d) => {
@@ -91,13 +227,8 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       }
     });
 
-    const currentVal = (localDraft.config.template_id as string) || '';
-    if (currentVal && !seen.has(currentVal)) {
-      list.unshift({ id: currentVal, name: currentVal });
-    }
-
     return list;
-  }, [catalogTemplates, localDraft.config.template_id]);
+  }, [catalogTemplates]);
   useEffect(() => {
     if (targetNode) {
       setLocalDraft({
@@ -529,32 +660,19 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
-                  Email Template Catalog Selector
+                  Email Template Search & Catalog Reference
                 </label>
-                <select
+                <SearchableTemplateInput
                   value={(localDraft.config.template_id as string) || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    handleConfigChange('template_id', val);
-                    if (val && !localDraft.config.subject) {
-                      const matched = templateOptions.find((t) => t.id === val);
-                      if (matched?.defaultSubject) {
-                        handleConfigChange('subject', matched.defaultSubject);
-                      }
+                  onChange={(newVal) => handleConfigChange('template_id', newVal)}
+                  options={templateOptions}
+                  onSelectTemplate={(tmpl) => {
+                    if (tmpl.defaultSubject && !localDraft.config.subject) {
+                      handleConfigChange('subject', tmpl.defaultSubject);
                     }
                   }}
-                  data-testid="inspector-input-template_id"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('template_id', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all cursor-pointer`}
-                >
-                  <option value="">-- Select Catalog Email Template --</option>
-                  {templateOptions.map((tmpl) => (
-                    <option key={tmpl.id} value={tmpl.id}>
-                      {tmpl.name === tmpl.id ? tmpl.id : `${tmpl.name} (${tmpl.id})`}
-                    </option>
-                  ))}
-                </select>
+                  hasError={Boolean(getFieldError('template_id', nodeIssues))}
+                />
                 {renderFieldError('template_id')}
               </div>
             </>
