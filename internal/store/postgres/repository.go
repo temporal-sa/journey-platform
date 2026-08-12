@@ -76,11 +76,11 @@ type Repository interface {
 	CreateAssignment(ctx context.Context, a *Assignment) (*Assignment, error)
 	GetAssignment(ctx context.Context, tenantID, assignmentID string) (*Assignment, error)
 	GetAssignmentByExperimentSubject(ctx context.Context, tenantID, experimentID, subjectID string) (*Assignment, error)
-
+	ListAssignmentsByExperiment(ctx context.Context, tenantID, experimentID string) ([]Assignment, error)
 	// 13. Exposures
 	CreateExposure(ctx context.Context, ex *Exposure) (*Exposure, error)
 	GetExposure(ctx context.Context, tenantID, exposureID string) (*Exposure, error)
-
+	ListExposuresByExperiment(ctx context.Context, tenantID, experimentID string) ([]Exposure, error)
 	// 14. Outbox
 	CreateOutboxEvent(ctx context.Context, o *Outbox) (*Outbox, error)
 	GetOutboxEvent(ctx context.Context, tenantID, id string) (*Outbox, error)
@@ -1002,6 +1002,18 @@ func (m *MemoryRepository) GetAssignmentByExperimentSubject(ctx context.Context,
 	a := m.assignments[pk]
 	return &a, nil
 }
+func (m *MemoryRepository) ListAssignmentsByExperiment(ctx context.Context, tenantID, experimentID string) ([]Assignment, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var res []Assignment
+	for _, item := range m.assignments {
+		if item.TenantID == tenantID && item.ExperimentID == experimentID {
+			res = append(res, item)
+		}
+	}
+	return res, nil
+}
 
 // 13. Exposures
 func (m *MemoryRepository) CreateExposure(ctx context.Context, ex *Exposure) (*Exposure, error) {
@@ -1041,6 +1053,19 @@ func (m *MemoryRepository) GetExposure(ctx context.Context, tenantID, exposureID
 		return nil, ErrNotFound
 	}
 	return &ex, nil
+}
+
+func (m *MemoryRepository) ListExposuresByExperiment(ctx context.Context, tenantID, experimentID string) ([]Exposure, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var res []Exposure
+	for _, item := range m.exposures {
+		if item.TenantID == tenantID && item.ExperimentID == experimentID {
+			res = append(res, item)
+		}
+	}
+	return res, nil
 }
 
 // 14. Outbox
