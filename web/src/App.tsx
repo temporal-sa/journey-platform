@@ -310,7 +310,7 @@ export function DashboardContent() {
     { route: 'runs', label: 'Execution Runs' },
     { route: 'static-lists', label: 'Static Lists' },
     { route: 'experiments', label: 'Experiment Analytics' },
-    { route: 'docs', label: 'User Documentation' },
+    { route: 'docs', label: 'Documentation' },
     { route: 'canvas', label: 'Journey Canvas' },
   ];
 
@@ -323,7 +323,7 @@ export function DashboardContent() {
     canvas: 'Journey Canvas',
     experiments: 'Experiment Analytics',
     'static-lists': 'Static Lists Directory',
-    docs: 'User Documentation',
+    docs: 'Documentation',
   };
   // Save Workflow with Conflict Simulation / Handling
   const handleSaveDraft = async () => {
