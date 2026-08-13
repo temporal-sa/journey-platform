@@ -15,7 +15,7 @@ if (typeof window !== 'undefined' && window.localStorage) {
     const storedMax = localStorage.getItem(MAX_ATTEMPTS_STORAGE_KEY);
     if (storedMax) {
       const parsed = parseInt(storedMax, 10);
-      if (!isNaN(parsed) && parsed >= 1 && parsed <= 10) {
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 99) {
         globalMaxFailureAttemptsState = parsed;
       }
     }
@@ -95,7 +95,7 @@ export function getGlobalMaxFailureAttempts(): number {
  * Sets global maximum failure attempts for activity simulation (min 1, max 10, default 3).
  */
 export function setGlobalMaxFailureAttempts(attempts: number): void {
-  const clamped = Math.min(10, Math.max(1, attempts));
+  const clamped = Math.min(99, Math.max(1, attempts));
   globalMaxFailureAttemptsState = clamped;
   if (typeof window !== 'undefined' && window.localStorage) {
     try {

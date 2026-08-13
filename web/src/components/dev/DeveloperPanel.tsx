@@ -182,10 +182,12 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
     const newState = toggleSimulatedActivityFailure();
     setIsActivityFailureActive(newState);
     if (newState) {
+      setMaxFailureAttempts(99);
+      setGlobalMaxFailureAttempts(99);
       onFireToast(
         ToastMessageType.WARNING,
         'Activity Failure Simulation Enabled',
-        'Backend activities will simulate failure retries up to the specified max attempts.'
+        'Backend activities will simulate failure retries up to 99 attempts.'
       );
     } else {
       onFireToast(
@@ -197,7 +199,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   };
 
   const handleMaxFailureAttemptsChange = (val: number) => {
-    const clamped = Math.min(10, Math.max(1, val));
+    const clamped = Math.min(99, Math.max(1, val));
     setMaxFailureAttempts(clamped);
     setGlobalMaxFailureAttempts(clamped);
   };
@@ -430,14 +432,14 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
 
           <div className="pt-2 border-t border-[#464554]/30 flex items-center justify-between gap-4">
             <label className="text-xs font-medium text-[#c7c4d7]">
-              Max Failure Retry Attempts (1-10)
+              Max Failure Retry Attempts (1-99)
             </label>
             <input
               type="number"
               min={1}
-              max={10}
+              max={99}
               value={maxFailureAttempts}
-              onChange={(e) => handleMaxFailureAttemptsChange(e.target.value === '' ? 3 : Number(e.target.value))}
+              onChange={(e) => handleMaxFailureAttemptsChange(e.target.value === '' ? 99 : Number(e.target.value))}
               data-testid="dev-max-failure-attempts-input"
               className="w-24 px-3 py-1 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#ddb7ff] outline-none"
             />

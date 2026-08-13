@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
 	"github.com/validated-pattern/journey-platform/internal/api/middleware"
 )
 
@@ -347,9 +346,8 @@ func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*
 		attempt := g.getFailureTracker().IncrementAndGet(actionKey)
 		if attempt <= maxAttempts {
 			return nil, fmt.Errorf("simulated activity execution failure attempt %d/%d", attempt, maxAttempts)
-		} else {
-			g.getFailureTracker().Reset(actionKey)
 		}
+		g.getFailureTracker().Reset(actionKey)
 	}
 
 	key := req.IdempotencyKey()

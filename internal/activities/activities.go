@@ -211,6 +211,7 @@ func (a *Activities) ExecuteNode(ctx context.Context, input ExecuteNodeInput) (d
 		if attempt <= maxAttempts {
 			return domain.ActionResult{}, fmt.Errorf("simulated activity execution failure attempt %d/%d", attempt, maxAttempts)
 		}
+		a.getFailureTracker().Reset(nodeKey)
 	}
 
 	now := time.Now().UTC()
