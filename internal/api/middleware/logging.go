@@ -62,15 +62,17 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			}
 
 			// Asynchronously export OpenTelemetry trace span to Jaeger OTLP collector
-			go func(reqMethod, reqPath string, statusCode int, dur time.Duration, bytesWritten int64, rID, tID, tenID, uID string, startTime time.Time) {
+			go func(reqMethod, reqPath string, statusCode int, dur time.Duration, bytesWritten int64, rID, tID, sID, tenID, uID string, startTime time.Time) {
 				otlpURL := os.Getenv("JAEGER_OTLP_HTTP_ENDPOINT")
 				if otlpURL == "" {
 					otlpURL = "http://127.0.0.1:4318/v1/traces"
 				}
 
 				endTime := startTime.Add(dur)
-				spanID := fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
-
+				spanID := sID
+				if spanID == "" {
+					spanID = fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
+				}
 				spanPayload := map[string]interface{}{
 					"resourceSpans": []map[string]interface{}{
 						{
@@ -122,7 +124,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				if err == nil && resp != nil {
 					_ = resp.Body.Close()
 				}
-			}(r.Method, r.URL.Path, ww.statusCode, duration, ww.bytesWritten, reqID, traceID, tenantID, userID, start)
+			}(r.Method, r.URL.Path, ww.statusCode, duration, ww.bytesWritten, reqID, traceID, GetSpanID(ctx), tenantID, userID, start)
 		})
 	}
 }

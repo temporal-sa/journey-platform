@@ -59,7 +59,8 @@ func main() {
 	var storeRepo postgres.Repository
 	db, err := sql.Open("postgres", dsn)
 	if err == nil && db != nil {
-		storeRepo = postgres.NewPostgresRepository(db)
+		tracedDB := postgres.NewTracedDB(db)
+		storeRepo = postgres.NewPostgresRepository(tracedDB)
 	} else {
 		log.Printf("Warning: Postgres repository connection error (%v), falling back to in-memory repository", err)
 		storeRepo = postgres.NewMemoryRepository()

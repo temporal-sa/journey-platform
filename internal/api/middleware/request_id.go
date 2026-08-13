@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -11,6 +13,7 @@ import (
 const (
 	requestIDKey contextKey = "request_id"
 	traceIDKey   contextKey = "trace_id"
+	spanIDKey    contextKey = "span_id"
 
 	HeaderRequestID   = "X-Request-ID"
 	HeaderTraceID     = "X-Trace-ID"
@@ -42,6 +45,18 @@ func GetTraceID(ctx context.Context) string {
 	}
 	return ""
 }
+// WithSpanID returns a new context with the span ID.
+func WithSpanID(ctx context.Context, spanID string) context.Context {
+	return context.WithValue(ctx, spanIDKey, spanID)
+}
+
+// GetSpanID retrieves the span ID from context.
+func GetSpanID(ctx context.Context) string {
+	if val, ok := ctx.Value(spanIDKey).(string); ok {
+		return val
+	}
+	return ""
+}
 
 // RequestID middleware generates or propagates X-Request-ID and X-Trace-ID.
 func RequestID(next http.Handler) http.Handler {
@@ -65,12 +80,15 @@ func RequestID(next http.Handler) http.Handler {
 			traceID = strings.ReplaceAll(rawUUID, "-", "")
 		}
 
+		spanID := fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
+
 		ctx := WithRequestID(r.Context(), reqID)
 		ctx = WithTraceID(ctx, traceID)
+		ctx = WithSpanID(ctx, spanID)
 
 		w.Header().Set(HeaderRequestID, reqID)
 		w.Header().Set(HeaderTraceID, traceID)
-		w.Header().Set(HeaderTraceparent, "00-"+traceID+"-0000000000000001-01")
+		w.Header().Set(HeaderTraceparent, "00-"+traceID+"-"+spanID+"-01")
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
