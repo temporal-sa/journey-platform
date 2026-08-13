@@ -594,39 +594,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
 
               <div className="mb-3">
-                <div className="flex justify-between items-center gap-3 mb-1.5">
-                  <label className="text-xs font-medium text-[#c7c4d7]">
-                    SMS Message Body
-                  </label>
-                  <Button
-                    type="button"
-                    variant="secondary-dark"
-                    size="sm"
-                    icon="token"
-                    onClick={() => handleOpenParamModal('message')}
-                    data-testid="param-btn-message"
-                    className="shrink-0 text-[11px] px-2 py-0.5"
-                  >
-                    + Insert Param
-                  </Button>
-                </div>
-                <textarea
-                  rows={3}
-                  ref={(el) => {
-                    inputRefs.current['message'] = el;
-                  }}
-                  value={(localDraft.config.message as string) || (localDraft.config.body as string) || ''}
-                  onChange={(e) => handleConfigChange('message', e.target.value)}
-                  placeholder="e.g. Your verification code is {{event.data.code}}"
-                  data-testid="inspector-input-message"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('message', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
-                />
-                {renderFieldError('message')}
-              </div>
-
-              <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
                   SMS Template Search & Catalog Reference
                 </label>
@@ -682,71 +649,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 {renderFieldError('recipient')}
               </div>
 
-              <div className="mb-3">
-                <div className="flex justify-between items-center gap-3 mb-1.5">
-                  <label className="text-xs font-medium text-[#c7c4d7]">
-                    Notification Title
-                  </label>
-                  <Button
-                    type="button"
-                    variant="secondary-dark"
-                    size="sm"
-                    icon="token"
-                    onClick={() => handleOpenParamModal('title')}
-                    data-testid="param-btn-title"
-                    className="shrink-0 text-[11px] px-2 py-0.5"
-                  >
-                    + Insert Param
-                  </Button>
-                </div>
-                <input
-                  type="text"
-                  ref={(el) => {
-                    inputRefs.current['title'] = el;
-                  }}
-                  value={(localDraft.config.title as string) || (localDraft.config.subject as string) || ''}
-                  onChange={(e) => handleConfigChange('title', e.target.value)}
-                  placeholder="e.g. Special Offer!"
-                  data-testid="inspector-input-title"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('title', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
-                />
-                {renderFieldError('title')}
-              </div>
-
-              <div className="mb-3">
-                <div className="flex justify-between items-center gap-3 mb-1.5">
-                  <label className="text-xs font-medium text-[#c7c4d7]">
-                    Notification Body
-                  </label>
-                  <Button
-                    type="button"
-                    variant="secondary-dark"
-                    size="sm"
-                    icon="token"
-                    onClick={() => handleOpenParamModal('message')}
-                    data-testid="param-btn-message"
-                    className="shrink-0 text-[11px] px-2 py-0.5"
-                  >
-                    + Insert Param
-                  </Button>
-                </div>
-                <textarea
-                  rows={2}
-                  ref={(el) => {
-                    inputRefs.current['message'] = el;
-                  }}
-                  value={(localDraft.config.message as string) || (localDraft.config.body as string) || ''}
-                  onChange={(e) => handleConfigChange('message', e.target.value)}
-                  placeholder="e.g. You have 20% off waiting for you."
-                  data-testid="inspector-input-message"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('message', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
-                />
-                {renderFieldError('message')}
-              </div>
 
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
@@ -804,71 +706,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 {renderFieldError('recipient')}
               </div>
 
-              <div className="mb-3">
-                <div className="flex justify-between items-center gap-3 mb-1.5">
-                  <label className="text-xs font-medium text-[#c7c4d7]">
-                    Banner Title / Header
-                  </label>
-                  <Button
-                    type="button"
-                    variant="secondary-dark"
-                    size="sm"
-                    icon="token"
-                    onClick={() => handleOpenParamModal('title')}
-                    data-testid="param-btn-title"
-                    className="shrink-0 text-[11px] px-2 py-0.5"
-                  >
-                    + Insert Param
-                  </Button>
-                </div>
-                <input
-                  type="text"
-                  ref={(el) => {
-                    inputRefs.current['title'] = el;
-                  }}
-                  value={(localDraft.config.title as string) || (localDraft.config.heading as string) || ''}
-                  onChange={(e) => handleConfigChange('title', e.target.value)}
-                  placeholder="e.g. Complete Your Profile"
-                  data-testid="inspector-input-title"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('title', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
-                />
-                {renderFieldError('title')}
-              </div>
-
-              <div className="mb-3">
-                <div className="flex justify-between items-center gap-3 mb-1.5">
-                  <label className="text-xs font-medium text-[#c7c4d7]">
-                    In-App Message Content
-                  </label>
-                  <Button
-                    type="button"
-                    variant="secondary-dark"
-                    size="sm"
-                    icon="token"
-                    onClick={() => handleOpenParamModal('message')}
-                    data-testid="param-btn-message"
-                    className="shrink-0 text-[11px] px-2 py-0.5"
-                  >
-                    + Insert Param
-                  </Button>
-                </div>
-                <textarea
-                  rows={3}
-                  ref={(el) => {
-                    inputRefs.current['message'] = el;
-                  }}
-                  value={(localDraft.config.message as string) || (localDraft.config.body as string) || ''}
-                  onChange={(e) => handleConfigChange('message', e.target.value)}
-                  placeholder="e.g. Welcome back! Check out what's new."
-                  data-testid="inspector-input-message"
-                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('message', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
-                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
-                />
-                {renderFieldError('message')}
-              </div>
 
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
