@@ -143,11 +143,10 @@ export function TemplateSelector({
             <a
               href="#/catalog?tab=templates"
               onClick={() => setIsOpen(false)}
-              className="text-[#c0c1ff] hover:text-white font-medium hover:underline flex items-center gap-1 transition-colors"
+              className="text-[#c0c1ff] hover:text-white font-medium hover:underline transition-colors"
               data-testid="view-all-templates-link"
             >
-              <span>View all templates</span>
-              <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              View all...
             </a>
           </div>
         </div>
