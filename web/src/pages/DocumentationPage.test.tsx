@@ -39,4 +39,20 @@ describe('DocumentationPage Component', () => {
       expect(screen.getByText('User Guide: Application Pages & Views')).toBeInTheDocument();
     });
   });
+
+  it('filters sections and highlights search terms when text is typed in search input', async () => {
+    render(
+      <SafeQueryClientProvider>
+        <DocumentationPage />
+      </SafeQueryClientProvider>
+    );
+
+    const searchInput = screen.getByTestId('docs-search-input');
+    fireEvent.change(searchInput, { target: { value: 'Canvas' } });
+
+    await waitFor(() => {
+      const contentArea = screen.getByTestId('rendered-docs-content');
+      expect(contentArea.innerHTML).toContain('<mark');
+    });
+  });
 });

@@ -182,6 +182,21 @@ const DEFAULT_DOCS_PARAMS = {
   search: '',
 };
 
+function filterAndHighlightMarkdown(markdown: string, search: string): string {
+  const query = search.trim();
+  if (!query) return markdown;
+
+  const qLower = query.toLowerCase();
+  const sections = markdown.split(/(?=\n## |\n### |\n---)/g);
+  const matchedSections = sections.filter((sec) => sec.toLowerCase().includes(qLower));
+
+  if (matchedSections.length === 0) {
+    return `<div className="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">No documentation sections found matching "<strong>${query}</strong>". Try searching for <em>canvas</em>, <em>nodes</em>, <em>runs</em>, or <em>catalog</em>.</div>`;
+  }
+
+  return matchedSections.join('\n\n');
+}
+
 export const DocumentationPage: React.FC = () => {
   const [params, setParams] = useRouteParams(DEFAULT_DOCS_PARAMS);
 
@@ -201,12 +216,22 @@ export const DocumentationPage: React.FC = () => {
 
   const htmlContent = useMemo(() => {
     try {
-      return marked.parse(rawMarkdown) as string;
+      const filteredMarkdown = filterAndHighlightMarkdown(rawMarkdown, params.search || '');
+      let parsedHtml = marked.parse(filteredMarkdown) as string;
+
+      if (params.search && params.search.trim()) {
+        const term = params.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${term})`, 'gi');
+        parsedHtml = parsedHtml.replace(/>([^<]+)</g, (_match, group1) => {
+          return '>' + group1.replace(regex, '<mark class="bg-[#b76dff]/30 text-[#ddb7ff] px-1 font-semibold">$1</mark>') + '<';
+        });
+      }
+
+      return parsedHtml;
     } catch {
       return '<p class="text-rose-400">Failed to render documentation content.</p>';
     }
-  }, [rawMarkdown]);
-
+  }, [rawMarkdown, params.search]);
   const tabs: { key: DocsTab; label: string; icon: string }[] = [
     { key: 'overview', label: 'Overview & Quick Start', icon: 'menu_book' },
     { key: 'pages', label: 'Application Views Guide', icon: 'auto_stories' },
