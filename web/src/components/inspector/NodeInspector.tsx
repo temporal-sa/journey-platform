@@ -908,9 +908,48 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                 />
                 {renderFieldError('condition_expression')}
               </div>
+            </>
+          )}
+
+          {/* WAIT FOR EVENT NODE */}
+          {(nodeType === 'WaitForEvent' || nodeType === 'WaitForEventNode' || nodeType === 'wait_for_event' || nodeType === 'waitforevent' || nodeType === 'event_wait') && (
+            <>
+              <div className="mb-3">
+                <div className="flex justify-between items-center gap-3 mb-1.5">
+                  <label className="text-xs font-medium text-[#c7c4d7]">
+                    Event Type / Name
+                  </label>
+                  <Button
+                    type="button"
+                    variant="secondary-dark"
+                    size="sm"
+                    icon="token"
+                    onClick={() => handleOpenParamModal('event_type')}
+                    data-testid="param-btn-event_type"
+                    className="shrink-0 text-[11px] px-2 py-0.5"
+                  >
+                    + Insert Param
+                  </Button>
+                </div>
+                <input
+                  type="text"
+                  ref={(el) => {
+                    inputRefs.current['event_type'] = el;
+                  }}
+                  value={(localDraft.config.event_type as string) || ''}
+                  onChange={(e) => handleConfigChange('event_type', e.target.value)}
+                  placeholder="e.g. order.completed"
+                  data-testid="inspector-input-event_type"
+                  className={`w-full px-3 py-1.5 bg-[#11141d] border ${
+                    getFieldError('event_type', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
+                  } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
+                />
+                {renderFieldError('event_type')}
+              </div>
+
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
-                  Evaluation Timeout (Seconds)
+                  Event Wait Timeout (Seconds)
                 </label>
                 <input
                   type="number"
@@ -922,7 +961,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                       e.target.value ? parseInt(e.target.value, 10) : ''
                     )
                   }
-                  placeholder="e.g. 10"
+                  placeholder="e.g. 86400 (24h) or 3600 (1h)"
                   data-testid="inspector-input-timeout_seconds"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
                     getFieldError('timeout_seconds', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'

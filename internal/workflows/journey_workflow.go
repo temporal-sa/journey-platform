@@ -405,31 +405,7 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 				}
 			}
 
-			// Determine condition evaluation timeout (default 10s if omitted/invalid)
-			timeoutSec := node.TimeoutSeconds
-			if timeoutSec <= 0 {
-				for _, k := range []string{"timeout_seconds", "timeout"} {
-					if v, ok := node.Params[k]; ok {
-						switch val := v.(type) {
-						case float64:
-							timeoutSec = int(val)
-						case int:
-							timeoutSec = val
-						case int64:
-							timeoutSec = int(val)
-						case string:
-							fmt.Sscanf(strings.TrimSpace(val), "%d", &timeoutSec)
-						}
-						if timeoutSec > 0 {
-							break
-						}
-					}
-				}
-			}
 			timeoutDuration := 10 * time.Second
-			if timeoutSec > 0 {
-				timeoutDuration = time.Duration(timeoutSec) * time.Second
-			}
 
 			if nodeExpr != "" {
 				condInput := activities.EvaluateConditionInput{

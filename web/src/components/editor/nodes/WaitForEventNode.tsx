@@ -5,6 +5,11 @@ export type CustomNode = Node<CustomNodeData>;
 
 export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
   const displayName = data?.name || data?.label || 'Wait For Event';
+  const eventType = (data?.config?.event_type as string) || 'order.completed';
+  const timeoutSec = (data?.config?.timeout_seconds as number) || (data?.config?.timeout as number);
+  const timeoutText = timeoutSec
+    ? (timeoutSec >= 3600 ? `${Math.round(timeoutSec / 3600)}h max` : `${timeoutSec}s max`)
+    : '24h max';
   const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
 
   return (
@@ -60,8 +65,8 @@ export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
           <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-['Outfit'] text-left">DECISION</div>
           <div className="text-xs font-bold text-[#dfe2f1] leading-tight truncate font-['Outfit'] text-left">{displayName}</div>
           <div className="flex items-center gap-2 mt-1.5 text-[10px] font-mono text-amber-300 text-left">
-            <span>order_delivered</span>
-            <span className="text-slate-400">(10s max)</span>
+            <span className="truncate max-w-[120px]">{eventType}</span>
+            <span className="text-slate-400 shrink-0">({timeoutText})</span>
           </div>
         </div>
 
