@@ -97,6 +97,8 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
       { id: 'tmpl_push_reminder', name: 'Mobile Push Activity Reminder', description: 'Re-engagement push notification', defaultSubject: 'Don\'t forget to complete your daily goal!' },
       { id: 'tmpl_inapp_banner', name: 'In-App Onboarding Banner', description: 'In-app welcome modal banner', defaultSubject: 'Welcome! Discover new features' },
       { id: 'tmpl_inapp_feature', name: 'In-App Feature Announcement', description: 'In-app update alert popup', defaultSubject: 'New Feature: Check out the new dashboard!' },
+      { id: 'tmpl_webhook_crm', name: 'CRM Webhook Payload Template', description: 'Standard CRM data sync webhook template', defaultSubject: 'https://api.partner.com/webhook/crm-sync' },
+      { id: 'tmpl_webhook_slack', name: 'Slack Channel Notification Webhook', description: 'Slack incoming webhook payload template', defaultSubject: 'https://api.example.com/webhooks/slack-notifications' },
     ];
 
     defaults.forEach((d) => {
@@ -884,7 +886,7 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
           )}
 
           {/* WEBHOOK NODE */}
-          {(nodeType === 'Webhook' || nodeType === 'WebhookNode') && (
+          {(nodeType === 'Webhook' || nodeType === 'WebhookNode' || nodeType === 'webhook' || (nodeType === 'action' && localDraft.name.toLowerCase().includes('webhook'))) && (
             <>
               <div className="mb-3">
                 <div className="flex justify-between items-center gap-3 mb-1.5">
@@ -934,6 +936,23 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
                   <option value="PUT">PUT</option>
                   <option value="DELETE">DELETE</option>
                 </select>
+              </div>
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
+                  Webhook Template Search & Catalog Reference
+                </label>
+                <TemplateSelector
+                  value={(localDraft.config.template_id as string) || ''}
+                  onChange={(newVal) => handleConfigChange('template_id', newVal)}
+                  options={templateOptions}
+                  onSelectTemplate={(tmpl) => {
+                    if (tmpl.defaultSubject && !localDraft.config.url) {
+                      handleConfigChange('url', tmpl.defaultSubject);
+                    }
+                  }}
+                  hasError={Boolean(getFieldError('template_id', nodeIssues))}
+                />
+                {renderFieldError('template_id')}
               </div>
             </>
           )}
