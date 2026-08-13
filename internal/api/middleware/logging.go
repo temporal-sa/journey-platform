@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -38,8 +39,23 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			start := time.Now()
 			ww := &responseWriterInterceptor{ResponseWriter: w, statusCode: http.StatusOK}
 
-			next.ServeHTTP(ww, r)
+			var reqBodyStr string
+			if r.Body != nil && (r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch) {
+				bodyBytes, err := io.ReadAll(r.Body)
+				if err == nil {
+					_ = r.Body.Close()
+					r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+					if len(bodyBytes) > 0 {
+						if len(bodyBytes) > 8192 {
+							reqBodyStr = string(bodyBytes[:8192]) + "... [truncated]"
+						} else {
+							reqBodyStr = string(bodyBytes)
+						}
+					}
+				}
+			}
 
+			next.ServeHTTP(ww, r)
 			duration := time.Since(start)
 			ctx := r.Context()
 			reqID := GetRequestID(ctx)
@@ -62,7 +78,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			}
 
 			// Asynchronously export OpenTelemetry trace span to Jaeger OTLP collector
-			go func(reqMethod, reqPath string, statusCode int, dur time.Duration, bytesWritten int64, rID, tID, sID, tenID, uID string, startTime time.Time) {
+			go func(reqMethod, reqPath, reqBodyPayload string, statusCode int, dur time.Duration, bytesWritten int64, rID, tID, sID, tenID, uID string, startTime time.Time) {
 				otlpURL := os.Getenv("JAEGER_OTLP_HTTP_ENDPOINT")
 				if otlpURL == "" {
 					otlpURL = "http://127.0.0.1:4318/v1/traces"
@@ -73,6 +89,21 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				if spanID == "" {
 					spanID = fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
 				}
+				attrs := []map[string]interface{}{
+					{"key": "http.method", "value": map[string]interface{}{"stringValue": reqMethod}},
+					{"key": "http.target", "value": map[string]interface{}{"stringValue": reqPath}},
+					{"key": "http.status_code", "value": map[string]interface{}{"intValue": statusCode}},
+					{"key": "http.response_content_length", "value": map[string]interface{}{"intValue": bytesWritten}},
+					{"key": "request_id", "value": map[string]interface{}{"stringValue": rID}},
+					{"key": "tenant_id", "value": map[string]interface{}{"stringValue": tenID}},
+					{"key": "user_id", "value": map[string]interface{}{"stringValue": uID}},
+				}
+				if reqBodyPayload != "" {
+					attrs = append(attrs, map[string]interface{}{
+						"key": "http.request.payload", "value": map[string]interface{}{"stringValue": reqBodyPayload},
+					})
+				}
+
 				spanPayload := map[string]interface{}{
 					"resourceSpans": []map[string]interface{}{
 						{
@@ -92,15 +123,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 											"kind":              1,
 											"startTimeUnixNano": fmt.Sprintf("%d", startTime.UnixNano()),
 											"endTimeUnixNano":   fmt.Sprintf("%d", endTime.UnixNano()),
-											"attributes": []map[string]interface{}{
-												{"key": "http.method", "value": map[string]interface{}{"stringValue": reqMethod}},
-												{"key": "http.target", "value": map[string]interface{}{"stringValue": reqPath}},
-												{"key": "http.status_code", "value": map[string]interface{}{"intValue": statusCode}},
-												{"key": "http.response_content_length", "value": map[string]interface{}{"intValue": bytesWritten}},
-												{"key": "request_id", "value": map[string]interface{}{"stringValue": rID}},
-												{"key": "tenant_id", "value": map[string]interface{}{"stringValue": tenID}},
-												{"key": "user_id", "value": map[string]interface{}{"stringValue": uID}},
-											},
+											"attributes":        attrs,
 										},
 									},
 								},
@@ -124,7 +147,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				if err == nil && resp != nil {
 					_ = resp.Body.Close()
 				}
-			}(r.Method, r.URL.Path, ww.statusCode, duration, ww.bytesWritten, reqID, traceID, GetSpanID(ctx), tenantID, userID, start)
+			}(r.Method, r.URL.Path, reqBodyStr, ww.statusCode, duration, ww.bytesWritten, reqID, traceID, GetSpanID(ctx), tenantID, userID, start)
 		})
 	}
 }
