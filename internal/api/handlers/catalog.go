@@ -206,6 +206,7 @@ func (h *Handlers) listCatalogByTypes(w http.ResponseWriter, r *http.Request, ta
 	}
 
 	var results []domain.CatalogRecord
+	seen := make(map[string]bool)
 
 	// Fetch catalog items from DB repo
 	dbRecords, err := h.repo.ListCatalogs(r.Context(), tenantID)
@@ -233,16 +234,16 @@ func (h *Handlers) listCatalogByTypes(w http.ResponseWriter, r *http.Request, ta
 					IsDeprecated:     dbRec.IsDeprecated,
 				}
 				results = append(results, rec)
+				seen[dbRec.RecordID] = true
 			}
 		}
 	}
 
-	// Fallback to default catalog records if none in DB for these types
-	if len(results) == 0 {
-		for _, rec := range defaultCatalogRecords {
-			if matchesType(string(rec.ComponentType), targetTypes) {
-				results = append(results, rec)
-			}
+	// Merge built-in default catalog records (not overridden by DB)
+	for _, rec := range defaultCatalogRecords {
+		if matchesType(string(rec.ComponentType), targetTypes) && !seen[rec.RecordID] {
+			results = append(results, rec)
+			seen[rec.RecordID] = true
 		}
 	}
 
