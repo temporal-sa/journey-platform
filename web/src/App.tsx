@@ -9,6 +9,7 @@ import {
   RunListPage,
   RunDetailPage,
   StaticListsPage,
+  DocumentationPage,
 } from './pages';
 import { Canvas } from './components/editor/Canvas';
 import { AgyContextModal } from './components/editor/AgyContextModal';
@@ -35,7 +36,7 @@ const queryClient = new QueryClient({
     },
   },
 });
-export type NavigationRoute = 'journeys' | 'catalog' | 'history' | 'runs' | 'run-detail' | 'canvas' | 'experiments' | 'static-lists';
+export type NavigationRoute = 'journeys' | 'catalog' | 'history' | 'runs' | 'run-detail' | 'canvas' | 'experiments' | 'static-lists' | 'docs';
 
 export interface ParsedRouteParams {
   route: NavigationRoute;
@@ -58,6 +59,7 @@ export function parseHashRoute(): ParsedRouteParams {
     'canvas',
     'experiments',
     'static-lists',
+    'docs',
   ];
 
   const candidate = pathSegments[0] as NavigationRoute;
@@ -308,6 +310,7 @@ export function DashboardContent() {
     { route: 'runs', label: 'Execution Runs' },
     { route: 'static-lists', label: 'Static Lists' },
     { route: 'experiments', label: 'Experiment Analytics' },
+    { route: 'docs', label: 'User Documentation' },
     { route: 'canvas', label: 'Journey Canvas' },
   ];
 
@@ -320,6 +323,7 @@ export function DashboardContent() {
     canvas: 'Journey Canvas',
     experiments: 'Experiment Analytics',
     'static-lists': 'Static Lists Directory',
+    docs: 'User Documentation',
   };
   // Save Workflow with Conflict Simulation / Handling
   const handleSaveDraft = async () => {
@@ -743,8 +747,8 @@ export function DashboardContent() {
               if (item.route === 'runs') icon = 'list_alt';
               if (item.route === 'static-lists') icon = 'format_list_bulleted';
               if (item.route === 'experiments') icon = 'analytics';
+              if (item.route === 'docs') icon = 'menu_book';
               if (item.route === 'canvas') icon = 'science';
-
               return (
                 <button
                   key={item.route}
@@ -920,6 +924,9 @@ export function DashboardContent() {
               }}
             />
           )}
+
+          {activeRoute === 'docs' && <DocumentationPage />}
+
           {activeRoute === 'experiments' && <ExperimentReportView />}
 
           {activeRoute === 'static-lists' && (
