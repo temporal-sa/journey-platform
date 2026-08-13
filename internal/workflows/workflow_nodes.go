@@ -3,9 +3,9 @@ package workflows
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
-
 	"github.com/validated-pattern/journey-platform/internal/activities"
 	"github.com/validated-pattern/journey-platform/internal/domain"
 	"github.com/validated-pattern/journey-platform/internal/experiments"
@@ -244,24 +244,28 @@ func ExecuteChannelActionNode(
 		}
 	}
 
-	actionReq := activities.ActionRequest{
-		TenantID:           input.TenantID,
-		WorkflowID:         input.WorkflowID,
-		JourneyVersion:     fmt.Sprintf("%d", state.Generation),
-		NodeID:             node.ID,
-		NodeVisit:          nodeVisit,
-		ActionVersion:      actionVersion,
-		TemplateVersion:    templateVersion,
-		SubjectRef:         subjectRef,
-		ParameterRefs:      paramRefs,
-		ExecutionMode:      execMode,
-		TestRunID:          testRunID,
-		ExperimentContexts: expContexts,
-		Channel:            channel,
-		RecipientAddress:   recipientAddress,
-		TemplateBody:       templateBody,
-	}
+	simFail := parseBoolParam(node.Params, "simulated_activity_failure")
+	maxAtt := parseIntParam(node.Params, "max_failure_attempts")
 
+	actionReq := activities.ActionRequest{
+		TenantID:                 input.TenantID,
+		WorkflowID:               input.WorkflowID,
+		JourneyVersion:           fmt.Sprintf("%d", state.Generation),
+		NodeID:                   node.ID,
+		NodeVisit:                nodeVisit,
+		ActionVersion:            actionVersion,
+		TemplateVersion:          templateVersion,
+		SubjectRef:               subjectRef,
+		ParameterRefs:            paramRefs,
+		ExecutionMode:            execMode,
+		TestRunID:                testRunID,
+		ExperimentContexts:       expContexts,
+		SimulatedActivityFailure: simFail,
+		MaxFailureAttempts:       maxAtt,
+		Channel:                  channel,
+		RecipientAddress:         recipientAddress,
+		TemplateBody:             templateBody,
+	}
 	var gwResult *activities.GatewayResult
 	gwAo := workflow.ActivityOptions{
 		Summary:             fmt.Sprintf("Execute %s channel action for node %s (%s)", channel, node.ID, node.ActivityName),
@@ -408,6 +412,51 @@ func getParamString(params map[string]interface{}, key string, defaultVal string
 	return defaultVal
 }
 
+func parseBoolParam(params map[string]interface{}, key string) bool {
+	if params == nil {
+		return false
+	}
+	v, ok := params[key]
+	if !ok || v == nil {
+		return false
+	}
+	switch val := v.(type) {
+	case bool:
+		return val
+	case string:
+		s := strings.ToLower(strings.TrimSpace(val))
+		return s == "true" || s == "1" || s == "yes"
+	case int:
+		return val != 0
+	case float64:
+		return val != 0
+	default:
+		return false
+	}
+}
+
+func parseIntParam(params map[string]interface{}, key string) int {
+	if params == nil {
+		return 0
+	}
+	v, ok := params[key]
+	if !ok || v == nil {
+		return 0
+	}
+	switch val := v.(type) {
+	case int:
+		return val
+	case int64:
+		return int(val)
+	case float64:
+		return int(val)
+	case string:
+		if i, err := strconv.Atoi(strings.TrimSpace(val)); err == nil {
+			return i
+		}
+	}
+	return 0
+}
 func buildExperimentDefinition(expID string, tenantID string, node domain.IRNode) *experiments.Experiment {
 	expDef := &experiments.Experiment{
 		TenantID:                 tenantID,

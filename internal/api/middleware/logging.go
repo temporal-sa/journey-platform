@@ -32,6 +32,12 @@ func (rw *responseWriterInterceptor) Write(b []byte) (int, error) {
 	return n, err
 }
 
+func (rw *responseWriterInterceptor) Flush() {
+	if f, ok := rw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 // RequestLogger returns a middleware that logs captured HTTP requests using Zerolog and exports OpenTelemetry trace spans to Jaeger.
 func RequestLogger(logger any) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
