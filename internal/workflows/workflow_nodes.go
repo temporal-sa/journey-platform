@@ -245,8 +245,23 @@ func ExecuteChannelActionNode(
 	}
 
 	simFail := parseBoolParam(node.Params, "simulated_activity_failure")
-	maxAtt := parseIntParam(node.Params, "max_failure_attempts")
+	if !simFail {
+		simFail = parseBoolParam(input.InputPayload, "simulated_activity_failure")
+	}
+	if !simFail {
+		simFail = parseBoolParam(state.Variables, "simulated_activity_failure")
+	}
 
+	maxAtt := parseIntParam(node.Params, "max_failure_attempts")
+	if maxAtt <= 0 {
+		maxAtt = parseIntParam(input.InputPayload, "max_failure_attempts")
+	}
+	if maxAtt <= 0 {
+		maxAtt = parseIntParam(state.Variables, "max_failure_attempts")
+	}
+	if maxAtt <= 0 {
+		maxAtt = 3
+	}
 	actionReq := activities.ActionRequest{
 		TenantID:                 input.TenantID,
 		WorkflowID:               input.WorkflowID,

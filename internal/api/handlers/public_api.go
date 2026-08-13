@@ -1427,14 +1427,33 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 		_, _ = h.repo.CreateEnrollment(r.Context(), enr)
 	}
 
+	simActivityFail := r.Header.Get("X-Simulated-Activity-Failure") == "true"
+	maxFailAttempts := 3
+	if maxStr := r.Header.Get("X-Max-Failure-Attempts"); maxStr != "" {
+		if parsed, pErr := strconv.Atoi(maxStr); pErr == nil && parsed > 0 {
+			maxFailAttempts = parsed
+		}
+	}
+	if !simActivityFail && trInput.MockInputs != nil {
+		if val, ok := trInput.MockInputs["simulated_activity_failure"]; ok {
+			strVal := strings.ToLower(fmt.Sprintf("%v", val))
+			simActivityFail = strVal == "true" || strVal == "1"
+		}
+		if val, ok := trInput.MockInputs["max_failure_attempts"]; ok {
+			if parsed, pErr := strconv.Atoi(fmt.Sprintf("%v", val)); pErr == nil && parsed > 0 {
+				maxFailAttempts = parsed
+			}
+		}
+	}
+
+	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	if tc := h.GetTemporalClient(); tc != nil {
+		var rows []map[string]interface{}
 		journeyName := draftID
 		if draftObj, dErr := h.repo.GetJourneyDraft(r.Context(), tenantID, draftID); dErr == nil && draftObj != nil && draftObj.Name != "" {
 			journeyName = draftObj.Name
 		}
-
-		var rows []map[string]interface{}
 		if trInput.StaticListID != "" {
 			dbList, err := h.repo.GetStaticList(r.Context(), tenantID, trInput.StaticListID)
 			if (err != nil || dbList == nil) && tenantID != "default" {
@@ -1444,7 +1463,6 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 				rows = parseStaticListItemsToMaps(dbList.Items)
 			}
 		}
-
 		if len(rows) == 0 {
 			if listArr, ok := trInput.MockInputs["rows"].([]interface{}); ok {
 				for _, r := range listArr {
@@ -1462,6 +1480,14 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 		for idx, rowPayload := range rows {
 			subID := fmt.Sprintf("%s-row-%d", created.TestRunID, idx+1)
 			wfID := fmt.Sprintf("wf-%s-%s", draftID, subID)
+
+			if simActivityFail {
+				if rowPayload == nil {
+					rowPayload = make(map[string]interface{})
+				}
+				rowPayload["simulated_activity_failure"] = true
+				rowPayload["max_failure_attempts"] = maxFailAttempts
+			}
 			opts := client.StartWorkflowOptions{
 				ID:        wfID,
 				TaskQueue: "journey-engine-task-queue",
@@ -1503,7 +1529,6 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
 	resp := domain.TestRun{
 		SchemaVersion:    domain.DefaultSchemaVersion,
 		TestRunID:        created.TestRunID,
