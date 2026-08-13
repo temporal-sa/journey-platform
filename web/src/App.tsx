@@ -871,7 +871,18 @@ export function DashboardContent() {
             />
           )}
 
-          {activeRoute === 'catalog' && <CatalogPage />}
+          {activeRoute === 'catalog' && (
+            <CatalogPage
+              onFireToast={(type, title, message) => {
+                setToastState({
+                  isOpen: true,
+                  messageType: type,
+                  title,
+                  message,
+                });
+              }}
+            />
+          )}
 
           {activeRoute === 'history' && <VersionHistoryPage />}
 

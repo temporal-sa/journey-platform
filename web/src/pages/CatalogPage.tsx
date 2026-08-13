@@ -7,10 +7,10 @@ import type { CatalogRecord } from '../types/api';
 import { PaginatedTable, ColumnDef } from '../components/common/PaginatedTable';
 import { DirectoryLayout } from '../components/common/DirectoryLayout';
 import { Modal } from '../components/common/Modal';
-import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
+import { Button } from '../components/common/Button';
+import { ToastMessageType } from '../components/common/Toast';
 import { CatalogCreationModal } from '../components/catalog/CatalogCreationModal';
-
 const apiClient = new JourneyApiClient();
 
 const getTemplateSubject = (rec: CatalogRecord): string => {
@@ -63,8 +63,11 @@ const DEFAULT_CATALOG_PARAMS = {
   search: '',
   selectedId: '',
 };
+export interface CatalogPageProps {
+  onFireToast?: (type: ToastMessageType, title: string, message: string) => void;
+}
 
-export const CatalogPage: React.FC = () => {
+export const CatalogPage: React.FC<CatalogPageProps> = ({ onFireToast }) => {
   const [params, setParams] = useRouteParams(DEFAULT_CATALOG_PARAMS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -470,6 +473,7 @@ export const CatalogPage: React.FC = () => {
         onSuccess={() => {
           refetch();
         }}
+        onFireToast={onFireToast}
       />
     </DirectoryLayout>
   );

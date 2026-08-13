@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
+import { ToastMessageType } from '../common/Toast';
 import { JourneyApiClient } from '../../api/client';
 import type { CatalogRecord } from '../../types/api';
-
 const apiClient = new JourneyApiClient();
 
 export type CatalogComponentType = 'template' | 'parameter' | 'attribute' | 'event' | 'action' | 'metric';
@@ -13,6 +13,7 @@ export interface CatalogCreationModalProps {
   onClose: () => void;
   defaultType?: string;
   onSuccess?: (createdRecord: CatalogRecord) => void;
+  onFireToast?: (type: ToastMessageType, title: string, message: string) => void;
 }
 
 const mapDefaultTypeToComponentType = (type?: string): CatalogComponentType => {
@@ -51,6 +52,7 @@ export const CatalogCreationModal: React.FC<CatalogCreationModalProps> = ({
   onClose,
   defaultType,
   onSuccess,
+  onFireToast,
 }) => {
   const [componentType, setComponentType] = useState<CatalogComponentType>('template');
   const [name, setName] = useState('');
@@ -160,6 +162,14 @@ export const CatalogCreationModal: React.FC<CatalogCreationModalProps> = ({
       const apiPath = mapComponentTypeToApiPath(componentType);
       const createdRecord = await apiClient.createCatalogItem(apiPath, payload);
 
+      if (onFireToast) {
+        onFireToast(
+          ToastMessageType.SUCCESS,
+          'Component Created Successfully',
+          `Created ${componentType} component "${createdRecord.name || name.trim()}".`
+        );
+      }
+
       if (onSuccess) {
         onSuccess(createdRecord);
       }
@@ -167,6 +177,13 @@ export const CatalogCreationModal: React.FC<CatalogCreationModalProps> = ({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create catalog component. Please check your inputs.';
       setErrorMessage(msg);
+      if (onFireToast) {
+        onFireToast(
+          ToastMessageType.ERROR,
+          'Failed to Create Component',
+          msg
+        );
+      }
     } finally {
       setIsSaving(false);
     }
