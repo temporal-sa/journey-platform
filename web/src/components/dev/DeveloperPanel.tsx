@@ -65,9 +65,23 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   }, [isLogStreamPaused]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (isOpen) {
+      apiClient
+        .getActivityFailureSimulationSetting()
+        .then((setting) => {
+          if (setting) {
+            setIsActivityFailureActive(setting.simulated_activity_failure);
+            if (setting.max_failure_attempts > 0) {
+              setMaxFailureAttempts(setting.max_failure_attempts);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
-    let eventSource: EventSource | null = null;
+  useEffect(() => {
+    if (!isOpen) return;
     try {
       eventSource = new EventSource('/api/v1/logs/stream');
 
@@ -178,12 +192,23 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
     }
   };
 
-  const handleToggleActivityFailure = () => {
+  const handleToggleActivityFailure = async () => {
     const newState = toggleSimulatedActivityFailure();
     setIsActivityFailureActive(newState);
+    const maxAtt = newState ? 99 : maxFailureAttempts;
     if (newState) {
       setMaxFailureAttempts(99);
       setGlobalMaxFailureAttempts(99);
+    }
+    try {
+      await apiClient.updateActivityFailureSimulationSetting({
+        simulated_activity_failure: newState,
+        max_failure_attempts: maxAtt,
+      });
+    } catch {
+      // Ignore
+    }
+    if (newState) {
       onFireToast(
         ToastMessageType.WARNING,
         'Activity Failure Simulation Enabled',
@@ -198,10 +223,18 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
     }
   };
 
-  const handleMaxFailureAttemptsChange = (val: number) => {
+  const handleMaxFailureAttemptsChange = async (val: number) => {
     const clamped = Math.min(99, Math.max(1, val));
     setMaxFailureAttempts(clamped);
     setGlobalMaxFailureAttempts(clamped);
+    try {
+      await apiClient.updateActivityFailureSimulationSetting({
+        simulated_activity_failure: isActivityFailureActive,
+        max_failure_attempts: clamped,
+      });
+    } catch {
+      // Ignore
+    }
   };
   const handleToggleWorker = async () => {
     setIsTogglingWorker(true);

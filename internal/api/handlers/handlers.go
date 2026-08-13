@@ -62,11 +62,14 @@ type Handlers struct {
 	temporalClient client.Client
 	logBuffer      *logging.LogBuffer
 	serviceMutex   sync.Mutex
-
 	workerMu        sync.Mutex
 	workerCmd       *exec.Cmd
 	workerDoneCh    chan struct{}
 	workerStartTime time.Time
+
+	simMu                 sync.Mutex
+	simActivityFailure    bool
+	simMaxFailureAttempts int
 }
 
 // SetLogBuffer attaches a custom LogBuffer instance.
@@ -100,11 +103,12 @@ func New(repo postgres.Repository, comp *compiler.Compiler, logger any) *Handler
 		comp = compiler.New()
 	}
 	return &Handlers{
-		repo:      repo,
-		compiler:  comp,
-		simulator: compiler.NewSimulator(nil),
-		logger:    logger,
-		logBuffer: logging.DefaultBuffer(),
+		repo:                  repo,
+		compiler:              comp,
+		simulator:             compiler.NewSimulator(nil),
+		logger:                logger,
+		logBuffer:             logging.DefaultBuffer(),
+		simMaxFailureAttempts: 99,
 	}
 }
 
@@ -195,5 +199,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 
 	// Log Stream Endpoint
 	r.Get("/api/v1/logs/stream", h.StreamLogs)
+
+	// Simulation Settings Endpoints
+	r.Get("/api/v1/simulation/activity-failure", h.GetActivityFailureSimulationSetting)
+	r.Post("/api/v1/simulation/activity-failure", h.UpdateActivityFailureSimulationSetting)
 }
 

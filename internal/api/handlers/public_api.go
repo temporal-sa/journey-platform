@@ -1446,6 +1446,12 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	h.simMu.Lock()
+	if !simActivityFail && h.simActivityFailure {
+		simActivityFail = true
+		maxFailAttempts = h.simMaxFailureAttempts
+	}
+	h.simMu.Unlock()
 	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	if tc := h.GetTemporalClient(); tc != nil {

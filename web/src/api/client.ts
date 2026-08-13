@@ -345,6 +345,22 @@ export class JourneyApiClient {
     return res.data;
   }
 
+  // Activity Failure Simulation Settings
+  async getActivityFailureSimulationSetting(headers?: StandardHeaders): Promise<{ simulated_activity_failure: boolean; max_failure_attempts: number }> {
+    const res = await this.request<{ simulated_activity_failure: boolean; max_failure_attempts: number }>('/simulation/activity-failure', { method: 'GET' }, headers);
+    return res.data;
+  }
+
+  async updateActivityFailureSimulationSetting(
+    config: { simulated_activity_failure: boolean; max_failure_attempts?: number },
+    headers?: StandardHeaders
+  ): Promise<{ simulated_activity_failure: boolean; max_failure_attempts: number }> {
+    const res = await this.request<{ simulated_activity_failure: boolean; max_failure_attempts: number }>('/simulation/activity-failure', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    }, headers);
+    return res.data;
+  }
   // Journey Runs
   async listJourneyRuns(params?: { workflowId?: string; status?: string }, headers?: StandardHeaders): Promise<RunProjection[]> {
     const query = new URLSearchParams();
