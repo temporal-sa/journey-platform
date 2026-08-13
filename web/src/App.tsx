@@ -715,7 +715,7 @@ export function DashboardContent() {
       {isSidebarOpen && (
         <aside
           aria-label="Main Sidebar Navigation"
-          className="w-[17rem] bg-[#0a0e18] border-r border-[#464554] flex flex-col h-full overflow-y-auto shrink-0 z-40"
+          className="w-64 bg-[#0a0e18] border-r border-[#464554] flex flex-col h-full overflow-y-auto shrink-0 z-40"
         >
           {/* Top Brand & Action Header */}
           <div className="p-4 space-y-4">
