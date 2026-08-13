@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { useEditorStore } from './stores/editorStore';
+import { useEditorStore, loadLastJourneyFromStorage, saveLastJourneyToStorage } from './stores/editorStore';
 import {
   JourneysPage,
   CatalogPage,
@@ -266,18 +266,26 @@ export function DashboardContent() {
     };
   }, []);
   useEffect(() => {
-    if (!currentDraft) {
-      setDraft({
-        schema_version: '1.0',
-        draft_id: 'draft-101',
-        tenant_id: 'default',
-        name: 'Onboarding Flow',
-        version: 1,
-        nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
-        edges: [],
-      });
+    if (!currentDraft && activeRoute === 'canvas') {
+      const savedDraft = loadLastJourneyFromStorage();
+      if (savedDraft) {
+        setDraft(savedDraft);
+      } else {
+        const newDraftId = `draft-${Date.now()}`;
+        const newDraft: GraphDraft = {
+          schema_version: '1.0',
+          draft_id: newDraftId,
+          tenant_id: 'default',
+          name: 'New Journey',
+          version: 1,
+          nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
+          edges: [],
+        };
+        setDraft(newDraft);
+        saveLastJourneyToStorage(newDraft);
+      }
     }
-  }, [currentDraft, setDraft]);
+  }, [currentDraft, activeRoute, setDraft]);
 
   // Save Progress State
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');

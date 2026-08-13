@@ -208,4 +208,27 @@ describe('App & Foundation Components', () => {
     expect(screen.getByTestId('app-toast-notification')).toBeInTheDocument();
     expect(screen.getByText('Journey Renamed Successfully')).toBeInTheDocument();
   });
+
+  it('persists last edited journey to localStorage and loads it when going to canvas', async () => {
+    localStorage.clear();
+
+    const mockDraft = {
+      schema_version: '1.0',
+      draft_id: 'draft-persist-999',
+      tenant_id: 'default',
+      name: 'Persisted Test Journey',
+      version: 1,
+      nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
+      edges: [],
+    };
+    localStorage.setItem('journey_engine_last_edited_journey', JSON.stringify(mockDraft));
+
+    render(<App />);
+    const canvasNavBtn = screen.getByRole('button', { name: 'Journey Canvas' });
+    fireEvent.click(canvasNavBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Journey name: Persisted Test Journey/i })).toBeInTheDocument();
+    });
+  });
 });

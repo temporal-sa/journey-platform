@@ -878,7 +878,52 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
       ...initialInspectorEditsState,
     }),
 }));
+export const STORAGE_KEY_LAST_JOURNEY = 'journey_engine_last_edited_journey';
+
+export function saveLastJourneyToStorage(draft: GraphDraft) {
+  if (typeof window !== 'undefined' && window.localStorage && draft && draft.draft_id) {
+    try {
+      localStorage.setItem(STORAGE_KEY_LAST_JOURNEY, JSON.stringify(draft));
+      localStorage.setItem('journey_engine_last_journey_id', draft.draft_id);
+    } catch {
+      // Ignore quota or security errors
+    }
+  }
+}
+
+export function loadLastJourneyFromStorage(): GraphDraft | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_LAST_JOURNEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.draft_id && Array.isArray(parsed.nodes)) {
+          return parsed as GraphDraft;
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+  return null;
+}
+
+export function clearLastJourneyFromStorage() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.removeItem(STORAGE_KEY_LAST_JOURNEY);
+      localStorage.removeItem('journey_engine_last_journey_id');
+    } catch {
+      // Ignore
+    }
+  }
+}
 
 if (typeof window !== 'undefined') {
   (window as any).useEditorStore = useEditorStore;
+  useEditorStore.subscribe((state) => {
+    if (state.currentDraft && state.currentDraft.draft_id) {
+      saveLastJourneyToStorage(state.currentDraft);
+    }
+  });
 }
