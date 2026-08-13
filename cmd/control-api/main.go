@@ -23,9 +23,9 @@ import (
 )
 
 func main() {
-	port := os.Getenv("PORT")
+	port := os.Getenv("CONTROL_API_PORT")
 	if port == "" {
-		port = os.Getenv("CONTROL_API_PORT")
+		port = os.Getenv("PORT")
 	}
 	if port == "" {
 		port = "8080"
