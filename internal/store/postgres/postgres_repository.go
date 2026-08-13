@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // PostgresRepository implements the Repository interface backed by a relational PostgreSQL database via DBTX.
@@ -64,10 +66,10 @@ func (r *PostgresRepository) CreateCatalog(ctx context.Context, c *Catalog) (*Ca
 		INSERT INTO catalogs (tenant_id, record_id, name, component_type, version, description, schema_definition, content_hash, tags, is_deprecated, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING tenant_id, record_id, name, component_type, version, description, schema_definition, content_hash, tags, is_deprecated, created_at, updated_at
-	`, c.TenantID, c.RecordID, c.Name, c.ComponentType, c.Version, c.Description, c.SchemaDefinition, c.ContentHash, c.Tags, c.IsDeprecated, c.CreatedAt, c.UpdatedAt)
+	`, c.TenantID, c.RecordID, c.Name, c.ComponentType, c.Version, c.Description, c.SchemaDefinition, c.ContentHash, pq.Array(c.Tags), c.IsDeprecated, c.CreatedAt, c.UpdatedAt)
 
 	var res Catalog
-	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, &res.Tags, &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
+	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, pq.Array(&res.Tags), &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return nil, fmt.Errorf("%w: %w", ErrAlreadyExists, err)
@@ -84,7 +86,7 @@ func (r *PostgresRepository) GetCatalog(ctx context.Context, tenantID, recordID 
 	`, tenantID, recordID)
 
 	var res Catalog
-	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, &res.Tags, &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
+	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, pq.Array(&res.Tags), &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -107,7 +109,7 @@ func (r *PostgresRepository) ListCatalogs(ctx context.Context, tenantID string) 
 	var list []Catalog
 	for rows.Next() {
 		var c Catalog
-		if err := rows.Scan(&c.TenantID, &c.RecordID, &c.Name, &c.ComponentType, &c.Version, &c.Description, &c.SchemaDefinition, &c.ContentHash, &c.Tags, &c.IsDeprecated, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.TenantID, &c.RecordID, &c.Name, &c.ComponentType, &c.Version, &c.Description, &c.SchemaDefinition, &c.ContentHash, pq.Array(&c.Tags), &c.IsDeprecated, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, c)
@@ -121,10 +123,10 @@ func (r *PostgresRepository) UpdateCatalog(ctx context.Context, c *Catalog) (*Ca
 		SET name = $3, component_type = $4, version = $5, description = $6, schema_definition = $7, content_hash = $8, tags = $9, is_deprecated = $10, updated_at = $11
 		WHERE tenant_id = $1 AND record_id = $2
 		RETURNING tenant_id, record_id, name, component_type, version, description, schema_definition, content_hash, tags, is_deprecated, created_at, updated_at
-	`, c.TenantID, c.RecordID, c.Name, c.ComponentType, c.Version, c.Description, c.SchemaDefinition, c.ContentHash, c.Tags, c.IsDeprecated, c.UpdatedAt)
+	`, c.TenantID, c.RecordID, c.Name, c.ComponentType, c.Version, c.Description, c.SchemaDefinition, c.ContentHash, pq.Array(c.Tags), c.IsDeprecated, c.UpdatedAt)
 
 	var res Catalog
-	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, &res.Tags, &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
+	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, pq.Array(&res.Tags), &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
