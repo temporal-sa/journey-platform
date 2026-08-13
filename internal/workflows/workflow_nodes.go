@@ -289,7 +289,6 @@ func ExecuteChannelActionNode(
 			InitialInterval:    100 * time.Millisecond,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    1 * time.Second,
-			MaximumAttempts:    3,
 		},
 	}
 	gwCtx := workflow.WithActivityOptions(ctx, gwAo)

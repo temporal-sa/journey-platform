@@ -16,7 +16,6 @@ func WithActivitySummary(ctx workflow.Context, summary string) workflow.Context 
 			InitialInterval:    100 * time.Millisecond,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    1 * time.Second,
-			MaximumAttempts:    3,
 		},
 	}
 	return workflow.WithActivityOptions(ctx, ao)

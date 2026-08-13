@@ -103,7 +103,6 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 			InitialInterval:    100 * time.Millisecond,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    1 * time.Second,
-			MaximumAttempts:    3,
 		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
@@ -124,7 +123,6 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 			InitialInterval:    100 * time.Millisecond,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    1 * time.Second,
-			MaximumAttempts:    3,
 		},
 	}
 	loadCtx := workflow.WithActivityOptions(ctx, loadAo)
@@ -426,7 +424,6 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 						InitialInterval:    100 * time.Millisecond,
 						BackoffCoefficient: 2.0,
 						MaximumInterval:    1 * time.Second,
-						MaximumAttempts:    3,
 					},
 				}
 				condCtx := workflow.WithActivityOptions(ctx, condAo)
