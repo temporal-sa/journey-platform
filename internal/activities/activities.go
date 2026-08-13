@@ -708,8 +708,8 @@ func getExecuteNodeSimulatedFailureConfig(input ExecuteNodeInput) (enabled bool,
 
 	if maxAttempts < 1 {
 		maxAttempts = 1
-	} else if maxAttempts > 10 {
-		maxAttempts = 10
+	} else if maxAttempts > 9999 {
+		maxAttempts = 9999
 	}
 
 	return enabled, maxAttempts
