@@ -238,6 +238,18 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
       subtitle="Browse, search, and manage all event-driven journey workflows."
       icon="account_tree"
       iconAccentColor="#ddb7ff"
+      headerActions={
+        <Button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          variant="primary-purple"
+          icon="add"
+          data-testid="create-journey-btn"
+          className="font-bold cursor-pointer"
+        >
+          New Journey
+        </Button>
+      }
       controls={
         <>
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
@@ -276,16 +288,6 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
             icon="filter_alt_off"
             data-testid="journeys-clear-filters-btn"
           />
-
-          <Button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            variant="primary-purple"
-            icon="add"
-            data-testid="create-journey-btn"
-          >
-            New Journey
-          </Button>
         </>
       }
     >
