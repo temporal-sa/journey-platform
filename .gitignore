@@ -50,14 +50,14 @@ yarn-error.log*
 # ==========================================
 # Go Binaries & Execution Artifacts
 # ==========================================
-bin/
-fake-provider
-control-api
-event-ingress
-journey-worker
-outcome-ingress
-report-materializer
-target-dispatcher
+/bin/
+/fake-provider
+/control-api
+/event-ingress
+/journey-worker
+/outcome-ingress
+/report-materializer
+/target-dispatcher
 *.exe
 *.dll
 *.so
