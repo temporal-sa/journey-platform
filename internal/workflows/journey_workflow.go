@@ -82,6 +82,12 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting CompiledJourneyWorkflow", "workflowID", input.WorkflowID, "runID", input.RunID, "contentHash", input.ContentHash)
 
+	if !workflow.IsReplaying(ctx) {
+		_ = workflow.UpsertSearchAttributes(ctx, map[string]interface{}{
+			"JourneyName":        input.ContentHash,
+			"InternalWorkflowID": input.WorkflowID,
+		})
+	}
 	if input.WorkflowID == "" || input.RunID == "" || input.ContentHash == "" {
 		return &CompiledJourneyResult{
 			RunID:        input.RunID,

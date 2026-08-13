@@ -358,3 +358,9 @@ export interface PauseResponse {
   status: string;
   paused_at: string;
 }
+
+export interface WorkerStatusResponse {
+  status: 'running' | 'stopped';
+  pid: number;
+  uptime_seconds: number;
+}

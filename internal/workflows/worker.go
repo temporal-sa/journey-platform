@@ -7,13 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
 	"github.com/validated-pattern/journey-platform/internal/activities"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"go.opentelemetry.io/otel"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/contrib/opentelemetry"
+	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 )
-
 // WorkerConfig holds configuration for the Temporal journey worker.
 type WorkerConfig struct {
 	HostPort                string
@@ -52,6 +54,14 @@ func DefaultWorkerConfig() WorkerConfig {
 	}
 }
 
+// CreateTemporalTracingInterceptor initializes an OpenTelemetry tracing interceptor for Temporal client/worker.
+func CreateTemporalTracingInterceptor() (interceptor.Interceptor, error) {
+	return opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
+		TextMapPropagator:       otel.GetTextMapPropagator(),
+		AllowInvalidParentSpans: true,
+	})
+}
+
 // BootstrapWorker initializes the Temporal Client with data converter isolation and registers all workflows and activities.
 func BootstrapWorker(cfg WorkerConfig, repos ...postgres.Repository) (worker.Worker, client.Client, error) {
 	isoConverter := NewIsolatedDataConverter(nil)
@@ -61,6 +71,11 @@ func BootstrapWorker(cfg WorkerConfig, repos ...postgres.Repository) (worker.Wor
 		Namespace:     cfg.Namespace,
 		DataConverter: isoConverter,
 		Identity:      cfg.Identity,
+	}
+
+	tracingInterceptor, errTr := CreateTemporalTracingInterceptor()
+	if errTr == nil && tracingInterceptor != nil {
+		clientOpts.Interceptors = append(clientOpts.Interceptors, tracingInterceptor)
 	}
 
 	c, err := client.Dial(clientOpts)
@@ -73,10 +88,11 @@ func BootstrapWorker(cfg WorkerConfig, repos ...postgres.Repository) (worker.Wor
 		MaxConcurrentActivityExecutionSize:     cfg.MaxConcurrentActivities,
 		MaxConcurrentWorkflowTaskExecutionSize: cfg.MaxConcurrentWorkflows,
 	}
+	if errTr == nil && tracingInterceptor != nil {
+		workerOpts.Interceptors = append(workerOpts.Interceptors, tracingInterceptor)
+	}
 
 	w := worker.New(c, cfg.TaskQueue, workerOpts)
-
-	// Register Workflow
 	w.RegisterWorkflow(CompiledJourneyWorkflow)
 
 	// Register Activities
@@ -126,7 +142,7 @@ func RunWorkerWithGracefulDrain(ctx context.Context, w worker.Worker) error {
 
 	select {
 	case sig := <-sigCh:
-		fmt.Printf("\n[Worker] Received signal %v, starting graceful drain...\n", sig)
+		logging.Info().Interface("signal", sig).Msg("Received signal, starting graceful worker drain")
 		w.Stop()
 		return nil
 	case err := <-errCh:
@@ -135,7 +151,7 @@ func RunWorkerWithGracefulDrain(ctx context.Context, w worker.Worker) error {
 		}
 		return nil
 	case <-ctx.Done():
-		fmt.Println("\n[Worker] Context canceled, stopping worker...")
+		logging.Info().Msg("Context canceled, stopping worker")
 		w.Stop()
 		return ctx.Err()
 	}

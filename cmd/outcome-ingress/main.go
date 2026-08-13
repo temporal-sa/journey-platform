@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,11 +14,15 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
 	"github.com/validated-pattern/journey-platform/internal/api/handlers"
+	appMiddleware "github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/compiler"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 )
 
 func main() {
+	logging.Init(false)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = os.Getenv("OUTCOME_INGRESS_PORT")
@@ -56,15 +59,19 @@ func main() {
 	var storeRepo postgres.Repository
 	db, err := sql.Open("postgres", dsn)
 	if err == nil && db != nil {
-		storeRepo = postgres.NewPostgresRepository(db)
+		tracedDB := postgres.NewTracedDB(db)
+		storeRepo = postgres.NewPostgresRepository(tracedDB)
 	} else {
+		logging.Debug().Err(err).Msg("Postgres repository connection error, falling back to in-memory repository")
 		storeRepo = postgres.NewMemoryRepository()
 	}
 
 	h := handlers.New(storeRepo, compiler.New(), nil)
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(appMiddleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(appMiddleware.RequestLogger(nil))
 	r.Use(middleware.Recoverer)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -80,11 +87,11 @@ func main() {
 		Handler: r,
 	}
 
-	log.Printf("Starting outcome-ingress service on port %s...", port)
+	logging.Info().Str("service", "outcome-ingress").Str("port", port).Msg(fmt.Sprintf("Starting outcome-ingress service on port %s...", port))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Outcome-Ingress server failed: %v", err)
+			logging.Fatal().Err(err).Msg("Outcome-Ingress server failed")
 		}
 	}()
 
@@ -92,7 +99,7 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
-	log.Println("Shutting down outcome-ingress gracefully...")
+	logging.Info().Str("service", "outcome-ingress").Msg("Shutting down outcome-ingress gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = server.Shutdown(ctx)

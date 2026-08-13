@@ -50,6 +50,7 @@ type Activities struct {
 	assignmentService *experiments.AssignmentService
 	exposureService   *outcomes.ExposureService
 	actionGateway     *ActionGateway
+	failureTracker    *FailureTracker
 	serviceMutex      sync.Mutex
 }
 
@@ -60,6 +61,7 @@ func (a *Activities) SetRepository(repo postgres.Repository) {
 // NewActivities returns a new Activities instance.
 func NewActivities(opts ...PolicyServiceOption) *Activities {
 	repo := postgres.NewMemoryRepository()
+	ft := NewFailureTracker()
 	return &Activities{
 		repo:              repo,
 		policyService:     NewPolicyService(opts...),
@@ -73,7 +75,8 @@ func NewActivities(opts ...PolicyServiceOption) *Activities {
 		subscriptions:     make(map[string]SubscriptionRecord),
 		assignmentService: experiments.NewAssignmentService(repo),
 		exposureService:   outcomes.NewExposureService(repo),
-		actionGateway:     NewActionGateway(),
+		actionGateway:     NewActionGateway(WithFailureTracker(ft)),
+		failureTracker:    ft,
 	}
 }
 
@@ -194,8 +197,21 @@ type ExecuteNodeInput struct {
 
 // ExecuteNode executes an IR node step.
 func (a *Activities) ExecuteNode(ctx context.Context, input ExecuteNodeInput) (domain.ActionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Executing activity node", "nodeID", input.Node.ID, "activityName", input.Node.ActivityName)
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Executing activity node", "nodeID", input.Node.ID, "activityName", input.Node.ActivityName)
+	}
+	enabled, maxAttempts := getExecuteNodeSimulatedFailureConfig(input)
+	if enabled {
+		nodeKey := fmt.Sprintf("node:%s:%s", input.RunID, input.Node.ID)
+		if input.RunID == "" {
+			nodeKey = fmt.Sprintf("node:%s", input.Node.ID)
+		}
+		attempt := a.getFailureTracker().IncrementAndGet(nodeKey)
+		if attempt <= maxAttempts {
+			return domain.ActionResult{}, fmt.Errorf("simulated activity execution failure attempt %d/%d", attempt, maxAttempts)
+		}
+	}
 
 	now := time.Now().UTC()
 	return domain.ActionResult{
@@ -228,13 +244,9 @@ func (a *Activities) EvaluateCondition(ctx context.Context, input EvaluateCondit
 		return false, nil
 	}
 
-	exprToParse := exprStr
-	if !strings.Contains(exprStr, ".") {
-		exprToParse = "event." + exprStr
-	}
-	astNode, err := expression.Parse(exprToParse)
-	if err != nil {
-		astNode, err = expression.Parse(exprStr)
+	astNode, err := expression.Parse(exprStr)
+	if err != nil && !strings.Contains(exprStr, ".") {
+		astNode, err = expression.Parse("event." + exprStr)
 	}
 	if err != nil {
 		return false, nil
@@ -244,7 +256,9 @@ func (a *Activities) EvaluateCondition(ctx context.Context, input EvaluateCondit
 	flattened := domain.FlattenPayloadContext(input.Context)
 	for k, v := range flattened {
 		evalCtx.Event[k] = v
+		evalCtx.Event["event."+k] = v
 		evalCtx.Subject[k] = v
+		evalCtx.Subject["subject."+k] = v
 		evalCtx.NodeOutput[k] = v
 		evalCtx.Parameter[k] = v
 	}
@@ -592,5 +606,111 @@ func (a *Activities) GetSubscriptions() []SubscriptionRecord {
 		res = append(res, sub)
 	}
 	return res
+}
+// FailureTracker manages thread-safe attempt counts per execution/action.
+type FailureTracker struct {
+	mu       sync.Mutex
+	attempts map[string]int
+}
+
+// NewFailureTracker creates a new FailureTracker.
+func NewFailureTracker() *FailureTracker {
+	return &FailureTracker{
+		attempts: make(map[string]int),
+	}
+}
+
+// IncrementAndGet increments the attempt count for key and returns the new value.
+func (ft *FailureTracker) IncrementAndGet(key string) int {
+	ft.mu.Lock()
+	defer ft.mu.Unlock()
+	ft.attempts[key]++
+	return ft.attempts[key]
+}
+
+// Reset clears the attempt count for key.
+func (ft *FailureTracker) Reset(key string) {
+	ft.mu.Lock()
+	defer ft.mu.Unlock()
+	delete(ft.attempts, key)
+}
+
+func (a *Activities) getFailureTracker() *FailureTracker {
+	a.serviceMutex.Lock()
+	defer a.serviceMutex.Unlock()
+	if a.failureTracker == nil {
+		a.failureTracker = NewFailureTracker()
+	}
+	return a.failureTracker
+}
+
+func parseBool(v interface{}) bool {
+	if v == nil {
+		return false
+	}
+	switch val := v.(type) {
+	case bool:
+		return val
+	case string:
+		s := strings.ToLower(strings.TrimSpace(val))
+		return s == "true" || s == "1" || s == "yes"
+	case int:
+		return val != 0
+	case int64:
+		return val != 0
+	case float64:
+		return val != 0
+	default:
+		return false
+	}
+}
+
+func parseInt(v interface{}) int {
+	if v == nil {
+		return 0
+	}
+	switch val := v.(type) {
+	case int:
+		return val
+	case int64:
+		return int(val)
+	case float64:
+		return int(val)
+	case string:
+		var n int
+		if _, err := fmt.Sscanf(strings.TrimSpace(val), "%d", &n); err == nil {
+			return n
+		}
+	}
+	return 0
+}
+
+func getExecuteNodeSimulatedFailureConfig(input ExecuteNodeInput) (enabled bool, maxAttempts int) {
+	maxAttempts = 3 // default
+
+	checkMap := func(m map[string]interface{}) {
+		if m == nil {
+			return
+		}
+		if val, ok := m["simulated_activity_failure"]; ok {
+			enabled = parseBool(val)
+		}
+		if val, ok := m["max_failure_attempts"]; ok {
+			if parsed := parseInt(val); parsed > 0 {
+				maxAttempts = parsed
+			}
+		}
+	}
+
+	checkMap(input.Node.Params)
+	checkMap(input.Params)
+
+	if maxAttempts < 1 {
+		maxAttempts = 1
+	} else if maxAttempts > 10 {
+		maxAttempts = 10
+	}
+
+	return enabled, maxAttempts
 }
 

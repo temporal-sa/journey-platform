@@ -214,6 +214,16 @@ services:
       timeout: 5s
       retries: 10
 
+  temporal-init:
+    image: temporalio/admin-tools:latest
+    container_name: journey-temporal-init
+    depends_on:
+      - temporal
+    volumes:
+      - ./scripts/init-temporal-search-attributes.sh:/scripts/init-temporal-search-attributes.sh:ro
+    entrypoint: ["/scripts/init-temporal-search-attributes.sh"]
+    environment:
+      TEMPORAL_ADDRESS: "temporal:7233"
   # ---------------------------------------------------------------------------
   # Local Fake Provider Service
   # ---------------------------------------------------------------------------

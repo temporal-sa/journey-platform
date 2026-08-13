@@ -9,6 +9,10 @@ import (
 	"net/smtp"
 	"os"
 	"time"
+
+	"github.com/validated-pattern/journey-platform/internal/api/middleware"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // MailpitClient handles routing local email previews to Mailpit via HTTP or SMTP.
@@ -80,6 +84,8 @@ func (m *MailpitClient) RoutePreview(ctx context.Context, from, to, subject, bod
 		req, reqErr := http.NewRequestWithContext(ctx, "POST", httpEndpoint, bytes.NewBuffer(payloadBytes))
 		if reqErr == nil {
 			req.Header.Set("Content-Type", "application/json")
+			middleware.InjectHTTPHeaders(ctx, req)
+			otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 			resp, err := m.client.Do(req)
 			if err == nil {
 				resp.Body.Close()

@@ -380,3 +380,102 @@ func TestActionRequest_IdempotencyKey(t *testing.T) {
 		t.Errorf("expected key %s, got %s", expected, req.IdempotencyKey())
 	}
 }
+func TestGateway_SimulatedActivityFailure(t *testing.T) {
+	ledger := NewMemoryActionLedgerStore()
+	provider := &MockProvider{
+		dispatchResp: &ProviderResponse{
+			Status:     LedgerStatusAccepted,
+			ReasonCode: ReasonAllowed,
+		},
+	}
+	gw := NewActionGateway(
+		WithLedgerStore(ledger),
+		WithProvider(provider),
+	)
+
+	req := ActionRequest{
+		TenantID:                 "tenant-sim",
+		WorkflowID:               "wf-sim-101",
+		JourneyVersion:           "1.0",
+		NodeID:                   "node-email-sim",
+		NodeVisit:                1,
+		ActionVersion:            "1.0",
+		TemplateVersion:          "v1.0",
+		SubjectRef:               "user-sim",
+		ExecutionMode:            ExecutionModeProduction,
+		SimulatedActivityFailure: true,
+		MaxFailureAttempts:       2,
+	}
+
+	// Attempt 1: should return simulated failure error
+	res1, err1 := gw.ExecuteAction(context.Background(), req)
+	if err1 == nil {
+		t.Fatalf("expected error on attempt 1, got result: %+v", res1)
+	}
+	if err1.Error() != "simulated activity execution failure attempt 1/2" {
+		t.Errorf("unexpected error on attempt 1: %v", err1)
+	}
+
+	// Attempt 2: should return simulated failure error
+	res2, err2 := gw.ExecuteAction(context.Background(), req)
+	if err2 == nil {
+		t.Fatalf("expected error on attempt 2, got result: %+v", res2)
+	}
+	if err2.Error() != "simulated activity execution failure attempt 2/2" {
+		t.Errorf("unexpected error on attempt 2: %v", err2)
+	}
+
+	// Attempt 3: should succeed as max_failure_attempts (2) is exceeded
+	res3, err3 := gw.ExecuteAction(context.Background(), req)
+	if err3 != nil {
+		t.Fatalf("expected attempt 3 to succeed, got error: %v", err3)
+	}
+	if res3.Status != LedgerStatusAccepted {
+		t.Errorf("expected status %s, got %s", LedgerStatusAccepted, res3.Status)
+	}
+}
+
+func TestGateway_SimulatedActivityFailureParameterRefs(t *testing.T) {
+	ledger := NewMemoryActionLedgerStore()
+	provider := &MockProvider{
+		dispatchResp: &ProviderResponse{
+			Status:     LedgerStatusAccepted,
+			ReasonCode: ReasonAllowed,
+		},
+	}
+	gw := NewActionGateway(
+		WithLedgerStore(ledger),
+		WithProvider(provider),
+	)
+
+	req := ActionRequest{
+		TenantID:        "tenant-sim-params",
+		WorkflowID:      "wf-sim-102",
+		JourneyVersion:  "1.0",
+		NodeID:          "node-push-sim",
+		NodeVisit:       1,
+		ActionVersion:   "1.0",
+		TemplateVersion: "v1.0",
+		SubjectRef:      "user-sim-params",
+		ExecutionMode:   ExecutionModeProduction,
+		ParameterRefs: map[string]interface{}{
+			"simulated_activity_failure": "true",
+			"max_failure_attempts":       1,
+		},
+	}
+
+	// Attempt 1: should fail
+	_, err1 := gw.ExecuteAction(context.Background(), req)
+	if err1 == nil || err1.Error() != "simulated activity execution failure attempt 1/1" {
+		t.Fatalf("expected attempt 1 failure, got %v", err1)
+	}
+
+	// Attempt 2: should succeed
+	res2, err2 := gw.ExecuteAction(context.Background(), req)
+	if err2 != nil {
+		t.Fatalf("expected attempt 2 success, got %v", err2)
+	}
+	if res2.Status != LedgerStatusAccepted {
+		t.Errorf("expected status %s, got %s", LedgerStatusAccepted, res2.Status)
+	}
+}

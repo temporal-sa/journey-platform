@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
@@ -6,10 +6,23 @@ import { ToastMessageType } from '../common/Toast';
 import { BUILD_TAG } from '../../buildTag';
 import { useEditorStore } from '../../stores/editorStore';
 import { apiClient } from '../../api/client';
+import { WorkerStatusResponse } from '../../types/api';
 import {
   isSimulatedApiFailureEnabled,
   toggleSimulatedApiFailure,
+  isSimulatedActivityFailureEnabled,
+  toggleSimulatedActivityFailure,
+  getGlobalMaxFailureAttempts,
+  setGlobalMaxFailureAttempts,
 } from '../../api/simulatedFailure';
+export interface LogStreamEntry {
+  id: string;
+  timestamp: string;
+  level: string;
+  message: string;
+  raw?: string;
+  fields?: Record<string, any>;
+}
 
 export interface DeveloperPanelProps {
   isOpen: boolean;
@@ -23,6 +36,8 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   onFireToast,
 }) => {
   const [isApiFailureActive, setIsApiFailureActive] = useState<boolean>(isSimulatedApiFailureEnabled());
+  const [isActivityFailureActive, setIsActivityFailureActive] = useState<boolean>(isSimulatedActivityFailureEnabled());
+  const [maxFailureAttempts, setMaxFailureAttempts] = useState<number>(getGlobalMaxFailureAttempts());
   const [eventType, setEventType] = useState<string>('order.completed');
   const [source, setSource] = useState<string>('web_control_panel');
   const [schemaVersion, setSchemaVersion] = useState<string>('1.0');
@@ -33,11 +48,116 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   const [traceId, setTraceId] = useState<string>('');
   const [payloadJson, setPayloadJson] = useState<string>('{\n  "amount": 149.99,\n  "currency": "USD"\n}');
   const [isEmitting, setIsEmitting] = useState<boolean>(false);
+  const [workerStatus, setWorkerStatus] = useState<WorkerStatusResponse>({
+    status: 'stopped',
+    pid: 0,
+    uptime_seconds: 0,
+  });
+  const [isTogglingWorker, setIsTogglingWorker] = useState<boolean>(false);
   const currentDraft = useEditorStore((s) => s.currentDraft);
+  const [logs, setLogs] = useState<LogStreamEntry[]>([]);
+  const [isLogStreamPaused, setIsLogStreamPaused] = useState<boolean>(false);
+  const isPausedRef = useRef<boolean>(isLogStreamPaused);
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    isPausedRef.current = isLogStreamPaused;
+  }, [isLogStreamPaused]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/v1/logs/stream');
+
+      eventSource.onmessage = (event) => {
+        if (isPausedRef.current) return;
+        try {
+          const data = JSON.parse(event.data);
+          const newEntry: LogStreamEntry = {
+            id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            timestamp: data.timestamp || new Date().toISOString(),
+            level: (data.level || 'info').toLowerCase(),
+            message: data.message || data.raw || JSON.stringify(data),
+            fields: data.fields,
+            raw: data.raw,
+          };
+          setLogs((prev) => [...prev.slice(-499), newEntry]);
+        } catch {
+          // ignore parse errors
+        }
+      };
+    } catch (e) {
+      console.error('Failed to connect log stream', e);
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isLogStreamPaused && terminalEndRef.current) {
+      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs, isLogStreamPaused]);
+
+  const getSeverityStyle = (level: string) => {
+    const l = (level || '').toLowerCase();
+    if (l === 'error' || l === 'fatal' || l === 'panic') {
+      return {
+        badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        text: 'text-rose-400',
+        label: 'ERROR',
+      };
+    }
+    if (l === 'warn' || l === 'warning') {
+      return {
+        badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        text: 'text-amber-400',
+        label: 'WARN',
+      };
+    }
+    return {
+      badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+      text: 'text-cyan-400',
+      label: 'INFO',
+    };
+  };
   useEffect(() => {
     if (isOpen) {
       setIsApiFailureActive(isSimulatedApiFailureEnabled());
+      apiClient
+        .getWorkerStatus()
+        .then((res) => {
+          if (res) setWorkerStatus(res);
+        })
+        .catch(() => {});
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || typeof EventSource === 'undefined') return;
+
+    const eventSource = new EventSource('/api/v1/worker/status/stream');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data && typeof data.status === 'string') {
+          setWorkerStatus(data);
+        }
+      } catch {
+        // SSE parse error ignored
+      }
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, [isOpen]);
 
   const handleToggleApiFailure = () => {
@@ -55,6 +175,60 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
         'API Failure Mode Disabled',
         'Normal backend client network requests restored.'
       );
+    }
+  };
+
+  const handleToggleActivityFailure = () => {
+    const newState = toggleSimulatedActivityFailure();
+    setIsActivityFailureActive(newState);
+    if (newState) {
+      onFireToast(
+        ToastMessageType.WARNING,
+        'Activity Failure Simulation Enabled',
+        'Backend activities will simulate failure retries up to the specified max attempts.'
+      );
+    } else {
+      onFireToast(
+        ToastMessageType.INFO,
+        'Activity Failure Simulation Disabled',
+        'Normal backend activity execution restored.'
+      );
+    }
+  };
+
+  const handleMaxFailureAttemptsChange = (val: number) => {
+    const clamped = Math.min(10, Math.max(1, val));
+    setMaxFailureAttempts(clamped);
+    setGlobalMaxFailureAttempts(clamped);
+  };
+  const handleToggleWorker = async () => {
+    setIsTogglingWorker(true);
+    try {
+      if (workerStatus.status === 'running') {
+        const res = await apiClient.stopWorker();
+        setWorkerStatus(res);
+        onFireToast(
+          ToastMessageType.INFO,
+          'Temporal Worker Stopped',
+          'journey-worker process stopped cleanly.'
+        );
+      } else {
+        const res = await apiClient.startWorker();
+        setWorkerStatus(res);
+        onFireToast(
+          ToastMessageType.SUCCESS,
+          'Temporal Worker Started',
+          `journey-worker process spawned with PID ${res.pid}.`
+        );
+      }
+    } catch (err: any) {
+      onFireToast(
+        ToastMessageType.ERROR,
+        'Worker Control Failed',
+        err?.message || 'Failed to toggle journey-worker process.'
+      );
+    } finally {
+      setIsTogglingWorker(false);
     }
   };
   const handleEmitEvent = async () => {
@@ -103,7 +277,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
       const generatedTraceId = traceId.trim() || `trace-${Date.now()}`;
 
       await apiClient.emitKafkaTestEvent({
-        schema_version: schemaVersion || '1.0',
+        schema_version: (schemaVersion || '1.0') as '1.0',
         event_id: generatedEvtId,
         trace_id: generatedTraceId,
         event_type: eventType.trim(),
@@ -199,6 +373,136 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
               }`}
             >
               {isApiFailureActive ? 'Disable Failure Mode' : 'Enable Failure Mode'}
+            </Button>
+          </div>
+        </div>
+        {/* Section 1b: Activity Failure Simulation Mode */}
+        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md" data-testid="activity-failure-simulation-card">
+          <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-[#464554]/30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-none bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <span className="material-symbols-outlined text-lg">sync_problem</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
+                  <span>Activity Failure Simulation Mode</span>
+                </h3>
+                <p className="text-xs text-[#908fa0] mt-0.5">
+                  Simulate activity execution retries and fault injection across backend activities.
+                </p>
+              </div>
+            </div>
+
+            {/* Status Badge */}
+            {isActivityFailureActive ? (
+              <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-none animate-pulse flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                ACTIVE
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-[#171b26] text-[#908fa0] border border-[#464554]/50 rounded-none">
+                DISABLED
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-xs text-[#c7c4d7] leading-relaxed flex-1">
+              When enabled, backend activities simulate execution failures up to max retry attempts so Temporal retries or records activity failure.
+            </p>
+
+            <Button
+              type="button"
+              onClick={handleToggleActivityFailure}
+              data-testid="toggle-activity-failure-btn"
+              variant={isActivityFailureActive ? 'warning' : 'secondary-dark'}
+              size="sm"
+              icon={isActivityFailureActive ? 'sync_problem' : 'play_circle'}
+              className={`shrink-0 font-bold ${
+                isActivityFailureActive
+                  ? 'bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/50 shadow-sm'
+                  : 'bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] border border-[#464554]'
+              }`}
+            >
+              {isActivityFailureActive ? 'Disable Activity Simulation' : 'Enable Activity Simulation'}
+            </Button>
+          </div>
+
+          <div className="pt-2 border-t border-[#464554]/30 flex items-center justify-between gap-4">
+            <label className="text-xs font-medium text-[#c7c4d7]">
+              Max Failure Retry Attempts (1-10)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              value={maxFailureAttempts}
+              onChange={(e) => handleMaxFailureAttemptsChange(e.target.value === '' ? 3 : Number(e.target.value))}
+              data-testid="dev-max-failure-attempts-input"
+              className="w-24 px-3 py-1 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#ddb7ff] outline-none"
+            />
+          </div>
+        </div>
+        {/* Section: Temporal Worker Process Control */}
+        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md" data-testid="worker-control-card">
+          <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-[#464554]/30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-none bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <span className="material-symbols-outlined text-lg">memory</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
+                  <span>Temporal Worker Process Control</span>
+                </h3>
+                <p className="text-xs text-[#908fa0] mt-0.5">
+                  Start, stop, and monitor the local <code className="text-[#ddb7ff] bg-[#1a1d28] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[11px]">journey-worker</code> daemon process.
+                </p>
+              </div>
+            </div>
+
+            {/* Status Badge */}
+            {workerStatus.status === 'running' ? (
+              <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-none flex items-center gap-1.5" data-testid="worker-status-badge">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                RUNNING
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-none flex items-center gap-1.5" data-testid="worker-status-badge">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                STOPPED
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-xs font-mono text-[#c7c4d7] space-y-1">
+              <div>
+                Status: <span className={workerStatus.status === 'running' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>{workerStatus.status.toUpperCase()}</span>
+                {workerStatus.status === 'running' && (
+                  <span className="ml-3 text-[#908fa0]">
+                    PID: <span className="text-[#c0c1ff]">{workerStatus.pid}</span> | Uptime: <span className="text-[#c0c1ff]">{workerStatus.uptime_seconds}s</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleToggleWorker}
+              disabled={isTogglingWorker}
+              data-testid="toggle-worker-btn"
+              variant={workerStatus.status === 'running' ? 'danger' : 'secondary-dark'}
+              size="sm"
+              icon={workerStatus.status === 'running' ? 'stop' : 'play_arrow'}
+              className={`shrink-0 font-bold ${
+                workerStatus.status === 'running'
+                  ? 'bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/50 shadow-sm'
+                  : 'bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/50 shadow-sm'
+              }`}
+            >
+              {isTogglingWorker
+                ? (workerStatus.status === 'running' ? 'Stopping Worker...' : 'Starting Worker...')
+                : (workerStatus.status === 'running' ? 'Stop Worker' : 'Start Worker')}
             </Button>
           </div>
         </div>
@@ -482,13 +786,113 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
               onClick={handleEmitEvent}
               disabled={isEmitting}
               data-testid="emit-ingress-event-btn"
-              variant="cyan"
+              variant="primary-cyan"
               size="sm"
               icon="bolt"
               className="font-bold bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/50 shadow-sm rounded-none"
             >
               {isEmitting ? 'Emitting Event...' : 'Emit Ingress Event'}
             </Button>
+          </div>
+        </div>
+        {/* Section: Live Server Log Stream */}
+        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md" data-testid="live-log-stream-card">
+          <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-[#464554]/30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6]">
+                <span className="material-symbols-outlined text-lg">receipt_long</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
+                  <span>Live Server Log Stream</span>
+                  {isLogStreamPaused ? (
+                    <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-none" data-testid="log-stream-status-paused">
+                      PAUSED
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-none flex items-center gap-1" data-testid="log-stream-status-live">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      STREAMING
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-[#908fa0] mt-0.5">
+                  Real-time Zerolog log buffer streaming via <code className="text-[#4cd7f6] bg-[#111520] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[10px]">GET /api/v1/logs/stream</code>.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                onClick={() => setIsLogStreamPaused(!isLogStreamPaused)}
+                data-testid="toggle-log-stream-btn"
+                variant="secondary-dark"
+                size="sm"
+                icon={isLogStreamPaused ? 'play_arrow' : 'pause'}
+                className={`font-bold rounded-none ${
+                  isLogStreamPaused
+                    ? 'bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/50'
+                    : 'bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] border border-[#464554]'
+                }`}
+              >
+                {isLogStreamPaused ? 'Resume Stream' : 'Pause Stream'}
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => setLogs([])}
+                data-testid="clear-logs-btn"
+                variant="secondary-dark"
+                size="sm"
+                icon="delete"
+                className="font-bold bg-[#1c1f2a] hover:bg-rose-500/20 text-[#dfe2f1] hover:text-rose-300 border border-[#464554] rounded-none"
+              >
+                Clear Logs
+              </Button>
+            </div>
+          </div>
+
+          <div
+            className="p-3 bg-[#050810] border border-[#464554]/50 rounded-none font-mono text-xs max-h-64 overflow-y-auto space-y-1.5"
+            data-testid="log-terminal-output"
+          >
+            {logs.length === 0 ? (
+              <div className="text-[#717386] italic text-center py-6 text-[11px]" data-testid="log-terminal-empty">
+                No server logs received yet. Listening to /api/v1/logs/stream...
+              </div>
+            ) : (
+              logs.map((log) => {
+                const style = getSeverityStyle(log.level);
+                const formattedTime = log.timestamp?.includes('T')
+                  ? log.timestamp.split('T')[1].replace('Z', '')
+                  : log.timestamp;
+
+                return (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-2 leading-relaxed border-b border-[#1c2233]/40 pb-1 text-[11px]"
+                    data-testid="log-entry"
+                  >
+                    <span className="text-[#717386] shrink-0 text-[10px] select-none">
+                      [{formattedTime}]
+                    </span>
+                    <span className={`px-1.5 py-0.2 text-[9px] font-bold border rounded-none shrink-0 ${style.badge}`}>
+                      {style.label}
+                    </span>
+                    <span className={`font-mono break-all ${style.text}`}>
+                      {log.message}
+                    </span>
+                    {log.fields && Object.keys(log.fields).length > 0 && (
+                      <span className="text-[#717386] text-[10px] truncate max-w-xs">
+                        {JSON.stringify(log.fields)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+            <div ref={terminalEndRef} />
           </div>
         </div>
         {/* Section 3: Runtime Diagnostics & System Metadata */}

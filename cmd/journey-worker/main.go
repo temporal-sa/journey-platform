@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,12 +10,16 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/validated-pattern/journey-platform/internal/activities"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"github.com/validated-pattern/journey-platform/internal/workflows"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 )
 
 func main() {
+	logging.Init(false)
+
 	temporalHost := os.Getenv("TEMPORAL_HOST_PORT")
 	if temporalHost == "" {
 		temporalHost = "127.0.0.1:7233"
@@ -25,19 +28,28 @@ func main() {
 	if namespace == "" {
 		namespace = "default"
 	}
+	tracingInterceptor, _ := workflows.CreateTemporalTracingInterceptor()
+	var clientInterceptors []interceptor.ClientInterceptor
+	if tracingInterceptor != nil {
+		clientInterceptors = append(clientInterceptors, tracingInterceptor)
+	}
 
 	c, err := client.Dial(client.Options{
-		HostPort:  temporalHost,
-		Namespace: namespace,
+		HostPort:     temporalHost,
+		Namespace:    namespace,
+		Interceptors: clientInterceptors,
 	})
 	if err != nil {
-		log.Fatalf("Failed to create Temporal client: %v", err)
+		logging.Fatal().Err(err).Msg("Failed to create Temporal client")
 	}
 	defer c.Close()
 
 	taskQueue := "journey-engine-task-queue"
-	w := worker.New(c, taskQueue, worker.Options{})
-
+	wOpts := worker.Options{}
+	if tracingInterceptor != nil {
+		wOpts.Interceptors = []interceptor.WorkerInterceptor{tracingInterceptor}
+	}
+	w := worker.New(c, taskQueue, wOpts)
 	w.RegisterWorkflow(workflows.CompiledJourneyWorkflow)
 
 	dsn := os.Getenv("POSTGRES_DSN")
@@ -68,8 +80,10 @@ func main() {
 	var storeRepo postgres.Repository
 	db, err := sql.Open("postgres", dsn)
 	if err == nil && db != nil {
-		storeRepo = postgres.NewPostgresRepository(db)
+		tracedDB := postgres.NewTracedDB(db)
+		storeRepo = postgres.NewPostgresRepository(tracedDB)
 	} else {
+		logging.Debug().Err(err).Msg("Postgres repository connection error, falling back to in-memory repository")
 		storeRepo = postgres.NewMemoryRepository()
 	}
 
@@ -86,17 +100,17 @@ func main() {
 	w.RegisterActivity(act.RecordExposure)
 	w.RegisterActivity(act.ExecuteNode)
 
-	log.Printf("Starting journey-worker connecting to Temporal at %s (TaskQueue: %s)...", temporalHost, taskQueue)
+	logging.Info().Str("service", "journey-worker").Str("temporal_host", temporalHost).Str("task_queue", taskQueue).Msg(fmt.Sprintf("Starting journey-worker connecting to Temporal at %s (TaskQueue: %s)...", temporalHost, taskQueue))
 
 	err = w.Start()
 	if err != nil {
-		log.Fatalf("Failed to start Temporal worker: %v", err)
+		logging.Fatal().Err(err).Msg("Failed to start Temporal worker")
 	}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
-	log.Println("Stopping journey-worker...")
+	logging.Info().Str("service", "journey-worker").Msg("Stopping journey-worker...")
 	w.Stop()
 }

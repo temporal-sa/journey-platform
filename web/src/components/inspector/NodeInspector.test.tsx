@@ -81,6 +81,31 @@ describe('NodeInspector Component', () => {
     expect(screen.getByDisplayValue('Welcome to Acme!')).toBeInTheDocument();
     expect(screen.getByDisplayValue('tmpl_welcome')).toBeInTheDocument();
   });
+  it('renders Fault Injection & Failure Simulation fields for Action nodes and saves config', () => {
+    render(<NodeInspector nodeId="email-1" />);
+
+    expect(screen.getByTestId('fault-injection-section')).toBeInTheDocument();
+    expect(screen.getByText('Fault Injection & Failure Simulation')).toBeInTheDocument();
+
+    const failureCheckbox = screen.getByTestId('inspector-input-simulated_activity_failure') as HTMLInputElement;
+    const maxAttemptsInput = screen.getByTestId('inspector-input-max_failure_attempts') as HTMLInputElement;
+
+    expect(failureCheckbox).not.toBeChecked();
+    expect(maxAttemptsInput.value).toBe('3');
+
+    fireEvent.click(failureCheckbox);
+    expect(failureCheckbox).toBeChecked();
+
+    fireEvent.change(maxAttemptsInput, { target: { value: '5' } });
+    expect(maxAttemptsInput.value).toBe('5');
+
+    const saveBtn = screen.getByTestId('inspector-save-btn');
+    fireEvent.click(saveBtn);
+
+    const emailNode = useEditorStore.getState().currentDraft?.nodes?.find((n) => n.id === 'email-1');
+    expect(emailNode?.config?.simulated_activity_failure).toBe(true);
+    expect(emailNode?.config?.max_failure_attempts).toBe(5);
+  });
 
   it('isolated draft buffer: Cancel restores original graph node state', () => {
     render(<NodeInspector nodeId="email-1" />);

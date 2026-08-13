@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"net/http"
 	"os"
 	"time"
@@ -32,8 +32,8 @@ func (rw *responseWriterInterceptor) Write(b []byte) (int, error) {
 	return n, err
 }
 
-// RequestLogger returns a middleware that logs structured details for every HTTP request using slog and exports OpenTelemetry trace spans to Jaeger.
-func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
+// RequestLogger returns a middleware that logs captured HTTP requests using Zerolog and exports OpenTelemetry trace spans to Jaeger.
+func RequestLogger(logger any) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -63,25 +63,27 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			tenantID := GetTenantID(ctx)
 			userID := GetUserID(ctx)
 
-			if logger != nil {
-				logger.InfoContext(ctx, "http request",
-					slog.String("method", r.Method),
-					slog.String("path", r.URL.Path),
-					slog.Int("status", ww.statusCode),
-					slog.Duration("duration", duration),
-					slog.Int64("bytes_written", ww.bytesWritten),
-					slog.String("request_id", reqID),
-					slog.String("trace_id", traceID),
-					slog.String("tenant_id", tenantID),
-					slog.String("user_id", userID),
-				)
-			}
+			logging.Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Int("status", ww.statusCode).
+				Dur("duration", duration).
+				Str("payload", reqBodyStr).
+				Int64("bytes_written", ww.bytesWritten).
+				Str("request_id", reqID).
+				Str("trace_id", traceID).
+				Str("tenant_id", tenantID).
+				Str("user_id", userID).
+				Msg("captured http request")
 
 			// Asynchronously export OpenTelemetry trace span to Jaeger OTLP collector
 			go func(reqMethod, reqPath, reqBodyPayload string, statusCode int, dur time.Duration, bytesWritten int64, rID, tID, sID, tenID, uID string, startTime time.Time) {
 				otlpURL := os.Getenv("JAEGER_OTLP_HTTP_ENDPOINT")
 				if otlpURL == "" {
 					otlpURL = "http://127.0.0.1:4318/v1/traces"
+				}
+				if tID == "" {
+					return
 				}
 
 				endTime := startTime.Add(dur)

@@ -8,7 +8,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
+
+func init() {
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
+}
 
 const (
 	requestIDKey contextKey = "request_id"
@@ -58,9 +68,71 @@ func GetSpanID(ctx context.Context) string {
 	return ""
 }
 
-// RequestID middleware generates or propagates X-Request-ID and X-Trace-ID.
+// EnsureOTelSpanContext ensures that ctx contains a valid OpenTelemetry SpanContext
+// matching GetTraceID(ctx) and GetSpanID(ctx).
+func EnsureOTelSpanContext(ctx context.Context) context.Context {
+	if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
+		tStr := sc.TraceID().String()
+		sStr := sc.SpanID().String()
+		if GetTraceID(ctx) == "" && tStr != "" {
+			ctx = WithTraceID(ctx, tStr)
+		}
+		if GetSpanID(ctx) == "" && sStr != "" {
+			ctx = WithSpanID(ctx, sStr)
+		}
+		return ctx
+	}
+
+	traceID := GetTraceID(ctx)
+	if traceID == "" {
+		rawUUID := uuid.New().String()
+		traceID = strings.ReplaceAll(rawUUID, "-", "")
+		ctx = WithTraceID(ctx, traceID)
+	}
+
+	spanID := GetSpanID(ctx)
+	if spanID == "" {
+		spanID = fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
+		ctx = WithSpanID(ctx, spanID)
+	}
+
+	tid, errT := trace.TraceIDFromHex(traceID)
+	sid, errS := trace.SpanIDFromHex(spanID)
+	if errT == nil && errS == nil {
+		sc := trace.NewSpanContext(trace.SpanContextConfig{
+			TraceID:    tid,
+			SpanID:     sid,
+			TraceFlags: trace.FlagsSampled,
+		})
+		ctx = trace.ContextWithRemoteSpanContext(ctx, sc)
+	}
+	return ctx
+}
+
+// InjectHTTPHeaders injects W3C traceparent headers into an outbound HTTP request header using otel.GetTextMapPropagator().
+func InjectHTTPHeaders(ctx context.Context, req *http.Request) {
+	if req == nil {
+		return
+	}
+	ctx = EnsureOTelSpanContext(ctx)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+	if req.Header.Get(HeaderTraceparent) == "" {
+		tID := GetTraceID(ctx)
+		sID := GetSpanID(ctx)
+		if tID != "" {
+			if sID == "" {
+				sID = fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
+			}
+			req.Header.Set(HeaderTraceparent, "00-"+tID+"-"+sID+"-01")
+		}
+	}
+}
+
+// RequestID middleware generates or propagates X-Request-ID and X-Trace-ID using otel.GetTextMapPropagator().
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+
 		reqID := r.Header.Get(HeaderRequestID)
 		if reqID == "" {
 			reqID = uuid.New().String()
@@ -76,19 +148,29 @@ func RequestID(next http.Handler) http.Handler {
 			}
 		}
 		if traceID == "" {
+			if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
+				traceID = sc.TraceID().String()
+			}
+		}
+		if traceID == "" {
 			rawUUID := uuid.New().String()
 			traceID = strings.ReplaceAll(rawUUID, "-", "")
 		}
 
 		spanID := fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
+		if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
+			spanID = sc.SpanID().String()
+		}
 
-		ctx := WithRequestID(r.Context(), reqID)
+		ctx = WithRequestID(ctx, reqID)
 		ctx = WithTraceID(ctx, traceID)
 		ctx = WithSpanID(ctx, spanID)
+		ctx = EnsureOTelSpanContext(ctx)
 
 		w.Header().Set(HeaderRequestID, reqID)
 		w.Header().Set(HeaderTraceID, traceID)
 		w.Header().Set(HeaderTraceparent, "00-"+traceID+"-"+spanID+"-01")
+		otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(w.Header()))
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

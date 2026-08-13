@@ -78,6 +78,9 @@ if [ -d "cmd" ]; then
                 fake-provider)
                     PORT="${FAKE_PROVIDER_PORT:-8082}" run_service "$service_name" go run "./$dir"
                     ;;
+                journey-worker)
+                    echo "Skipping automatic start of journey-worker (managed via dev panel/API)"
+                    ;;
                 *)
                     run_service "$service_name" go run "./$dir"
                     ;;

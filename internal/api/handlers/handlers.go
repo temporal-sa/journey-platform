@@ -1,16 +1,19 @@
 package handlers
 
 import (
-	"log/slog"
 	"os"
+	"os/exec"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/validated-pattern/journey-platform/internal/compiler"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"github.com/validated-pattern/journey-platform/internal/workflows"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/interceptor"
 )
-
 // GetTemporalClient returns the active Temporal SDK client or lazily connects to Temporal server.
 func (h *Handlers) GetTemporalClient() client.Client {
 	h.serviceMutex.Lock()
@@ -29,18 +32,23 @@ func (h *Handlers) GetTemporalClient() client.Client {
 		temporalNamespace = "default"
 	}
 
+	tracingInterceptor, _ := workflows.CreateTemporalTracingInterceptor()
+	var clientInterceptors []interceptor.ClientInterceptor
+	if tracingInterceptor != nil {
+		clientInterceptors = append(clientInterceptors, tracingInterceptor)
+	}
+
 	tc, err := client.Dial(client.Options{
-		HostPort:  temporalHost,
-		Namespace: temporalNamespace,
+		HostPort:     temporalHost,
+		Namespace:    temporalNamespace,
+		Interceptors: clientInterceptors,
 	})
 	if err == nil && tc != nil {
 		h.temporalClient = tc
-		if h.logger != nil {
-			h.logger.Info("Lazily connected to Temporal server", "host", temporalHost)
-		}
+		logging.Debug().Str("host", temporalHost).Msg("Lazily connected to Temporal server")
 		return tc
-	} else if err != nil && h.logger != nil {
-		h.logger.Error("Failed lazy dial to Temporal server", "host", temporalHost, "error", err)
+	} else if err != nil {
+		logging.Debug().Err(err).Str("host", temporalHost).Msg("Failed lazy dial to Temporal server")
 	}
 	return nil
 }
@@ -50,12 +58,33 @@ type Handlers struct {
 	repo           postgres.Repository
 	compiler       *compiler.Compiler
 	simulator      *compiler.Simulator
-	logger         *slog.Logger
+	logger         any
 	temporalClient client.Client
+	logBuffer      *logging.LogBuffer
 	serviceMutex   sync.Mutex
+
+	workerMu        sync.Mutex
+	workerCmd       *exec.Cmd
+	workerDoneCh    chan struct{}
+	workerStartTime time.Time
 }
 
-// SetTemporalClient attaches a Temporal SDK client for workflow dispatch.
+// SetLogBuffer attaches a custom LogBuffer instance.
+func (h *Handlers) SetLogBuffer(buf *logging.LogBuffer) {
+	h.serviceMutex.Lock()
+	defer h.serviceMutex.Unlock()
+	h.logBuffer = buf
+}
+
+// GetLogBuffer returns the active LogBuffer instance or default buffer.
+func (h *Handlers) GetLogBuffer() *logging.LogBuffer {
+	h.serviceMutex.Lock()
+	defer h.serviceMutex.Unlock()
+	if h.logBuffer == nil {
+		h.logBuffer = logging.DefaultBuffer()
+	}
+	return h.logBuffer
+}
 func (h *Handlers) SetTemporalClient(c client.Client) {
 	h.serviceMutex.Lock()
 	defer h.serviceMutex.Unlock()
@@ -63,21 +92,19 @@ func (h *Handlers) SetTemporalClient(c client.Client) {
 }
 
 // New creates a new Handlers instance.
-func New(repo postgres.Repository, comp *compiler.Compiler, logger *slog.Logger) *Handlers {
+func New(repo postgres.Repository, comp *compiler.Compiler, logger any) *Handlers {
 	if repo == nil {
 		repo = postgres.NewMemoryRepository()
 	}
 	if comp == nil {
 		comp = compiler.New()
 	}
-	if logger == nil {
-		logger = slog.Default()
-	}
 	return &Handlers{
 		repo:      repo,
 		compiler:  comp,
 		simulator: compiler.NewSimulator(nil),
 		logger:    logger,
+		logBuffer: logging.DefaultBuffer(),
 	}
 }
 
@@ -157,7 +184,16 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/v1/events/emit", h.EmitKafkaTestEvent)
 	r.Post("/api/v1/callbacks/outcomes", h.ProcessOutcomeCallback)
 
+	// Worker Process Control Endpoints
+	r.Post("/api/v1/worker/start", h.StartWorker)
+	r.Post("/api/v1/worker/stop", h.StopWorker)
+	r.Get("/api/v1/worker/status", h.GetWorkerStatus)
+	r.Get("/api/v1/worker/status/stream", h.StreamWorkerStatus)
+
 	// WebMCP JSON-RPC 2.0 Endpoint
 	r.Post("/mcp", h.HandleWebMCP)
+
+	// Log Stream Endpoint
+	r.Get("/api/v1/logs/stream", h.StreamLogs)
 }
 

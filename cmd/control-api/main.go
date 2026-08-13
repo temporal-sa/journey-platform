@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,10 +17,13 @@ import (
 	appMiddleware "github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/compiler"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"go.temporal.io/sdk/client"
 )
 
 func main() {
+	logging.Init(false)
+
 	port := os.Getenv("CONTROL_API_PORT")
 	if port == "" {
 		port = os.Getenv("PORT")
@@ -62,7 +63,7 @@ func main() {
 		tracedDB := postgres.NewTracedDB(db)
 		storeRepo = postgres.NewPostgresRepository(tracedDB)
 	} else {
-		log.Printf("Warning: Postgres repository connection error (%v), falling back to in-memory repository", err)
+		logging.Debug().Err(err).Msg("Postgres repository connection error, falling back to in-memory repository")
 		storeRepo = postgres.NewMemoryRepository()
 	}
 
@@ -75,7 +76,7 @@ func main() {
 		Namespace: "default",
 	})
 	if err != nil {
-		log.Printf("Warning: Temporal client connection notice (%v)", err)
+		logging.Debug().Err(err).Msg("Temporal client connection notice")
 	} else {
 		defer tc.Close()
 	}
@@ -88,7 +89,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(appMiddleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(appMiddleware.RequestLogger(slog.Default()))
+	r.Use(appMiddleware.RequestLogger(nil))
 	r.Use(middleware.Recoverer)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -103,11 +104,11 @@ func main() {
 		Handler: r,
 	}
 
-	log.Printf("Starting control-api service on port %s...", port)
+	logging.Info().Str("service", "control-api").Str("port", port).Msg(fmt.Sprintf("Starting control-api service on port %s...", port))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Control-API server failed: %v", err)
+			logging.Fatal().Err(err).Msg("Control-API server failed")
 		}
 	}()
 
@@ -115,7 +116,7 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
-	log.Println("Shutting down control-api gracefully...")
+	logging.Info().Str("service", "control-api").Msg("Shutting down control-api gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = server.Shutdown(ctx)

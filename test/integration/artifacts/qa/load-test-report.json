@@ -3,9 +3,9 @@
   "successful_ingest": 1,
   "duplicate_ingest": 999,
   "error_count": 0,
-  "duration_ms": 10,
-  "throughput_per_sec": 98836.20370141583,
+  "duration_ms": 3,
+  "throughput_per_sec": 276711.2863615925,
   "queue_depth_max": 999,
   "correctness_status": "PASS",
-  "timestamp": "2026-08-07T19:15:32.813423Z"
+  "timestamp": "2026-08-13T08:28:54.654932Z"
 }

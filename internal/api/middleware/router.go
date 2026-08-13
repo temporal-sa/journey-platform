@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -9,7 +8,7 @@ import (
 
 // RouterConfig holds configuration options for initializing the Chi router.
 type RouterConfig struct {
-	Logger            *slog.Logger
+	Logger            any
 	ReadinessRegistry *ReadinessRegistry
 	IdempotencyStore  IdempotencyStore
 	MaxBodyBytes      int64
@@ -21,9 +20,6 @@ func NewRouter(cfg RouterConfig) chi.Router {
 	r := chi.NewRouter()
 
 	logger := cfg.Logger
-	if logger == nil {
-		logger = slog.Default()
-	}
 
 	maxBodyBytes := cfg.MaxBodyBytes
 	if maxBodyBytes <= 0 {

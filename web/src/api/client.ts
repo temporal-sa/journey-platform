@@ -21,6 +21,7 @@ import type {
   PauseResponse,
   ErrorResponse,
   StandardHeaders,
+  WorkerStatusResponse,
 } from '../types/api';
 import { isSimulatedApiFailureEnabled } from './simulatedFailure';
 
@@ -392,6 +393,27 @@ export class JourneyApiClient {
     const res = await this.request<ProcessOutcomeResponse>('/callbacks/outcomes', {
       method: 'POST',
       body: JSON.stringify(outcome),
+    }, headers);
+    return res.data;
+  }
+  // Temporal Worker Process Control
+  async startWorker(headers?: StandardHeaders): Promise<WorkerStatusResponse> {
+    const res = await this.request<WorkerStatusResponse>('/worker/start', {
+      method: 'POST',
+    }, headers);
+    return res.data;
+  }
+
+  async stopWorker(headers?: StandardHeaders): Promise<WorkerStatusResponse> {
+    const res = await this.request<WorkerStatusResponse>('/worker/stop', {
+      method: 'POST',
+    }, headers);
+    return res.data;
+  }
+
+  async getWorkerStatus(headers?: StandardHeaders): Promise<WorkerStatusResponse> {
+    const res = await this.request<WorkerStatusResponse>('/worker/status', {
+      method: 'GET',
     }, headers);
     return res.data;
   }

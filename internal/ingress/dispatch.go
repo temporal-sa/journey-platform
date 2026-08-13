@@ -7,13 +7,15 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
+	"github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/domain"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 )
-
 // Delivery Ledger Result Constants
 const (
 	StatusAccepted      = "accepted"
@@ -255,17 +257,39 @@ func (s *SDKTemporalClient) StartWorkflow(ctx context.Context, opts WorkflowDisp
 	if taskQueue == "" {
 		taskQueue = "journey-engine-task-queue"
 	}
+	draftName := opts.ID
+	workflowID := opts.ID
+	if len(args) > 0 {
+		if inputMap, ok := args[0].(map[string]interface{}); ok {
+			if ch, ok := inputMap["content_hash"].(string); ok && ch != "" {
+				draftName = ch
+			}
+			if wID, ok := inputMap["workflow_id"].(string); ok && wID != "" {
+				workflowID = wID
+			}
+		}
+	}
 	wfOpts := client.StartWorkflowOptions{
 		ID:        opts.ID,
 		TaskQueue: taskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
 		},
+		SearchAttributes: map[string]interface{}{
+			"JourneyName":        draftName,
+			"InternalWorkflowID": workflowID,
+		},
 	}
 	run, err := s.client.ExecuteWorkflow(ctx, wfOpts, workflowType, args...)
 	if err != nil {
 		return "", err
 	}
+	logging.Info().
+		Str("workflow_id", opts.ID).
+		Str("workflow_type", workflowType).
+		Str("task_queue", taskQueue).
+		Str("run_id", run.GetRunID()).
+		Msg("captured temporal workflow start trigger")
 	return run.GetRunID(), nil
 }
 
@@ -393,6 +417,22 @@ func NewTargetDispatcher(repo postgres.Repository, tc TemporalClient, fencer *Pa
 	}
 }
 
+// ProduceTargetKafkaMessage constructs a KafkaMessage with W3C traceparent record headers injected using otel.GetTextMapPropagator().
+func ProduceTargetKafkaMessage(ctx context.Context, topic string, partition int32, key string, value []byte) KafkaMessage {
+	headers := make(map[string]string)
+	ctx = middleware.EnsureOTelSpanContext(ctx)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(headers))
+	headers = InjectKafkaHeaders(ctx, headers)
+	return KafkaMessage{
+		Topic:     topic,
+		Partition: partition,
+		Key:       key,
+		Value:     value,
+		Headers:   headers,
+		Timestamp: time.Now().UTC(),
+	}
+}
+
 // Fencer returns the PartitionFencer.
 func (d *TargetDispatcher) Fencer() *PartitionFencer {
 	return d.fencer
@@ -424,6 +464,7 @@ func (d *TargetDispatcher) LeaseFrozenTarget(ctx context.Context, req DispatchRe
 
 // DispatchManifest executes idempotent Temporal workflows/signals for all frozen targets in a manifest.
 func (d *TargetDispatcher) DispatchManifest(ctx context.Context, req DispatchRequest) (*DispatchResult, error) {
+	ctx = middleware.EnsureOTelSpanContext(ctx)
 	tm, err := d.LeaseFrozenTarget(ctx, req)
 	if err != nil {
 		return nil, err
@@ -503,6 +544,7 @@ func (d *TargetDispatcher) DispatchManifest(ctx context.Context, req DispatchReq
 }
 
 func (d *TargetDispatcher) dispatchSubject(ctx context.Context, tenantID, manifestID, journeyVersionID, subjectID string, lane TargetLane, taskQueue string, spec ManifestQuerySpec) string {
+	ctx = middleware.EnsureOTelSpanContext(ctx)
 	// 1. Check for tombstoned / quarantined subject
 	tombstone, _ := d.repo.GetTombstoneByEntity(ctx, tenantID, "subject", subjectID)
 	if tombstone == nil {

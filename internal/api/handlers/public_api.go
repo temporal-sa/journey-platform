@@ -16,8 +16,10 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/domain"
 	"github.com/validated-pattern/journey-platform/internal/experiments"
+	"github.com/validated-pattern/journey-platform/internal/ingress"
 	"github.com/validated-pattern/journey-platform/internal/security"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"github.com/validated-pattern/journey-platform/internal/testaudience"
 	"github.com/validated-pattern/journey-platform/internal/workflows"
 	"go.temporal.io/sdk/client"
@@ -1427,8 +1429,12 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 
 	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	if tc := h.GetTemporalClient(); tc != nil {
-		var rows []map[string]interface{}
+		journeyName := draftID
+		if draftObj, dErr := h.repo.GetJourneyDraft(r.Context(), tenantID, draftID); dErr == nil && draftObj != nil && draftObj.Name != "" {
+			journeyName = draftObj.Name
+		}
 
+		var rows []map[string]interface{}
 		if trInput.StaticListID != "" {
 			dbList, err := h.repo.GetStaticList(r.Context(), tenantID, trInput.StaticListID)
 			if (err != nil || dbList == nil) && tenantID != "default" {
@@ -1459,6 +1465,10 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 			opts := client.StartWorkflowOptions{
 				ID:        wfID,
 				TaskQueue: "journey-engine-task-queue",
+				SearchAttributes: map[string]interface{}{
+					"JourneyName":        journeyName,
+					"InternalWorkflowID": wfID,
+				},
 			}
 			input := workflows.CompiledJourneyInput{
 				SchemaVersion: domain.DefaultSchemaVersion,
@@ -1471,6 +1481,11 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 				InputPayload:  rowPayload,
 			}
 			_, _ = tc.ExecuteWorkflow(r.Context(), opts, "CompiledJourneyWorkflow", input)
+			logging.Info().
+				Str("workflow_id", wfID).
+				Str("workflow_type", "CompiledJourneyWorkflow").
+				Str("task_queue", opts.TaskQueue).
+				Msg("captured temporal workflow start trigger")
 		}
 	}
 
@@ -1633,6 +1648,7 @@ func (h *Handlers) ListStaticListVersions(w http.ResponseWriter, r *http.Request
 
 // EmitKafkaTestEvent handles POST /api/v1/events/emit
 func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
+	ctx := middleware.EnsureOTelSpanContext(r.Context())
 	if checkRateLimit(w, r) {
 		return
 	}
@@ -1657,6 +1673,18 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 	if eventID == "" {
 		eventID = "evt-" + uuid.New().String()
 	}
+
+	kafkaHeaders := ingress.InjectKafkaHeaders(ctx, nil)
+	evtType, _ := payload["event_type"].(string)
+	logging.Info().
+		Str("topic", "events.ingress.v1").
+		Int32("partition", 0).
+		Int64("offset", time.Now().UnixNano()).
+		Str("event_type", evtType).
+		Str("event_id", eventID).
+		Str("tenant_id", getTenantID(r)).
+		Str("traceparent", kafkaHeaders["traceparent"]).
+		Msg("captured kafka event")
 
 	// Extract run_id, draft_id, customer_email metadata from data payload if available
 	var dataMap map[string]interface{}
@@ -1701,13 +1729,13 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 		CompletedAt:      &now,
 	}
 
-	_, _ = h.repo.CreateEnrollment(r.Context(), enr)
+	_, _ = h.repo.CreateEnrollment(ctx, enr)
 
 	// Record lifecycle events for draft nodes in run timeline
-	draft, errDraft := h.repo.GetJourneyDraft(r.Context(), tenantID, draftID)
+	draft, errDraft := h.repo.GetJourneyDraft(ctx, tenantID, draftID)
 	if errDraft != nil || draft == nil {
 		if tenantID != "default" {
-			draft, _ = h.repo.GetJourneyDraft(r.Context(), "default", draftID)
+			draft, _ = h.repo.GetJourneyDraft(ctx, "default", draftID)
 		}
 	}
 	if draft != nil && len(draft.Nodes) > 0 {
@@ -1732,7 +1760,7 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 					"node_type":   n.Type,
 				}
 				pBytes, _ := json.Marshal(pMap)
-				_, _ = h.repo.RecordLifecycleEvent(r.Context(), &postgres.LifecycleEvent{
+				_, _ = h.repo.RecordLifecycleEvent(ctx, &postgres.LifecycleEvent{
 					TenantID:   tenantID,
 					EventID:    evtID,
 					EntityType: "workflow_run",
@@ -1747,7 +1775,7 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 
 	tc := h.GetTemporalClient()
 	if tc != nil {
-		evtType, _ := payload["event_type"].(string)
+		evtType, _ = payload["event_type"].(string)
 		if evtType == "" {
 			evtType = "order.completed"
 		}
@@ -1771,7 +1799,7 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if targetWfID != "" {
-			_ = tc.SignalWorkflow(r.Context(), targetWfID, "", "journey.signal.event", sigData)
+			_ = tc.SignalWorkflow(ctx, targetWfID, "", "journey.signal.event", sigData)
 		}
 
 		// Also start new workflow if execution requested
@@ -1781,6 +1809,10 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 			TaskQueue: "journey-engine-task-queue",
 			RetryPolicy: &temporal.RetryPolicy{
 				MaximumAttempts: 1,
+			},
+			SearchAttributes: map[string]interface{}{
+				"JourneyName":        draftID,
+				"InternalWorkflowID": wfID,
 			},
 		}
 		wfInput := map[string]interface{}{
@@ -1794,19 +1826,23 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 			"data_classification": string(domain.DataClassificationPII),
 			"input_payload":       payload,
 		}
-		_, errWf := tc.ExecuteWorkflow(r.Context(), wfOpts, "CompiledJourneyWorkflow", wfInput)
-		if errWf != nil && h.logger != nil {
-			h.logger.Warn("Temporal workflow dispatch notice", "error", errWf)
+		_, errWf := tc.ExecuteWorkflow(ctx, wfOpts, "CompiledJourneyWorkflow", wfInput)
+		if errWf != nil {
+			logging.Debug().Err(errWf).Msg("Temporal workflow dispatch notice")
+		} else {
+			logging.Info().Str("workflow_id", wfID).Str("run_id", runID).Msg("Dispatched temporal test workflow")
 		}
-	} else if h.logger != nil {
-		h.logger.Info("Standalone execution mode (Temporal client disabled)")
+	} else {
+		logging.Debug().Msg("Standalone execution mode (Temporal client disabled)")
 	}
+
 	nowStr := now.Format(time.RFC3339)
 	resp := map[string]interface{}{
 		"event_id":   eventID,
 		"run_id":     runID,
-		"status":     "emitted",
-		"emitted_at": nowStr,
+		"status":     "accepted",
+		"created_at": nowStr,
+		"headers":    kafkaHeaders,
 	}
 	middleware.WriteJSON(w, http.StatusAccepted, resp)
 }

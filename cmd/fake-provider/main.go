@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,9 +13,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	appMiddleware "github.com/validated-pattern/journey-platform/internal/api/middleware"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 )
 
 func main() {
+	logging.Init(false)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = os.Getenv("FAKE_PROVIDER_PORT")
@@ -25,7 +28,7 @@ func main() {
 	}
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(appMiddleware.RequestLogger(nil))
 	r.Use(middleware.Recoverer)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -42,11 +45,11 @@ func main() {
 		Handler: r,
 	}
 
-	log.Printf("Starting fake-provider service on :%s...", port)
+	logging.Info().Str("service", "fake-provider").Str("port", port).Msg(fmt.Sprintf("Starting fake-provider service on :%s...", port))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Fake-Provider server failed: %v", err)
+			logging.Fatal().Err(err).Msg("Fake-Provider server failed")
 		}
 	}()
 
@@ -54,7 +57,7 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
-	log.Println("Shutting down fake-provider gracefully...")
+	logging.Info().Str("service", "fake-provider").Msg("Shutting down fake-provider gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = server.Shutdown(ctx)

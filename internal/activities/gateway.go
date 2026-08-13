@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/validated-pattern/journey-platform/internal/api/middleware"
 )
 
 // LedgerStatus defines the states in the action ledger state machine.
@@ -34,6 +36,8 @@ type ActionRequest struct {
 	ExecutionMode      ExecutionMode          `json:"execution_mode"`
 	TestRunID          string                 `json:"test_run_id,omitempty"`
 	ExperimentContexts map[string]interface{} `json:"experiment_contexts,omitempty"`
+	SimulatedActivityFailure bool                   `json:"simulated_activity_failure,omitempty"`
+	MaxFailureAttempts       int                    `json:"max_failure_attempts,omitempty"`
 
 	// Additional routing & content context
 	Channel          string `json:"channel,omitempty"`
@@ -257,9 +261,10 @@ type ActionGateway struct {
 	attributeResolver AttributeResolver
 	renderer          TemplateRenderer
 	leaseDuration     time.Duration
+	failureTracker    *FailureTracker
+	trackerMu         sync.Mutex
 	keyLocks          sync.Map
 }
-
 // GatewayOption configures an ActionGateway.
 type GatewayOption func(*ActionGateway)
 
@@ -304,6 +309,11 @@ func WithLeaseDuration(d time.Duration) GatewayOption {
 		g.leaseDuration = d
 	}
 }
+func WithFailureTracker(ft *FailureTracker) GatewayOption {
+	return func(g *ActionGateway) {
+		g.failureTracker = ft
+	}
+}
 
 // NewActionGateway constructs a new ActionGateway instance.
 func NewActionGateway(opts ...GatewayOption) *ActionGateway {
@@ -326,8 +336,23 @@ func (g *ActionGateway) getKeyLock(key string) *sync.Mutex {
 
 // ExecuteAction processes an action request idempotently.
 func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*GatewayResult, error) {
-	key := req.IdempotencyKey()
+	ctx = middleware.EnsureOTelSpanContext(ctx)
 
+	enabled, maxAttempts := getActionRequestSimulatedFailureConfig(req)
+	if enabled {
+		actionKey := req.IdempotencyKey()
+		if actionKey == ":::" || actionKey == ":::0" || actionKey == "" {
+			actionKey = fmt.Sprintf("action:%s:%d", req.NodeID, req.NodeVisit)
+		}
+		attempt := g.getFailureTracker().IncrementAndGet(actionKey)
+		if attempt <= maxAttempts {
+			return nil, fmt.Errorf("simulated activity execution failure attempt %d/%d", attempt, maxAttempts)
+		} else {
+			g.getFailureTracker().Reset(actionKey)
+		}
+	}
+
+	key := req.IdempotencyKey()
 	lock := g.getKeyLock(key)
 	lock.Lock()
 	defer lock.Unlock()
@@ -516,9 +541,8 @@ func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*
 	if row.Status == LedgerStatusAccepted {
 		g.emitOutboxAccepted(ctx, req, row)
 	}
-
+	g.getFailureTracker().Reset(fmt.Sprintf("%s:%s:%s:%d", req.TenantID, req.WorkflowID, req.NodeID, req.NodeVisit))
 	return &GatewayResult{
-		IdempotencyKey:   key,
 		Status:           row.Status,
 		ReasonCode:       row.ReasonCode,
 		RenderedContent:  rendered,
@@ -526,6 +550,50 @@ func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*
 		ErrorMessage:     row.ErrorMessage,
 		ExecutedAt:       now,
 	}, nil
+}
+func (g *ActionGateway) getFailureTracker() *FailureTracker {
+	g.trackerMu.Lock()
+	defer g.trackerMu.Unlock()
+	if g.failureTracker == nil {
+		g.failureTracker = NewFailureTracker()
+	}
+	return g.failureTracker
+}
+
+func getActionRequestSimulatedFailureConfig(req ActionRequest) (enabled bool, maxAttempts int) {
+	maxAttempts = 3 // default
+
+	if req.SimulatedActivityFailure {
+		enabled = true
+	}
+	if req.MaxFailureAttempts > 0 {
+		maxAttempts = req.MaxFailureAttempts
+	}
+
+	checkMap := func(m map[string]interface{}) {
+		if m == nil {
+			return
+		}
+		if val, ok := m["simulated_activity_failure"]; ok {
+			enabled = parseBool(val)
+		}
+		if val, ok := m["max_failure_attempts"]; ok {
+			if parsed := parseInt(val); parsed > 0 {
+				maxAttempts = parsed
+			}
+		}
+	}
+
+	checkMap(req.ParameterRefs)
+	checkMap(req.ExperimentContexts)
+
+	if maxAttempts < 1 {
+		maxAttempts = 1
+	} else if maxAttempts > 10 {
+		maxAttempts = 10
+	}
+
+	return enabled, maxAttempts
 }
 
 func (g *ActionGateway) emitOutboxAccepted(ctx context.Context, req ActionRequest, row *ActionLedgerRow) {

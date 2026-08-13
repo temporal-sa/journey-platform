@@ -11,8 +11,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/ingress/codec"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // Outcome constants for event processing
@@ -26,12 +30,48 @@ const (
 
 // KafkaMessage represents an incoming message from Kafka or simulated queue.
 type KafkaMessage struct {
-	Topic     string    `json:"topic"`
-	Partition int32     `json:"partition"`
-	Offset    int64     `json:"offset"`
-	Key       string    `json:"key"`
-	Value     []byte    `json:"value"`
-	Timestamp time.Time `json:"timestamp"`
+	Topic     string            `json:"topic"`
+	Partition int32             `json:"partition"`
+	Offset    int64             `json:"offset"`
+	Key       string            `json:"key"`
+	Value     []byte            `json:"value"`
+	Headers   map[string]string `json:"headers,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
+}
+
+// InjectKafkaHeaders injects W3C traceparent headers into Kafka record headers map using otel.GetTextMapPropagator().
+func InjectKafkaHeaders(ctx context.Context, headers map[string]string) map[string]string {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+	ctx = middleware.EnsureOTelSpanContext(ctx)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(headers))
+	if headers["traceparent"] == "" {
+		tID := middleware.GetTraceID(ctx)
+		sID := middleware.GetSpanID(ctx)
+		if tID != "" {
+			if sID == "" {
+				sID = fmt.Sprintf("%016x", time.Now().UnixNano()&0x7FFFFFFFFFFFFFFF)
+			}
+			headers["traceparent"] = fmt.Sprintf("00-%s-%s-01", tID, sID)
+		}
+	}
+	return headers
+}
+
+// ExtractKafkaHeaders extracts W3C traceparent context from Kafka record headers map into context.Context.
+func ExtractKafkaHeaders(ctx context.Context, headers map[string]string) context.Context {
+	if headers == nil {
+		return ctx
+	}
+	ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.MapCarrier(headers))
+	if tp := headers["traceparent"]; tp != "" {
+		parts := strings.Split(tp, "-")
+		if len(parts) >= 2 && len(parts[1]) == 32 {
+			ctx = middleware.WithTraceID(ctx, parts[1])
+		}
+	}
+	return middleware.EnsureOTelSpanContext(ctx)
 }
 
 // OffsetCommitter interface defines Kafka offset commit behavior.
@@ -120,6 +160,7 @@ func NewCaptureConsumer(repo postgres.Repository, committer OffsetCommitter, opt
 
 // ProcessMessage ingests a single Kafka message into database inbox and freezes target manifest inside a single transaction.
 func (c *CaptureConsumer) ProcessMessage(ctx context.Context, msg KafkaMessage) (*CaptureResult, error) {
+	ctx = ExtractKafkaHeaders(ctx, msg.Headers)
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -152,6 +193,16 @@ func (c *CaptureConsumer) ProcessMessage(ctx context.Context, msg KafkaMessage) 
 	}
 
 	messageID := fmt.Sprintf("msg-%s-%s", tenantID, eventID)
+
+	evtType, _ := raw["event_type"].(string)
+	logging.Info().
+		Str("topic", msg.Topic).
+		Int32("partition", msg.Partition).
+		Int64("offset", msg.Offset).
+		Str("event_type", evtType).
+		Str("event_id", eventID).
+		Str("tenant_id", tenantID).
+		Msg("captured kafka event")
 
 	var result CaptureResult
 

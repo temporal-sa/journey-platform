@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/validated-pattern/journey-platform/internal/api/middleware"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 )
 
 // TracedDB wraps a DBTX connection to instrument raw SQL queries with OpenTelemetry spans sent to Jaeger.
@@ -117,11 +118,22 @@ func exportDBSpan(ctx context.Context, query string, duration time.Duration, que
 		_ = resp.Body.Close()
 	}
 }
+func logDBCall(query string, duration time.Duration, queryErr error) {
+	cleanQuery := strings.Join(strings.Fields(query), " ")
+	ev := logging.Info().
+		Str("query", cleanQuery).
+		Dur("duration", duration)
+	if queryErr != nil {
+		ev.Err(queryErr)
+	}
+	ev.Msg("captured database call")
+}
 
 func (t *TracedDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	start := time.Now()
 	res, err := t.db.ExecContext(ctx, query, args...)
 	dur := time.Since(start)
+	logDBCall(query, dur, err)
 	go exportDBSpan(ctx, query, dur, err, start)
 	return res, err
 }
@@ -130,6 +142,7 @@ func (t *TracedDB) PrepareContext(ctx context.Context, query string) (*sql.Stmt,
 	start := time.Now()
 	stmt, err := t.db.PrepareContext(ctx, query)
 	dur := time.Since(start)
+	logDBCall(query, dur, err)
 	go exportDBSpan(ctx, query, dur, err, start)
 	return stmt, err
 }
@@ -138,6 +151,7 @@ func (t *TracedDB) QueryContext(ctx context.Context, query string, args ...inter
 	start := time.Now()
 	rows, err := t.db.QueryContext(ctx, query, args...)
 	dur := time.Since(start)
+	logDBCall(query, dur, err)
 	go exportDBSpan(ctx, query, dur, err, start)
 	return rows, err
 }
@@ -146,6 +160,7 @@ func (t *TracedDB) QueryRowContext(ctx context.Context, query string, args ...in
 	start := time.Now()
 	row := t.db.QueryRowContext(ctx, query, args...)
 	dur := time.Since(start)
+	logDBCall(query, dur, nil)
 	go exportDBSpan(ctx, query, dur, nil, start)
 	return row
 }

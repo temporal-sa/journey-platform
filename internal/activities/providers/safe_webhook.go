@@ -12,6 +12,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/validated-pattern/journey-platform/internal/api/middleware"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 var (
@@ -286,6 +290,8 @@ func (c *SafeWebhookClient) SendWebhook(ctx context.Context, targetURL string, d
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "JourneyEngine-SafeWebhook/1.0")
+	middleware.InjectHTTPHeaders(ctx, req)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	resp, err := client.Do(req)
 	if err != nil {

@@ -269,6 +269,18 @@ export function StaticListsPage({ onOpenUpload }: StaticListsPageProps) {
       subtitle="Manage static CSV contact datasets, audience segments, and classification policies."
       icon="format_list_bulleted"
       iconAccentColor="#4cd7f6"
+      headerActions={
+        <Button
+          type="button"
+          onClick={onOpenUpload}
+          variant="primary-purple"
+          icon="upload"
+          data-testid="upload-static-list-header-btn"
+          className="font-bold cursor-pointer"
+        >
+          Upload List
+        </Button>
+      }
       controls={
         <>
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">

@@ -66,7 +66,7 @@ func TestCompiledJourneyWorkflow_AllNodeKinds(t *testing.T) {
 
 		nodes := []domain.IRNode{
 			{ID: "node_start", Type: "event_start"},
-			{ID: "node_cond", Type: "condition"},
+			{ID: "node_cond", Type: "condition", Params: map[string]interface{}{"condition_expression": "user_status == 'active'"}},
 			{ID: "node_exp", Type: "experiment", Params: map[string]interface{}{"experiment_id": "exp_welcome_test", "randomization_unit": "user_id"}},
 			{ID: "node_email", Type: "email", Params: map[string]interface{}{"template": "welcome_template", "recipient": "user@example.com"}},
 			{ID: "node_delay", Type: "delay", Params: map[string]interface{}{"duration_seconds": 2}},
@@ -77,8 +77,8 @@ func TestCompiledJourneyWorkflow_AllNodeKinds(t *testing.T) {
 
 		edges := []domain.IREdge{
 			{ID: "e1", SourceID: "node_start", TargetID: "node_cond"},
-			{ID: "e2", SourceID: "node_cond", TargetID: "node_exp", ConditionExpression: "user_status == 'active'"},
-			{ID: "e3", SourceID: "node_cond", TargetID: "node_exit_suppressed", ConditionExpression: "true"},
+			{ID: "e2_true", SourceID: "node_cond", TargetID: "node_exp", ConditionExpression: "user_status == 'active'"},
+			{ID: "e3_false", SourceID: "node_cond", TargetID: "node_exit_suppressed", ConditionExpression: "false"},
 			{ID: "e4", SourceID: "node_exp", TargetID: "node_email", ConditionExpression: "variant_a"},
 			{ID: "e5", SourceID: "node_exp", TargetID: "node_email", ConditionExpression: "ineligible"},
 			{ID: "e6", SourceID: "node_email", TargetID: "node_delay"},
@@ -891,8 +891,6 @@ func generateHistoryFixturesIfMissing(t *testing.T, fixturesDir string) {
 		NodeOutputs:   map[string]interface{}{"start_1": "started", "cond_1": "exit_1", "exit_1": "succeeded"},
 	}
 
-	evalResultTrue, _ := dc.ToPayloads(true)
-
 	eventsCond := createEvents(inputCond, irCond, resCond, func(nextID func() int64, events *[]*historyv1.HistoryEvent) {
 		addActWithResult := func(actName string, resPayloads *commonv1.Payloads) {
 			schedID := nextID()
@@ -960,9 +958,7 @@ func generateHistoryFixturesIfMissing(t *testing.T, fixturesDir string) {
 
 		addActWithResult("EmitLifecycleEvent", nilPayloads) // start_1 node_entered
 		addActWithResult("EmitLifecycleEvent", nilPayloads) // cond_1 node_entered
-		addActWithResult("EvaluateCondition", evalResultTrue)
 		addActWithResult("EmitLifecycleEvent", nilPayloads) // exit_1 node_entered
-		addActWithResult("EmitLifecycleEvent", nilPayloads) // exit_1 workflow_succeeded
 	})
 
 	// 4. Experiment & Action History

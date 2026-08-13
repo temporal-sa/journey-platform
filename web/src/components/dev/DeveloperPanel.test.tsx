@@ -10,6 +10,12 @@ import {
 describe('DeveloperPanel Component', () => {
   beforeEach(() => {
     setSimulatedApiFailureEnabled(false);
+    class MockEventSource {
+      onmessage: ((ev: MessageEvent) => void) | null = null;
+      onerror: ((ev: Event) => void) | null = null;
+      close = vi.fn();
+    }
+    (globalThis as unknown as { EventSource: unknown }).EventSource = MockEventSource;
   });
 
   afterEach(() => {
@@ -51,7 +57,7 @@ describe('DeveloperPanel Component', () => {
 
     const toggleBtn = screen.getByTestId('toggle-api-failure-btn');
     expect(isSimulatedApiFailureEnabled()).toBe(false);
-    expect(screen.getByText('DISABLED')).toBeInTheDocument();
+    expect(screen.getAllByText('DISABLED')[0]).toBeInTheDocument();
     expect(screen.getByText('Enable Failure Mode')).toBeInTheDocument();
 
     fireEvent.click(toggleBtn);
@@ -66,7 +72,7 @@ describe('DeveloperPanel Component', () => {
 
     fireEvent.click(toggleBtn);
     expect(isSimulatedApiFailureEnabled()).toBe(false);
-    expect(screen.getByText('DISABLED')).toBeInTheDocument();
+    expect(screen.getAllByText('DISABLED')[0]).toBeInTheDocument();
     expect(screen.getByText('Enable Failure Mode')).toBeInTheDocument();
     expect(handleFireToast).toHaveBeenCalledWith(
       ToastMessageType.INFO,
@@ -131,5 +137,81 @@ describe('DeveloperPanel Component', () => {
     expect(screen.getByTestId('dev-subject-ref-input')).toBeInTheDocument();
     expect(screen.getByTestId('dev-event-payload-textarea')).toBeInTheDocument();
     expect(screen.getByTestId('emit-ingress-event-btn')).toBeInTheDocument();
+  });
+  it('renders Temporal Worker Process Control card and controls worker state', async () => {
+    const handleClose = vi.fn();
+    const handleFireToast = vi.fn();
+
+    render(
+      <DeveloperPanel
+        isOpen={true}
+        onClose={handleClose}
+        onFireToast={handleFireToast}
+      />
+    );
+
+    expect(screen.getByTestId('worker-control-card')).toBeInTheDocument();
+    expect(screen.getByTestId('worker-status-badge')).toHaveTextContent('STOPPED');
+    expect(screen.getByTestId('toggle-worker-btn')).toHaveTextContent('Start Worker');
+  });
+
+  it('renders Live Server Log Stream card with pause/resume and clear controls', () => {
+    const handleClose = vi.fn();
+    const handleFireToast = vi.fn();
+
+    render(
+      <DeveloperPanel
+        isOpen={true}
+        onClose={handleClose}
+        onFireToast={handleFireToast}
+      />
+    );
+
+    expect(screen.getByTestId('live-log-stream-card')).toBeInTheDocument();
+    expect(screen.getByText('Live Server Log Stream')).toBeInTheDocument();
+    expect(screen.getByTestId('toggle-log-stream-btn')).toHaveTextContent('Pause Stream');
+    expect(screen.getByTestId('clear-logs-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('log-terminal-output')).toBeInTheDocument();
+
+    const toggleBtn = screen.getByTestId('toggle-log-stream-btn');
+    fireEvent.click(toggleBtn);
+    expect(screen.getByTestId('toggle-log-stream-btn')).toHaveTextContent('Resume Stream');
+    expect(screen.getByTestId('log-stream-status-paused')).toBeInTheDocument();
+  });
+  it('toggles Activity failure simulation mode and updates max failure retry attempts', () => {
+    const handleClose = vi.fn();
+    const handleFireToast = vi.fn();
+
+    render(
+      <DeveloperPanel
+        isOpen={true}
+        onClose={handleClose}
+        onFireToast={handleFireToast}
+      />
+    );
+
+    const toggleBtn = screen.getByTestId('toggle-activity-failure-btn');
+    const attemptsInput = screen.getByTestId('dev-max-failure-attempts-input') as HTMLInputElement;
+
+    expect(screen.getByTestId('activity-failure-simulation-card')).toBeInTheDocument();
+    expect(attemptsInput).toBeInTheDocument();
+    expect(attemptsInput.value).toBe('3');
+
+    fireEvent.click(toggleBtn);
+    expect(handleFireToast).toHaveBeenCalledWith(
+      ToastMessageType.WARNING,
+      'Activity Failure Simulation Enabled',
+      expect.any(String)
+    );
+
+    fireEvent.change(attemptsInput, { target: { value: '5' } });
+    expect(attemptsInput.value).toBe('5');
+
+    fireEvent.click(toggleBtn);
+    expect(handleFireToast).toHaveBeenCalledWith(
+      ToastMessageType.INFO,
+      'Activity Failure Simulation Disabled',
+      expect.any(String)
+    );
   });
 });
