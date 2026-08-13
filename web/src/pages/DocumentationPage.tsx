@@ -292,7 +292,7 @@ export const DocumentationPage: React.FC = () => {
       }
     >
       {/* HTML Rendered Documentation Card */}
-      <div className="bg-[#0F131D]/90 backdrop-blur-xl p-8 border border-[#464554] shadow-xl rounded-none w-full min-h-[500px]">
+      <div className="bg-[#0F131D]/90 backdrop-blur-xl p-8 border-none shadow-xl rounded-none w-full min-h-[500px]">
         <div
           data-testid="rendered-docs-content"
           className="docs-markdown-theme max-w-5xl"
