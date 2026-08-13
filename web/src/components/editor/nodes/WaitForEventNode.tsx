@@ -6,12 +6,22 @@ export type CustomNode = Node<CustomNodeData>;
 export function WaitForEventNode({ data, selected }: NodeProps<CustomNode>) {
   const displayName = data?.name || data?.label || 'Wait For Event';
   const eventType = (data?.config?.event_type as string) || 'order.completed';
-  const timeoutSec = (data?.config?.timeout_seconds as number) || (data?.config?.timeout as number);
-  const timeoutText = timeoutSec
-    ? (timeoutSec >= 3600 ? `${Math.round(timeoutSec / 3600)}h max` : `${timeoutSec}s max`)
-    : '24h max';
-  const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
+  const rawDuration = (data?.config?.duration ?? data?.config?.timeout ?? data?.config?.timeout_seconds) as number | string | undefined;
+  const rawUnit = (data?.config?.unit as string) || (data?.config?.timeout_seconds ? 'seconds' : 'hours');
 
+  let timeoutText = '24h max';
+  if (rawDuration !== undefined && rawDuration !== null && rawDuration !== '') {
+    const durStr = String(rawDuration).trim();
+    if (/[a-zA-Z]/.test(durStr)) {
+      timeoutText = `${durStr} max`;
+    } else if (rawUnit) {
+      const u = rawUnit.charAt(0).toLowerCase();
+      timeoutText = `${durStr}${u} max`;
+    } else {
+      timeoutText = `${durStr}s max`;
+    }
+  }
+  const hasBadge = Boolean((data?.errorCount ?? 0) > 0 || (data?.warningCount ?? 0) > 0);
   return (
     <div
       role="group"

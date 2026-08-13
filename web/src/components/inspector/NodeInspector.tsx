@@ -949,25 +949,60 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
 
               <div className="mb-3">
                 <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
-                  Event Wait Timeout (Seconds)
+                  Timeout Duration Value
                 </label>
                 <input
                   type="number"
                   min={1}
-                  value={(localDraft.config.timeout_seconds as number | string) ?? ''}
-                  onChange={(e) =>
-                    handleConfigChange(
-                      'timeout_seconds',
-                      e.target.value ? parseInt(e.target.value, 10) : ''
-                    )
-                  }
-                  placeholder="e.g. 86400 (24h) or 3600 (1h)"
-                  data-testid="inspector-input-timeout_seconds"
+                  value={(localDraft.config.duration as number | string) ?? (localDraft.config.timeout as number | string) ?? (localDraft.config.timeout_seconds as number | string) ?? ''}
+                  onChange={(e) => {
+                    const num = e.target.value === '' ? '' : Number(e.target.value);
+                    handleConfigChange('duration', num);
+                    handleConfigChange('timeout', num);
+                    if (typeof num === 'number') {
+                      const unit = (localDraft.config.unit as string) || 'hours';
+                      let mult = 1;
+                      if (unit === 'minutes') mult = 60;
+                      if (unit === 'hours') mult = 3600;
+                      if (unit === 'days') mult = 86400;
+                      handleConfigChange('timeout_seconds', num * mult);
+                    }
+                  }}
+                  placeholder="e.g. 24"
+                  data-testid="inspector-input-duration"
                   className={`w-full px-3 py-1.5 bg-[#11141d] border ${
-                    getFieldError('timeout_seconds', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
+                    getFieldError('duration', nodeIssues) ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
                   } rounded-none text-[#dfe2f1] text-xs outline-none transition-all placeholder-[#64748b]`}
                 />
-                {renderFieldError('timeout_seconds')}
+                {renderFieldError('duration')}
+              </div>
+
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
+                  Time Unit
+                </label>
+                <select
+                  value={(localDraft.config.unit as string) ?? 'hours'}
+                  onChange={(e) => {
+                    const unit = e.target.value;
+                    handleConfigChange('unit', unit);
+                    const num = Number(localDraft.config.duration ?? localDraft.config.timeout);
+                    if (num > 0) {
+                      let mult = 1;
+                      if (unit === 'minutes') mult = 60;
+                      if (unit === 'hours') mult = 3600;
+                      if (unit === 'days') mult = 86400;
+                      handleConfigChange('timeout_seconds', num * mult);
+                    }
+                  }}
+                  data-testid="inspector-input-unit"
+                  className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all cursor-pointer"
+                >
+                  <option value="seconds">Seconds</option>
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                </select>
               </div>
             </>
           )}

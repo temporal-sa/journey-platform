@@ -71,14 +71,14 @@ func ExtractWaitForEventConfig(node domain.IRNode, tenantID, workflowID, runID s
 				break
 			}
 		}
-		for _, key := range []string{"timeout_seconds", "duration_seconds", "timeout", "duration"} {
-			if val, ok := node.Params[key]; ok {
-				sec := toInt64(val)
-				if sec > 0 {
-					cfg.TimeoutDuration = time.Duration(sec) * time.Second
-				}
-				break
-			}
+		sec := extractDelaySeconds(node.Params)
+		if sec <= 0 && node.TimeoutSeconds > 0 {
+			sec = int64(node.TimeoutSeconds)
+		}
+		if sec > 0 {
+			cfg.TimeoutDuration = time.Duration(sec) * time.Second
+		} else {
+			cfg.TimeoutDuration = 86400 * time.Second
 		}
 	}
 
