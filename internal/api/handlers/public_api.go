@@ -1480,12 +1480,27 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 				ExecutionMode: workflows.ExecutionModeTest,
 				InputPayload:  rowPayload,
 			}
-			_, _ = tc.ExecuteWorkflow(r.Context(), opts, "CompiledJourneyWorkflow", input)
-			logging.Info().
-				Str("workflow_id", wfID).
-				Str("workflow_type", "CompiledJourneyWorkflow").
-				Str("task_queue", opts.TaskQueue).
-				Msg("captured temporal workflow start trigger")
+			_, errWf := tc.ExecuteWorkflow(r.Context(), opts, "CompiledJourneyWorkflow", input)
+			if errWf != nil {
+				logging.Error().Err(errWf).Str("workflow_id", wfID).Msg("Failed to start temporal workflow with search attributes; retrying without search attributes")
+				opts.SearchAttributes = nil
+				_, errWf2 := tc.ExecuteWorkflow(r.Context(), opts, "CompiledJourneyWorkflow", input)
+				if errWf2 != nil {
+					logging.Error().Err(errWf2).Str("workflow_id", wfID).Msg("Failed to start temporal workflow execution")
+				} else {
+					logging.Info().
+						Str("workflow_id", wfID).
+						Str("workflow_type", "CompiledJourneyWorkflow").
+						Str("task_queue", opts.TaskQueue).
+						Msg("captured temporal workflow start trigger (fallback)")
+				}
+			} else {
+				logging.Info().
+					Str("workflow_id", wfID).
+					Str("workflow_type", "CompiledJourneyWorkflow").
+					Str("task_queue", opts.TaskQueue).
+					Msg("captured temporal workflow start trigger")
+			}
 		}
 	}
 

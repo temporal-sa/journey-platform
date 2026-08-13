@@ -57,9 +57,12 @@ if command -v docker >/dev/null 2>&1; then
         if [ -f "migrations/postgres/000001_create_postgres_tables.up.sql" ]; then
             docker compose exec -T postgres psql -U journey -d journeydb < migrations/postgres/000001_create_postgres_tables.up.sql 2>/dev/null || true
         fi
+        echo "Ensuring Temporal Search Attributes are registered..."
+        if [ -f "scripts/init-temporal-search-attributes.sh" ]; then
+            TEMPORAL_ADDRESS="127.0.0.1:7233" ./scripts/init-temporal-search-attributes.sh 2>/dev/null || true
+        fi
     fi
 fi
-
 # Start Go services from cmd/
 if [ -d "cmd" ]; then
     for dir in cmd/*/; do
