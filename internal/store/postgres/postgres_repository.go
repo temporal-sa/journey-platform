@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -47,6 +48,17 @@ func (r *PostgresRepository) WithTx(ctx context.Context, fn func(repo Repository
 }
 
 // 1. Catalogs
+func isUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrAlreadyExists) || errors.Is(err, ErrConflict) {
+		return true
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "duplicate key") || strings.Contains(errStr, "unique constraint") || strings.Contains(errStr, "23505")
+}
+
 func (r *PostgresRepository) CreateCatalog(ctx context.Context, c *Catalog) (*Catalog, error) {
 	row := r.db.QueryRowContext(ctx, `
 		INSERT INTO catalogs (tenant_id, record_id, name, component_type, version, description, schema_definition, content_hash, tags, is_deprecated, created_at, updated_at)
@@ -57,6 +69,9 @@ func (r *PostgresRepository) CreateCatalog(ctx context.Context, c *Catalog) (*Ca
 	var res Catalog
 	err := row.Scan(&res.TenantID, &res.RecordID, &res.Name, &res.ComponentType, &res.Version, &res.Description, &res.SchemaDefinition, &res.ContentHash, &res.Tags, &res.IsDeprecated, &res.CreatedAt, &res.UpdatedAt)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, fmt.Errorf("%w: %w", ErrAlreadyExists, err)
+		}
 		return nil, fmt.Errorf("failed to create catalog: %w", err)
 	}
 	return &res, nil

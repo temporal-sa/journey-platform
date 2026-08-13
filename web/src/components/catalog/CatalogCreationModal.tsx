@@ -136,12 +136,14 @@ export const CatalogCreationModal: React.FC<CatalogCreationModalProps> = ({
         schemaDefinition.default_value = attrDefaultValue.trim();
       }
 
+      const baseSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       const generatedId =
         recordId.trim() ||
-        `cat-${componentType}-${name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '_')
-          .replace(/^_+|_+$/g, '')}`;
+        `cat-${componentType}-${baseSlug || 'item'}-${uniqueSuffix}`;
 
       const payload: Partial<CatalogRecord> = {
         schema_version: '1.0',
