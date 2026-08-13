@@ -97,7 +97,7 @@ export function ExperimentNode({ data, selected }: NodeProps<CustomNode>) {
           <div className="flex items-center gap-2 mt-1 text-[10px] font-['Outfit',sans-serif] text-amber-300 text-left">
             <span><span>Variant A</span>: <strong data-testid="experiment-node-pct-a">{variantAPct}%</strong></span>
             <span className="text-slate-500">|</span>
-            <span><span>Variant B</span>: <strong data-testid="experiment-node-pct-b" className="text-slate-400">{variantBPct}%</strong></span>
+            <span><span>Variant B</span>: <strong data-testid="experiment-node-pct-b">{variantBPct}%</strong></span>
           </div>
         </div>
 

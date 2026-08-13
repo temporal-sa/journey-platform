@@ -6,4 +6,4 @@ fix/run-detail-duration-calc=4
 feat/ui-enhancements=16
 fix/experiments=5
 feat/node-palette-ui-enhancements=59
-feat/batch-future-enhancements=72
+feat/batch-future-enhancements=75
