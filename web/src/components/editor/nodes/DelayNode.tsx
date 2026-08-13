@@ -77,13 +77,12 @@ export function DelayNode({ data, selected }: NodeProps<CustomNode>) {
         <div className="flex items-center gap-2 mt-1.5 text-left">
           <span
             data-testid="node-type-badge"
-            className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase"
+            className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 uppercase"
           >
             Wait: {duration}
           </span>
         </div>
       </div>
-
       <div className="pr-1 text-amber-400 opacity-80 shrink-0">
         <span className="material-symbols-outlined text-lg">drag_indicator</span>
       </div>

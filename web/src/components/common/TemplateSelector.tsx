@@ -49,6 +49,10 @@ export function TemplateSelector({
     );
   }, [options, searchQuery]);
 
+  const displayedOptions = useMemo(() => {
+    return filteredOptions.slice(0, 3);
+  }, [filteredOptions]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -86,23 +90,12 @@ export function TemplateSelector({
           }}
           placeholder={placeholder}
           data-testid={testId}
-          className={`w-full px-3 py-1.5 pr-8 bg-[#11141d] border ${
+          className={`w-full px-3 py-1.5 bg-[#11141d] border ${
             hasError ? 'border-rose-500' : 'border-[#464554] focus:border-[#c0c1ff]'
           } rounded-none text-[#dfe2f1] text-xs font-['Outfit',sans-serif] outline-none transition-all placeholder-[#64748b] ${
             disabled ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         />
-        <button
-          type="button"
-          tabIndex={-1}
-          disabled={disabled}
-          onClick={() => setIsOpen((prev) => !prev)}
-          className="absolute right-2 text-[#908fa0] hover:text-[#dfe2f1] cursor-pointer flex items-center justify-center p-0 m-0 bg-transparent border-none"
-        >
-          <span className="material-symbols-outlined text-sm">
-            {isOpen ? 'expand_less' : 'expand_more'}
-          </span>
-        </button>
       </div>
 
       {isOpen && (
@@ -115,7 +108,7 @@ export function TemplateSelector({
               No catalog templates matching &quot;{searchQuery}&quot;. Custom ID &quot;{searchQuery}&quot; will be used.
             </div>
           ) : (
-            filteredOptions.map((opt) => {
+            displayedOptions.map((opt) => {
               const isSelected = opt.id === value;
               return (
                 <div
@@ -146,6 +139,17 @@ export function TemplateSelector({
               );
             })
           )}
+          <div className="border-t border-[#464554]/60 mt-1 pt-1.5 pb-1 px-3 flex items-center justify-between text-[11px]">
+            <a
+              href="#/catalog?tab=templates"
+              onClick={() => setIsOpen(false)}
+              className="text-[#c0c1ff] hover:text-white font-medium hover:underline flex items-center gap-1 transition-colors"
+              data-testid="view-all-templates-link"
+            >
+              <span>View all templates</span>
+              <span className="material-symbols-outlined text-xs">arrow_forward</span>
+            </a>
+          </div>
         </div>
       )}
     </div>
