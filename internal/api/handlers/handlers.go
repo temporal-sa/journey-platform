@@ -42,6 +42,7 @@ func (h *Handlers) GetTemporalClient() client.Client {
 		HostPort:     temporalHost,
 		Namespace:    temporalNamespace,
 		Interceptors: clientInterceptors,
+		Logger:       logging.NewTemporalLogger(),
 	})
 	if err == nil && tc != nil {
 		h.temporalClient = tc
@@ -67,9 +68,8 @@ type Handlers struct {
 	workerDoneCh    chan struct{}
 	workerStartTime time.Time
 
-	simMu                 sync.Mutex
-	simActivityFailure    bool
-	simMaxFailureAttempts int
+	simMu              sync.Mutex
+	simActivityFailure bool
 }
 
 // SetLogBuffer attaches a custom LogBuffer instance.
@@ -108,7 +108,6 @@ func New(repo postgres.Repository, comp *compiler.Compiler, logger any) *Handler
 		simulator:             compiler.NewSimulator(nil),
 		logger:                logger,
 		logBuffer:             logging.DefaultBuffer(),
-		simMaxFailureAttempts: 99,
 	}
 }
 
@@ -203,5 +202,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	// Simulation Settings Endpoints
 	r.Get("/api/v1/simulation/activity-failure", h.GetActivityFailureSimulationSetting)
 	r.Post("/api/v1/simulation/activity-failure", h.UpdateActivityFailureSimulationSetting)
+	r.Get("/api/v1/simulation/activity-latency", h.GetActivityLatencySetting)
+	r.Post("/api/v1/simulation/activity-latency", h.UpdateActivityLatencySetting)
 }
 

@@ -176,6 +176,13 @@ func (a *Activities) ResolveAttributes(ctx context.Context, input ResolveAttribu
 		logger := activity.GetLogger(ctx)
 		logger.Info("Resolving attributes", "subjectRef", input.SubjectRef, "count", len(input.Keys))
 	}
+	info := ActivityInfo{
+		ActivityName: "ResolveAttributes",
+		NodeID:       input.SubjectRef,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return ResolveResult{}, err
+	}
 	return a.resolveKeys(ctx, input.SubjectRef, input.PayloadRef, input.Keys, true)
 }
 
@@ -184,6 +191,13 @@ func (a *Activities) ResolveParameters(ctx context.Context, input ResolveParamet
 	if activity.IsActivity(ctx) {
 		logger := activity.GetLogger(ctx)
 		logger.Info("Resolving parameters", "subjectRef", input.SubjectRef, "count", len(input.Keys))
+	}
+	info := ActivityInfo{
+		ActivityName: "ResolveParameters",
+		NodeID:       input.SubjectRef,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return ResolveResult{}, err
 	}
 	return a.resolveKeys(ctx, input.SubjectRef, input.PayloadRef, input.Keys, false)
 }

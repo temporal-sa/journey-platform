@@ -2,21 +2,20 @@
 
 let isFailureEnabledState = false;
 let isActivityFailureEnabledState = false;
-let globalMaxFailureAttemptsState = 3;
+let simulatedActivityLatencyMSState = 0;
 
 const STORAGE_KEY = 'agy_simulated_api_failure_enabled';
 const ACTIVITY_STORAGE_KEY = 'agy_simulated_activity_failure_enabled';
-const MAX_ATTEMPTS_STORAGE_KEY = 'agy_simulated_activity_max_failure_attempts';
-
+const LATENCY_STORAGE_KEY = 'agy_simulated_activity_latency_ms';
 if (typeof window !== 'undefined' && window.localStorage) {
   try {
     isFailureEnabledState = localStorage.getItem(STORAGE_KEY) === 'true';
     isActivityFailureEnabledState = localStorage.getItem(ACTIVITY_STORAGE_KEY) === 'true';
-    const storedMax = localStorage.getItem(MAX_ATTEMPTS_STORAGE_KEY);
-    if (storedMax) {
-      const parsed = parseInt(storedMax, 10);
-      if (!isNaN(parsed) && parsed >= 1 && parsed <= 99) {
-        globalMaxFailureAttemptsState = parsed;
+    const storedLatency = localStorage.getItem(LATENCY_STORAGE_KEY);
+    if (storedLatency) {
+      const parsed = parseInt(storedLatency, 10);
+      if (!isNaN(parsed) && parsed >= 0) {
+        simulatedActivityLatencyMSState = parsed;
       }
     }
   } catch {
@@ -83,25 +82,25 @@ export function toggleSimulatedActivityFailure(): boolean {
   setSimulatedActivityFailureEnabled(nextState);
   return nextState;
 }
-
 /**
- * Gets global maximum failure attempts for activity simulation.
+ * Gets the simulated Activity latency in milliseconds.
  */
-export function getGlobalMaxFailureAttempts(): number {
-  return globalMaxFailureAttemptsState;
+export function getSimulatedActivityLatencyMS(): number {
+  return simulatedActivityLatencyMSState;
 }
 
 /**
- * Sets global maximum failure attempts for activity simulation (min 1, max 10, default 3).
+ * Sets the simulated Activity latency in milliseconds.
  */
-export function setGlobalMaxFailureAttempts(attempts: number): void {
-  const clamped = Math.min(99, Math.max(1, attempts));
-  globalMaxFailureAttemptsState = clamped;
+export function setSimulatedActivityLatencyMS(latencyMs: number): void {
+  const clamped = Math.max(0, latencyMs || 0);
+  simulatedActivityLatencyMSState = clamped;
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      localStorage.setItem(MAX_ATTEMPTS_STORAGE_KEY, String(clamped));
+      localStorage.setItem(LATENCY_STORAGE_KEY, String(clamped));
     } catch {
       // Ignore
     }
   }
 }
+

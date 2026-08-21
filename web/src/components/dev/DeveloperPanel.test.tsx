@@ -155,7 +155,7 @@ describe('DeveloperPanel Component', () => {
     expect(screen.getByTestId('toggle-worker-btn')).toHaveTextContent('Start Worker');
   });
 
-  it('renders Live Server Log Stream card with pause/resume and clear controls', () => {
+  it('renders Live Server Log Stream launcher card and opens separate LogStreamModal when button is clicked', () => {
     const handleClose = vi.fn();
     const handleFireToast = vi.fn();
 
@@ -169,6 +169,13 @@ describe('DeveloperPanel Component', () => {
 
     expect(screen.getByTestId('live-log-stream-card')).toBeInTheDocument();
     expect(screen.getByText('Live Server Log Stream')).toBeInTheDocument();
+    const openBtn = screen.getByTestId('open-log-stream-btn');
+    expect(openBtn).toBeInTheDocument();
+    expect(openBtn).toHaveTextContent('Open Log Stream Modal');
+
+    fireEvent.click(openBtn);
+
+    expect(screen.getByTestId('log-stream-modal')).toBeInTheDocument();
     expect(screen.getByTestId('toggle-log-stream-btn')).toHaveTextContent('Pause Stream');
     expect(screen.getByTestId('clear-logs-btn')).toBeInTheDocument();
     expect(screen.getByTestId('log-terminal-output')).toBeInTheDocument();
@@ -178,7 +185,7 @@ describe('DeveloperPanel Component', () => {
     expect(screen.getByTestId('toggle-log-stream-btn')).toHaveTextContent('Resume Stream');
     expect(screen.getByTestId('log-stream-status-paused')).toBeInTheDocument();
   });
-  it('toggles Activity failure simulation mode and updates max failure retry attempts', () => {
+  it('toggles Activity failure simulation mode on and off', () => {
     const handleClose = vi.fn();
     const handleFireToast = vi.fn();
 
@@ -191,11 +198,9 @@ describe('DeveloperPanel Component', () => {
     );
 
     const toggleBtn = screen.getByTestId('toggle-activity-failure-btn');
-    const attemptsInput = screen.getByTestId('dev-max-failure-attempts-input') as HTMLInputElement;
 
     expect(screen.getByTestId('activity-failure-simulation-card')).toBeInTheDocument();
-    expect(attemptsInput).toBeInTheDocument();
-    expect(attemptsInput.value).toBe('3');
+    expect(screen.queryByTestId('dev-max-failure-attempts-input')).not.toBeInTheDocument();
 
     fireEvent.click(toggleBtn);
     expect(handleFireToast).toHaveBeenCalledWith(
@@ -204,13 +209,54 @@ describe('DeveloperPanel Component', () => {
       expect.any(String)
     );
 
-    fireEvent.change(attemptsInput, { target: { value: '5' } });
-    expect(attemptsInput.value).toBe('5');
-
     fireEvent.click(toggleBtn);
     expect(handleFireToast).toHaveBeenCalledWith(
       ToastMessageType.INFO,
       'Activity Failure Simulation Disabled',
+      expect.any(String)
+    );
+  });
+  it('renders Activity Latency Simulation card and allows updating latency via input and presets', () => {
+    const handleClose = vi.fn();
+    const handleFireToast = vi.fn();
+
+    render(
+      <DeveloperPanel
+        isOpen={true}
+        onClose={handleClose}
+        onFireToast={handleFireToast}
+      />
+    );
+
+    expect(screen.getByTestId('activity-latency-simulation-card')).toBeInTheDocument();
+    expect(screen.getByText('Activity Latency Simulation')).toBeInTheDocument();
+    expect(screen.getByTestId('activity-latency-status-disabled')).toHaveTextContent('0 ms (NO LATENCY)');
+
+    const latencyInput = screen.getByTestId('dev-activity-latency-input') as HTMLInputElement;
+    expect(latencyInput).toBeInTheDocument();
+    expect(latencyInput.value).toBe('0');
+
+    // Change via preset
+    const preset250 = screen.getByTestId('latency-preset-250');
+    fireEvent.click(preset250);
+
+    expect(latencyInput.value).toBe('250');
+    expect(screen.getByTestId('activity-latency-status-active')).toHaveTextContent('250 ms LATENCY');
+    expect(handleFireToast).toHaveBeenCalledWith(
+      ToastMessageType.INFO,
+      'Activity Latency Updated',
+      expect.stringContaining('250ms')
+    );
+
+    // Reset back to 0
+    const resetBtn = screen.getByTestId('clear-activity-latency-btn');
+    fireEvent.click(resetBtn);
+
+    expect(latencyInput.value).toBe('0');
+    expect(screen.getByTestId('activity-latency-status-disabled')).toHaveTextContent('0 ms (NO LATENCY)');
+    expect(handleFireToast).toHaveBeenCalledWith(
+      ToastMessageType.INFO,
+      'Activity Latency Cleared',
       expect.any(String)
     );
   });

@@ -16,6 +16,16 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/store/object"
 	"go.temporal.io/sdk/activity"
 )
+// SetSimulatedActivityFailure sets the in-memory simulated activity failure flag on the default injector.
+func SetSimulatedActivityFailure(enabled bool) {
+	DefaultBehaviorInjector().SetFailureEnabled(enabled)
+}
+
+// IsSimulatedActivityFailureEnabled returns whether simulated activity failure is enabled in memory.
+func IsSimulatedActivityFailureEnabled() bool {
+	return DefaultBehaviorInjector().IsFailureEnabled()
+}
+
 
 // Registry manages activity definitions.
 type Registry struct{}
@@ -50,7 +60,7 @@ type Activities struct {
 	assignmentService *experiments.AssignmentService
 	exposureService   *outcomes.ExposureService
 	actionGateway     *ActionGateway
-	failureTracker    *FailureTracker
+	behaviorInjector  *BehaviorInjector
 	serviceMutex      sync.Mutex
 }
 
@@ -61,7 +71,6 @@ func (a *Activities) SetRepository(repo postgres.Repository) {
 // NewActivities returns a new Activities instance.
 func NewActivities(opts ...PolicyServiceOption) *Activities {
 	repo := postgres.NewMemoryRepository()
-	ft := NewFailureTracker()
 	return &Activities{
 		repo:              repo,
 		policyService:     NewPolicyService(opts...),
@@ -75,11 +84,22 @@ func NewActivities(opts ...PolicyServiceOption) *Activities {
 		subscriptions:     make(map[string]SubscriptionRecord),
 		assignmentService: experiments.NewAssignmentService(repo),
 		exposureService:   outcomes.NewExposureService(repo),
-		actionGateway:     NewActionGateway(WithFailureTracker(ft)),
-		failureTracker:    ft,
+		actionGateway:     NewActionGateway(),
 	}
 }
 
+// WithBehaviorInjector sets a custom BehaviorInjector on the Activities instance.
+func (a *Activities) WithBehaviorInjector(bi *BehaviorInjector) *Activities {
+	a.behaviorInjector = bi
+	return a
+}
+
+func (a *Activities) getBehaviorInjector() *BehaviorInjector {
+	if a.behaviorInjector != nil {
+		return a.behaviorInjector
+	}
+	return DefaultBehaviorInjector()
+}
 // WithRepository sets the repository instance for database lookups.
 func (a *Activities) WithRepository(r postgres.Repository) *Activities {
 	if r != nil {
@@ -155,6 +175,14 @@ func (a *Activities) GetOrAssign(ctx context.Context, req experiments.Assignment
 		logger := activity.GetLogger(ctx)
 		logger.Info("Getting or assigning experiment variant", "subjectID", req.SubjectID, "mode", req.Mode)
 	}
+	info := ActivityInfo{
+		ActivityName: "GetOrAssign",
+		TenantID:     req.TenantID,
+		NodeID:       req.SubjectID,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return nil, err
+	}
 	a.ensureServices()
 	return a.assignmentService.GetOrAssign(ctx, req)
 }
@@ -164,6 +192,14 @@ func (a *Activities) RecordExposure(ctx context.Context, req outcomes.ExposureRe
 	if activity.IsActivity(ctx) {
 		logger := activity.GetLogger(ctx)
 		logger.Info("Recording experiment exposure", "experimentID", req.ExperimentID, "assignmentID", req.AssignmentID, "subjectID", req.SubjectID)
+	}
+	info := ActivityInfo{
+		ActivityName: "RecordExposure",
+		TenantID:     req.TenantID,
+		NodeID:       req.ExperimentID,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return nil, err
 	}
 	a.ensureServices()
 	return a.exposureService.RecordExposure(ctx, req)
@@ -181,9 +217,17 @@ func (a *Activities) ExecuteActionGateway(ctx context.Context, req ActionRequest
 
 // EvaluatePolicy evaluates communication policy for a given context.
 func (a *Activities) EvaluatePolicy(ctx context.Context, pctx PolicyContext) (PolicyDecisionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Evaluating communication policy", "subjectID", pctx.SubjectID, "channel", pctx.Channel)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Evaluating communication policy", "subjectID", pctx.SubjectID, "channel", pctx.Channel)
+	}
+	info := ActivityInfo{
+		ActivityName: "EvaluatePolicy",
+		Payload:      map[string]interface{}{"subject_id": pctx.SubjectID, "channel": pctx.Channel},
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return PolicyDecisionResult{}, err
+	}
 	res := a.policyService.Evaluate(ctx, &pctx)
 	return res, nil
 }
@@ -201,17 +245,13 @@ func (a *Activities) ExecuteNode(ctx context.Context, input ExecuteNodeInput) (d
 		logger := activity.GetLogger(ctx)
 		logger.Info("Executing activity node", "nodeID", input.Node.ID, "activityName", input.Node.ActivityName)
 	}
-	enabled, maxAttempts := getExecuteNodeSimulatedFailureConfig(input)
-	if enabled {
-		nodeKey := fmt.Sprintf("node:%s:%s", input.RunID, input.Node.ID)
-		if input.RunID == "" {
-			nodeKey = fmt.Sprintf("node:%s", input.Node.ID)
-		}
-		attempt := a.getFailureTracker().IncrementAndGet(nodeKey)
-		if attempt <= maxAttempts {
-			return domain.ActionResult{}, fmt.Errorf("simulated activity execution failure attempt %d/%d", attempt, maxAttempts)
-		}
-		a.getFailureTracker().Reset(nodeKey)
+	info := ActivityInfo{
+		ActivityName: "ExecuteNode",
+		NodeID:       input.Node.ID,
+		Payload:      input.Params,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return domain.ActionResult{}, err
 	}
 
 	now := time.Now().UTC()
@@ -234,9 +274,17 @@ type EvaluateConditionInput struct {
 
 // EvaluateCondition evaluates a workflow edge condition expression.
 func (a *Activities) EvaluateCondition(ctx context.Context, input EvaluateConditionInput) (bool, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Evaluating condition expression", "expression", input.ConditionExpression)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Evaluating condition expression", "expression", input.ConditionExpression)
+	}
+	info := ActivityInfo{
+		ActivityName: "EvaluateCondition",
+		Payload:      input.Context,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return false, err
+	}
 	exprStr := strings.TrimSpace(input.ConditionExpression)
 	if exprStr == "" || exprStr == "true" || exprStr == "default" {
 		return true, nil
@@ -273,9 +321,18 @@ func (a *Activities) EvaluateCondition(ctx context.Context, input EvaluateCondit
 
 // EmitOutcome emits a normalized outcome event.
 func (a *Activities) EmitOutcome(ctx context.Context, outcome domain.NormalizedOutcome) (domain.ActionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Emitting outcome", "outcomeID", outcome.OutcomeID, "eventName", outcome.EventName)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Emitting outcome", "outcomeID", outcome.OutcomeID, "eventName", outcome.EventName)
+	}
+	info := ActivityInfo{
+		ActivityName: "EmitOutcome",
+		NodeID:       outcome.RunID,
+		Payload:      outcome.Metadata,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return domain.ActionResult{}, err
+	}
 	now := time.Now().UTC()
 	return domain.ActionResult{
 		SchemaVersion:       domain.DefaultSchemaVersion,
@@ -290,9 +347,17 @@ func (a *Activities) EmitOutcome(ctx context.Context, outcome domain.NormalizedO
 
 // ExposeAssignment records an experiment assignment exposure.
 func (a *Activities) ExposeAssignment(ctx context.Context, exposure domain.AssignmentExposure) (domain.ActionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Exposing experiment assignment", "assignmentID", exposure.AssignmentID, "experimentID", exposure.ExperimentID)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Exposing experiment assignment", "assignmentID", exposure.AssignmentID, "experimentID", exposure.ExperimentID)
+	}
+	info := ActivityInfo{
+		ActivityName: "ExposeAssignment",
+		NodeID:       exposure.ExperimentID,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return domain.ActionResult{}, err
+	}
 	now := time.Now().UTC()
 	return domain.ActionResult{
 		SchemaVersion:       domain.DefaultSchemaVersion,
@@ -329,9 +394,18 @@ type LoadCompiledIRInput struct {
 
 // LoadCompiledIR loads immutable compiled IR by SHA-256 content hash and verifies hash integrity.
 func (a *Activities) LoadCompiledIR(ctx context.Context, input LoadCompiledIRInput) (*domain.CompiledIR, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Loading compiled IR", "contentHash", input.ContentHash, "irID", input.IRID)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Loading compiled IR", "contentHash", input.ContentHash, "irID", input.IRID)
+	}
+	info := ActivityInfo{
+		ActivityName: "LoadCompiledIR",
+		TenantID:     input.TenantID,
+		NodeID:       input.ContentHash,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return nil, err
+	}
 	if a.repo != nil {
 		tenantID := input.TenantID
 		if tenantID == "" {
@@ -410,9 +484,20 @@ type LifecycleEvent struct {
 
 // EmitLifecycleEvent emits an idempotent lifecycle event for run projections.
 func (a *Activities) EmitLifecycleEvent(ctx context.Context, event LifecycleEvent) (domain.ActionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Emitting lifecycle event", "runID", event.RunID, "eventType", event.EventType, "nodeID", event.NodeID)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Emitting lifecycle event", "runID", event.RunID, "eventType", event.EventType, "nodeID", event.NodeID)
+	}
+	info := ActivityInfo{
+		ActivityName: "EmitLifecycleEvent",
+		NodeID:       event.NodeID,
+		TenantID:     event.TenantID,
+		WorkflowID:   event.WorkflowID,
+		Payload:      event.Metadata,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return domain.ActionResult{}, err
+	}
 	if event.EventID == "" {
 		event.EventID = fmt.Sprintf("%s:%s:%s", event.RunID, event.EventType, event.NodeID)
 	}
@@ -527,9 +612,19 @@ type SubscriptionRecord struct {
 
 // CreateSubscription creates a generation-scoped subscription row before waiting for events.
 func (a *Activities) CreateSubscription(ctx context.Context, input CreateSubscriptionInput) (domain.ActionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Creating subscription", "subscriptionID", input.SubscriptionID, "eventType", input.EventType, "generation", input.Generation)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Creating subscription", "subscriptionID", input.SubscriptionID, "eventType", input.EventType, "generation", input.Generation)
+	}
+	info := ActivityInfo{
+		ActivityName: "CreateSubscription",
+		NodeID:       input.NodeID,
+		TenantID:     input.TenantID,
+		WorkflowID:   input.WorkflowID,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return domain.ActionResult{}, err
+	}
 	a.subMutex.Lock()
 	defer a.subMutex.Unlock()
 
@@ -564,9 +659,17 @@ func (a *Activities) CreateSubscription(ctx context.Context, input CreateSubscri
 
 // CloseSubscription closes a subscription idempotently on match, timeout, cancellation, or Continue-As-New.
 func (a *Activities) CloseSubscription(ctx context.Context, input CloseSubscriptionInput) (domain.ActionResult, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Closing subscription idempotently", "subscriptionID", input.SubscriptionID, "reason", input.Reason)
-
+	if activity.IsActivity(ctx) {
+		logger := activity.GetLogger(ctx)
+		logger.Info("Closing subscription idempotently", "subscriptionID", input.SubscriptionID, "reason", input.Reason)
+	}
+	info := ActivityInfo{
+		ActivityName: "CloseSubscription",
+		TenantID:     input.TenantID,
+	}
+	if err := a.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return domain.ActionResult{}, err
+	}
 	a.subMutex.Lock()
 	defer a.subMutex.Unlock()
 
@@ -607,42 +710,6 @@ func (a *Activities) GetSubscriptions() []SubscriptionRecord {
 		res = append(res, sub)
 	}
 	return res
-}
-// FailureTracker manages thread-safe attempt counts per execution/action.
-type FailureTracker struct {
-	mu       sync.Mutex
-	attempts map[string]int
-}
-
-// NewFailureTracker creates a new FailureTracker.
-func NewFailureTracker() *FailureTracker {
-	return &FailureTracker{
-		attempts: make(map[string]int),
-	}
-}
-
-// IncrementAndGet increments the attempt count for key and returns the new value.
-func (ft *FailureTracker) IncrementAndGet(key string) int {
-	ft.mu.Lock()
-	defer ft.mu.Unlock()
-	ft.attempts[key]++
-	return ft.attempts[key]
-}
-
-// Reset clears the attempt count for key.
-func (ft *FailureTracker) Reset(key string) {
-	ft.mu.Lock()
-	defer ft.mu.Unlock()
-	delete(ft.attempts, key)
-}
-
-func (a *Activities) getFailureTracker() *FailureTracker {
-	a.serviceMutex.Lock()
-	defer a.serviceMutex.Unlock()
-	if a.failureTracker == nil {
-		a.failureTracker = NewFailureTracker()
-	}
-	return a.failureTracker
 }
 
 func parseBool(v interface{}) bool {
@@ -686,32 +753,4 @@ func parseInt(v interface{}) int {
 	return 0
 }
 
-func getExecuteNodeSimulatedFailureConfig(input ExecuteNodeInput) (enabled bool, maxAttempts int) {
-	maxAttempts = 3 // default
-
-	checkMap := func(m map[string]interface{}) {
-		if m == nil {
-			return
-		}
-		if val, ok := m["simulated_activity_failure"]; ok {
-			enabled = parseBool(val)
-		}
-		if val, ok := m["max_failure_attempts"]; ok {
-			if parsed := parseInt(val); parsed > 0 {
-				maxAttempts = parsed
-			}
-		}
-	}
-
-	checkMap(input.Node.Params)
-	checkMap(input.Params)
-
-	if maxAttempts < 1 {
-		maxAttempts = 1
-	} else if maxAttempts > 9999 {
-		maxAttempts = 9999
-	}
-
-	return enabled, maxAttempts
-}
 

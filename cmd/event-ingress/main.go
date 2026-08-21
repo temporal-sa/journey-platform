@@ -18,12 +18,21 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/compiler"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/tracing"
 	"go.temporal.io/sdk/client"
 )
 
 func main() {
 	logging.Init(false)
-
+	ctx := context.Background()
+	shutdownTracer, _ := tracing.InitTracerProvider(ctx, "event-ingress")
+	if shutdownTracer != nil {
+		defer func() {
+			sCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_ = shutdownTracer(sCtx)
+		}()
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = os.Getenv("EVENT_INGRESS_PORT")
@@ -74,6 +83,7 @@ func main() {
 	tc, _ := client.Dial(client.Options{
 		HostPort:  temporalHost,
 		Namespace: "default",
+		Logger:    logging.NewTemporalLogger(),
 	})
 	if tc != nil {
 		defer tc.Close()

@@ -71,6 +71,7 @@ func BootstrapWorker(cfg WorkerConfig, repos ...postgres.Repository) (worker.Wor
 		Namespace:     cfg.Namespace,
 		DataConverter: isoConverter,
 		Identity:      cfg.Identity,
+		Logger:        logging.NewTemporalLogger(),
 	}
 
 	tracingInterceptor, errTr := CreateTemporalTracingInterceptor()

@@ -8,8 +8,11 @@ import (
 
 	"github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/ingress"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Consumer aliases OutcomeConsumer for backward compatibility and concise access.
@@ -46,10 +49,22 @@ func ExtractKafkaTraceHeaders(ctx context.Context, headers map[string]string) co
 // ProcessMessage ingests a single Kafka record message, extracting W3C traceparent headers.
 func (c *OutcomeConsumer) ProcessMessage(ctx context.Context, msg ingress.KafkaMessage) (*IngestResult, error) {
 	ctx = ExtractKafkaTraceHeaders(ctx, msg.Headers)
+
+	tracer := otel.GetTracerProvider().Tracer("kafka-outcome-consumer")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("kafka.consume %s", msg.Topic),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "kafka"),
+			attribute.String("messaging.destination.name", msg.Topic),
+			attribute.Int("messaging.kafka.partition", int(msg.Partition)),
+			attribute.Int64("messaging.kafka.offset", msg.Offset),
+			attribute.String("messaging.kafka.message_key", msg.Key),
+		),
+	)
+	defer span.End()
+
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-
 	if len(msg.Value) == 0 {
 		return nil, fmt.Errorf("empty Kafka message payload")
 	}
@@ -59,6 +74,15 @@ func (c *OutcomeConsumer) ProcessMessage(ctx context.Context, msg ingress.KafkaM
 		return nil, fmt.Errorf("failed to unmarshal outcome event: %w", err)
 	}
 
+	logging.Info().
+		Str("topic", msg.Topic).
+		Int32("partition", msg.Partition).
+		Int64("offset", msg.Offset).
+		Str("event_type", event.EventType).
+		Str("event_id", event.EventID).
+		Str("tenant_id", event.TenantID).
+		Str("subject_id", event.SubjectID).
+		Msg("captured kafka outcome event")
 	return c.handler.Ingest(ctx, &event)
 }
 

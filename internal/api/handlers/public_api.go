@@ -1427,31 +1427,6 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 		_, _ = h.repo.CreateEnrollment(r.Context(), enr)
 	}
 
-	simActivityFail := r.Header.Get("X-Simulated-Activity-Failure") == "true"
-	maxFailAttempts := 3
-	if maxStr := r.Header.Get("X-Max-Failure-Attempts"); maxStr != "" {
-		if parsed, pErr := strconv.Atoi(maxStr); pErr == nil && parsed > 0 {
-			maxFailAttempts = parsed
-		}
-	}
-	if !simActivityFail && trInput.MockInputs != nil {
-		if val, ok := trInput.MockInputs["simulated_activity_failure"]; ok {
-			strVal := strings.ToLower(fmt.Sprintf("%v", val))
-			simActivityFail = strVal == "true" || strVal == "1"
-		}
-		if val, ok := trInput.MockInputs["max_failure_attempts"]; ok {
-			if parsed, pErr := strconv.Atoi(fmt.Sprintf("%v", val)); pErr == nil && parsed > 0 {
-				maxFailAttempts = parsed
-			}
-		}
-	}
-
-	h.simMu.Lock()
-	if !simActivityFail && h.simActivityFailure {
-		simActivityFail = true
-		maxFailAttempts = h.simMaxFailureAttempts
-	}
-	h.simMu.Unlock()
 	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	// Trigger Temporal workflow execution for EACH row in the static list / audience payload
 	if tc := h.GetTemporalClient(); tc != nil {
@@ -1483,24 +1458,26 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 			rows = append(rows, trInput.MockInputs)
 		}
 
+		isStaticList := trInput.StaticListID != ""
+		staticListID := trInput.StaticListID
+
 		for idx, rowPayload := range rows {
 			subID := fmt.Sprintf("%s-row-%d", created.TestRunID, idx+1)
 			wfID := fmt.Sprintf("wf-%s-%s", draftID, subID)
 
-			if simActivityFail {
-				if rowPayload == nil {
-					rowPayload = make(map[string]interface{})
-				}
-				rowPayload["simulated_activity_failure"] = true
-				rowPayload["max_failure_attempts"] = maxFailAttempts
+			searchAttrs := map[string]interface{}{
+				"JourneyName":        journeyName,
+				"InternalWorkflowID": wfID,
+				"IsStaticList":       isStaticList,
 			}
+			if isStaticList {
+				searchAttrs["StaticListID"] = staticListID
+			}
+
 			opts := client.StartWorkflowOptions{
-				ID:        wfID,
-				TaskQueue: "journey-engine-task-queue",
-				SearchAttributes: map[string]interface{}{
-					"JourneyName":        journeyName,
-					"InternalWorkflowID": wfID,
-				},
+				ID:               wfID,
+				TaskQueue:        "journey-engine-task-queue",
+				SearchAttributes: searchAttrs,
 			}
 			input := workflows.CompiledJourneyInput{
 				SchemaVersion: domain.DefaultSchemaVersion,
@@ -1509,6 +1486,9 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 				TenantID:      tenantID,
 				IRID:          created.IRID,
 				ContentHash:   draftID,
+				JourneyName:   journeyName,
+				IsStaticList:  isStaticList,
+				StaticListID:  staticListID,
 				ExecutionMode: workflows.ExecutionModeTest,
 				InputPayload:  rowPayload,
 			}
@@ -1859,6 +1839,7 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 			SearchAttributes: map[string]interface{}{
 				"JourneyName":        draftID,
 				"InternalWorkflowID": wfID,
+				"IsStaticList":       false,
 			},
 		}
 		wfInput := map[string]interface{}{
@@ -1868,6 +1849,8 @@ func (h *Handlers) EmitKafkaTestEvent(w http.ResponseWriter, r *http.Request) {
 			"tenant_id":           tenantID,
 			"trigger_event_id":     eventID,
 			"content_hash":        draftID,
+			"journey_name":        draftID,
+			"is_static_list":       false,
 			"execution_mode":      "test",
 			"data_classification": string(domain.DataClassificationPII),
 			"input_payload":       payload,

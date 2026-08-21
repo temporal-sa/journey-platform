@@ -16,7 +16,9 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Outcome constants for event processing
@@ -175,7 +177,20 @@ func (c *CaptureConsumer) ProcessMessage(ctx context.Context, msg KafkaMessage) 
 		}
 	}
 
-	// 1. Unmarshal basic header info from raw bytes
+	// 1. Extract W3C traceparent and start OTel span for Kafka message consumption
+	ctx = ExtractKafkaHeaders(ctx, msg.Headers)
+	tracer := otel.GetTracerProvider().Tracer("kafka-ingress")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("kafka.consume %s", msg.Topic),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "kafka"),
+			attribute.String("messaging.destination.name", msg.Topic),
+			attribute.Int("messaging.kafka.partition", int(msg.Partition)),
+			attribute.Int64("messaging.kafka.offset", msg.Offset),
+			attribute.String("messaging.kafka.message_key", msg.Key),
+		),
+	)
+	defer span.End()
+
 	var raw map[string]interface{}
 	_ = json.Unmarshal(msg.Value, &raw)
 

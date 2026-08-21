@@ -1,6 +1,6 @@
 ---
 name: investigate-system-issues
-description: Investigates runtime behavior, condition evaluations, data flows, and workflow execution anomalies across APIs, Temporal gRPC event histories, and PostgreSQL databases through hypothesis formulation and empirical verification without code changes.
+description: Investigates runtime behavior, condition evaluations, data flows, Jaeger traces, service logs, and workflow execution anomalies across APIs, OpenTelemetry, Temporal gRPC event histories, and PostgreSQL databases through hypothesis formulation and empirical verification without code changes.
 ---
 
 # System Issue Investigation & Empirical Verification Skill
@@ -8,7 +8,7 @@ description: Investigates runtime behavior, condition evaluations, data flows, a
 Use this skill when investigating bugs, workflow branch routing mismatches, condition evaluation discrepancies, or data flow anomalies across the event-driven journey engine stack.
 
 > [!IMPORTANT]
-> **Core Objective**: Formulate empirical hypotheses and verify them using live APIs, database queries, and Temporal gRPC history inspection **WITHOUT changing existing production code** until requested.
+> **Core Objective**: Formulate empirical hypotheses and verify them using live APIs, database queries, Jaeger distributed traces, service logs, and Temporal gRPC history inspection **WITHOUT changing existing production code** until requested.
 
 ---
 
@@ -18,10 +18,11 @@ Use this skill when investigating bugs, workflow branch routing mismatches, cond
 flowchart TD
     A["User Issue Report / Symptom"] --> B["1. Formulate Hypotheses"]
     B --> C["2. Query PostgreSQL Database State"]
-    C --> D["3. Inspect Temporal gRPC Workflow Histories"]
-    D --> E["4. Verify Context & Condition Activity Outputs"]
-    E --> F["5. Trace End-to-End Payload Flow"]
-    F --> G["6. Synthesize Empirical Findings & Evidence"]
+    C --> D["3. Query Jaeger Traces & Spans"]
+    D --> E["4. Inspect Structured Service Logs"]
+    E --> F["5. Inspect Temporal gRPC Workflow Histories"]
+    F --> G["6. Trace End-to-End Payload Flow"]
+    G --> H["7. Synthesize Empirical Findings & Evidence"]
 ```
 
 ---
@@ -58,11 +59,39 @@ docker compose exec -T postgres psql -U journey -d journeydb -c "SELECT list_id,
 # Inspect test run records
 docker compose exec -T postgres psql -U journey -d journeydb -c "SELECT test_run_id, draft_id, status, mock_inputs FROM test_runs ORDER BY created_at DESC LIMIT 5;"
 ```
+---
+
+## 3. Query Jaeger Distributed Traces & OpenTelemetry Spans
+Use the Jaeger API to inspect HTTP request headers, SQL statements, span tags, and status codes associated with specific `trace_id` or `request_id` values.
+
+### A. Fetch Trace Details by Trace ID
+```bash
+# Query exact trace details and format with jq
+curl -s http://localhost:16686/api/traces/<trace_id> | jq .
+```
+
+### B. Search Recent Traces by Service Name
+```bash
+# Search recent spans for a target service to find operations and HTTP status codes
+curl -s "http://localhost:16686/api/traces?service=<service_name>&limit=50" | jq '.data[] | {traceID: .traceID, op: .spans[0].operationName, tags: .spans[0].tags}'
+```
 
 ---
 
-## 3. Inspect Temporal gRPC Workflow Event Histories
-Use a temporary research script with the Temporal Go SDK client (`c.GetWorkflowHistory`) to extract un-truncated, exact history events for target workflow IDs.
+## 4. Inspect Structured Service Logs
+Search runtime service log output streams to correlate `request_id`, `trace_id`, service startup configurations, and error messages.
+
+```bash
+# Search log output for specific trace ID or request ID
+grep "<trace_id_or_request_id>" /path/to/service.log
+
+# Inspect recent error or warning entries in service logs
+grep -E '"level":"(error|warn)"' /path/to/service.log
+```
+
+---
+
+## 5. Inspect Temporal gRPC Workflow Event Histories
 
 ### Temporal History Inspection Pattern
 Create a scratch script in `<artifacts_dir>/scratch/inspect_workflows.go` or `test/inspect_workflows.go`:
@@ -147,18 +176,19 @@ go run ./test/inspect_workflows.go
 
 ---
 
-## 4. Cross-Layer Verification Checklist
+## 6. Cross-Layer Verification Checklist
 
 - [ ] **Payload Integrity**: Does the `WORKFLOW_STARTED` input contain the audience member attributes (`tier`, `score`, `region`) or only generic testpack metadata?
 - [ ] **Context Flattening**: Does `EvaluateCondition` receive flattened top-level keys (`"tier": "gold"`) alongside nested objects?
 - [ ] **Condition Activity Result**: Did `EvaluateCondition` return `true` or `false`?
 - [ ] **Node Visit & Action Gateway**: Did `true` route to the node on handle `true` (e.g. Email), and `false` route to the node on handle `false` (e.g. SMS)?
 - [ ] **Run Identity Matching**: Are the workflow IDs being compared from the **same test run ID** (e.g. `tr-369711-row-1` vs `tr-369711-row-2`), rather than comparing an older run against a newer run?
+- [ ] **Trace & Span Correlation**: Was the Jaeger `trace_id` or `request_id` queried to verify request headers (such as `X-Tenant-ID`), HTTP status codes, and DB query statements?
+- [ ] **Log Alignment**: Do the service logs confirm the service port, tenant context, and runtime error messages match the trace findings?
 
 ---
 
-## 5. Synthesize Findings
-
+## 7. Synthesize Findings
 Present findings in a structured report detailing:
 1. **Empirical Evidence**: Raw event payloads from `WORKFLOW_STARTED`, `EvaluateCondition`, and `ExecuteActionGateway`.
 2. **Confirmed Root Cause**: Precise explanation of why the observed behavior occurred.

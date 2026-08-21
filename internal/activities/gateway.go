@@ -260,7 +260,7 @@ type ActionGateway struct {
 	attributeResolver AttributeResolver
 	renderer          TemplateRenderer
 	leaseDuration     time.Duration
-	failureTracker    *FailureTracker
+	behaviorInjector  *BehaviorInjector
 	trackerMu         sync.Mutex
 	keyLocks          sync.Map
 }
@@ -308,9 +308,9 @@ func WithLeaseDuration(d time.Duration) GatewayOption {
 		g.leaseDuration = d
 	}
 }
-func WithFailureTracker(ft *FailureTracker) GatewayOption {
+func WithBehaviorInjector(bi *BehaviorInjector) GatewayOption {
 	return func(g *ActionGateway) {
-		g.failureTracker = ft
+		g.behaviorInjector = bi
 	}
 }
 
@@ -332,22 +332,26 @@ func (g *ActionGateway) getKeyLock(key string) *sync.Mutex {
 	val, _ := g.keyLocks.LoadOrStore(key, &sync.Mutex{})
 	return val.(*sync.Mutex)
 }
+func (g *ActionGateway) getBehaviorInjector() *BehaviorInjector {
+	if g.behaviorInjector != nil {
+		return g.behaviorInjector
+	}
+	return DefaultBehaviorInjector()
+}
 
 // ExecuteAction processes an action request idempotently.
 func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*GatewayResult, error) {
 	ctx = middleware.EnsureOTelSpanContext(ctx)
 
-	enabled, maxAttempts := getActionRequestSimulatedFailureConfig(req)
-	if enabled {
-		actionKey := req.IdempotencyKey()
-		if actionKey == ":::" || actionKey == ":::0" || actionKey == "" {
-			actionKey = fmt.Sprintf("action:%s:%d", req.NodeID, req.NodeVisit)
-		}
-		attempt := g.getFailureTracker().IncrementAndGet(actionKey)
-		if attempt <= maxAttempts {
-			return nil, fmt.Errorf("simulated activity execution failure attempt %d/%d", attempt, maxAttempts)
-		}
-		g.getFailureTracker().Reset(actionKey)
+	info := ActivityInfo{
+		ActivityName: "ExecuteActionGateway",
+		NodeID:       req.NodeID,
+		TenantID:     req.TenantID,
+		WorkflowID:   req.WorkflowID,
+		Payload:      req.ParameterRefs,
+	}
+	if err := g.getBehaviorInjector().Intercept(ctx, info); err != nil {
+		return nil, err
 	}
 
 	key := req.IdempotencyKey()
@@ -539,7 +543,6 @@ func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*
 	if row.Status == LedgerStatusAccepted {
 		g.emitOutboxAccepted(ctx, req, row)
 	}
-	g.getFailureTracker().Reset(fmt.Sprintf("%s:%s:%s:%d", req.TenantID, req.WorkflowID, req.NodeID, req.NodeVisit))
 	return &GatewayResult{
 		Status:           row.Status,
 		ReasonCode:       row.ReasonCode,
@@ -549,50 +552,6 @@ func (g *ActionGateway) ExecuteAction(ctx context.Context, req ActionRequest) (*
 		ExecutedAt:       now,
 	}, nil
 }
-func (g *ActionGateway) getFailureTracker() *FailureTracker {
-	g.trackerMu.Lock()
-	defer g.trackerMu.Unlock()
-	if g.failureTracker == nil {
-		g.failureTracker = NewFailureTracker()
-	}
-	return g.failureTracker
-}
-
-func getActionRequestSimulatedFailureConfig(req ActionRequest) (enabled bool, maxAttempts int) {
-	maxAttempts = 3 // default
-
-	if req.SimulatedActivityFailure {
-		enabled = true
-	}
-	if req.MaxFailureAttempts > 0 {
-		maxAttempts = req.MaxFailureAttempts
-	}
-
-	checkMap := func(m map[string]interface{}) {
-		if m == nil {
-			return
-		}
-		if val, ok := m["simulated_activity_failure"]; ok {
-			enabled = parseBool(val)
-		}
-		if val, ok := m["max_failure_attempts"]; ok {
-			if parsed := parseInt(val); parsed > 0 {
-				maxAttempts = parsed
-			}
-		}
-	}
-
-	checkMap(req.ParameterRefs)
-	checkMap(req.ExperimentContexts)
-
-	if maxAttempts < 1 {
-		maxAttempts = 1
-	} else if maxAttempts > 9999 {
-		maxAttempts = 9999
-	}
-	return enabled, maxAttempts
-}
-
 func (g *ActionGateway) emitOutboxAccepted(ctx context.Context, req ActionRequest, row *ActionLedgerRow) {
 	if g.outboxStore == nil {
 		return

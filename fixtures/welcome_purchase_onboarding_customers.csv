@@ -1,0 +1,3 @@
+user_id,email,name,scenario,purchase_status,expected_path
+usr_buyer_01,alice.buyer@example.com,Alice Buyer,Buyer Scenario,purchased,welcome_to_purchase_to_onboarding_guide
+usr_prospect_02,bob.prospect@example.com,Bob Prospect,Non-Buyer Scenario,not_purchased,welcome_to_timeout_to_discount_20

@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/validated-pattern/journey-platform/internal/domain"
@@ -20,29 +19,27 @@ func TestExecuteNode_SimulatedFailure(t *testing.T) {
 		Node: domain.IRNode{
 			ID:           "node-email-1",
 			ActivityName: "SendEmail",
-			Params: map[string]interface{}{
-				"simulated_activity_failure": true,
-				"max_failure_attempts":       3,
-			},
 		},
 	}
 
-	// Attempts 1, 2, 3 should fail
-	for attempt := 1; attempt <= 3; attempt++ {
-		res, err := acts.ExecuteNode(context.Background(), input)
-		if err == nil {
-			t.Fatalf("expected simulated failure error on attempt %d, got success: %+v", attempt, res)
-		}
-		expectedErr := fmt.Sprintf("simulated activity execution failure attempt %d/3", attempt)
-		if err.Error() != expectedErr {
-			t.Errorf("expected error %q, got %q", expectedErr, err.Error())
-		}
+	// 1. When enabled, ExecuteNode should fail
+	SetSimulatedActivityFailure(true)
+	defer SetSimulatedActivityFailure(false)
+
+	res, err := acts.ExecuteNode(context.Background(), input)
+	if err == nil {
+		t.Fatalf("expected simulated failure error when enabled, got success: %+v", res)
+	}
+	expectedErr := "simulated activity execution failure"
+	if err.Error() != expectedErr {
+		t.Errorf("expected error %q, got %q", expectedErr, err.Error())
 	}
 
-	// Attempt 4 should succeed
-	res, err := acts.ExecuteNode(context.Background(), input)
+	// 2. When disabled, ExecuteNode should succeed
+	SetSimulatedActivityFailure(false)
+	res, err = acts.ExecuteNode(context.Background(), input)
 	if err != nil {
-		t.Fatalf("expected attempt 4 to succeed after max failure attempts reached, got error: %v", err)
+		t.Fatalf("expected success after disabling simulated failure, got error: %v", err)
 	}
 	if res.Status != domain.ActionResultStatusSuccess {
 		t.Errorf("expected ActionResultStatusSuccess, got %s", res.Status)
@@ -50,16 +47,13 @@ func TestExecuteNode_SimulatedFailure(t *testing.T) {
 }
 
 func TestExecuteNode_SimulatedFailureDisabled(t *testing.T) {
+	SetSimulatedActivityFailure(false)
 	acts := NewActivities()
 	input := ExecuteNodeInput{
 		RunID: "run-sim-102",
 		Node: domain.IRNode{
 			ID:           "node-email-2",
 			ActivityName: "SendEmail",
-			Params: map[string]interface{}{
-				"simulated_activity_failure": false,
-				"max_failure_attempts":       3,
-			},
 		},
 	}
 

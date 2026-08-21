@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { ToastMessageType } from '../common/Toast';
+import { LogStreamModal } from './LogStreamModal';
 import { BUILD_TAG } from '../../buildTag';
 import { useEditorStore } from '../../stores/editorStore';
 import { apiClient } from '../../api/client';
@@ -12,8 +13,8 @@ import {
   toggleSimulatedApiFailure,
   isSimulatedActivityFailureEnabled,
   toggleSimulatedActivityFailure,
-  getGlobalMaxFailureAttempts,
-  setGlobalMaxFailureAttempts,
+  getSimulatedActivityLatencyMS,
+  setSimulatedActivityLatencyMS,
 } from '../../api/simulatedFailure';
 export interface LogStreamEntry {
   id: string;
@@ -37,7 +38,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
 }) => {
   const [isApiFailureActive, setIsApiFailureActive] = useState<boolean>(isSimulatedApiFailureEnabled());
   const [isActivityFailureActive, setIsActivityFailureActive] = useState<boolean>(isSimulatedActivityFailureEnabled());
-  const [maxFailureAttempts, setMaxFailureAttempts] = useState<number>(getGlobalMaxFailureAttempts());
+  const [activityLatencyMS, setActivityLatencyMS] = useState<number>(getSimulatedActivityLatencyMS());
   const [eventType, setEventType] = useState<string>('order.completed');
   const [source, setSource] = useState<string>('web_control_panel');
   const [schemaVersion, setSchemaVersion] = useState<string>('1.0');
@@ -55,14 +56,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   });
   const [isTogglingWorker, setIsTogglingWorker] = useState<boolean>(false);
   const currentDraft = useEditorStore((s) => s.currentDraft);
-  const [logs, setLogs] = useState<LogStreamEntry[]>([]);
-  const [isLogStreamPaused, setIsLogStreamPaused] = useState<boolean>(false);
-  const isPausedRef = useRef<boolean>(isLogStreamPaused);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    isPausedRef.current = isLogStreamPaused;
-  }, [isLogStreamPaused]);
+  const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -71,8 +65,9 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
         .then((setting) => {
           if (setting) {
             setIsActivityFailureActive(setting.simulated_activity_failure);
-            if (setting.max_failure_attempts > 0) {
-              setMaxFailureAttempts(setting.max_failure_attempts);
+            if (typeof setting.latency_ms === 'number') {
+              setActivityLatencyMS(setting.latency_ms);
+              setSimulatedActivityLatencyMS(setting.latency_ms);
             }
           }
         })
@@ -80,67 +75,6 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    try {
-      eventSource = new EventSource('/api/v1/logs/stream');
-
-      eventSource.onmessage = (event) => {
-        if (isPausedRef.current) return;
-        try {
-          const data = JSON.parse(event.data);
-          const newEntry: LogStreamEntry = {
-            id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-            timestamp: data.timestamp || new Date().toISOString(),
-            level: (data.level || 'info').toLowerCase(),
-            message: data.message || data.raw || JSON.stringify(data),
-            fields: data.fields,
-            raw: data.raw,
-          };
-          setLogs((prev) => [...prev.slice(-499), newEntry]);
-        } catch {
-          // ignore parse errors
-        }
-      };
-    } catch (e) {
-      console.error('Failed to connect log stream', e);
-    }
-
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isLogStreamPaused && terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs, isLogStreamPaused]);
-
-  const getSeverityStyle = (level: string) => {
-    const l = (level || '').toLowerCase();
-    if (l === 'error' || l === 'fatal' || l === 'panic') {
-      return {
-        badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-        text: 'text-rose-400',
-        label: 'ERROR',
-      };
-    }
-    if (l === 'warn' || l === 'warning') {
-      return {
-        badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-        text: 'text-amber-400',
-        label: 'WARN',
-      };
-    }
-    return {
-      badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-      text: 'text-cyan-400',
-      label: 'INFO',
-    };
-  };
   useEffect(() => {
     if (isOpen) {
       setIsApiFailureActive(isSimulatedApiFailureEnabled());
@@ -195,24 +129,11 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
   const handleToggleActivityFailure = async () => {
     const newState = toggleSimulatedActivityFailure();
     setIsActivityFailureActive(newState);
-    const maxAtt = newState ? 99 : maxFailureAttempts;
-    if (newState) {
-      setMaxFailureAttempts(99);
-      setGlobalMaxFailureAttempts(99);
-    }
-    try {
-      await apiClient.updateActivityFailureSimulationSetting({
-        simulated_activity_failure: newState,
-        max_failure_attempts: maxAtt,
-      });
-    } catch {
-      // Ignore
-    }
     if (newState) {
       onFireToast(
         ToastMessageType.WARNING,
         'Activity Failure Simulation Enabled',
-        'Backend activities will simulate failure retries up to 99 attempts.'
+        'Backend activities will simulate failures until disabled.'
       );
     } else {
       onFireToast(
@@ -221,17 +142,27 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
         'Normal backend activity execution restored.'
       );
     }
-  };
-
-  const handleMaxFailureAttemptsChange = async (val: number) => {
-    const clamped = Math.min(99, Math.max(1, val));
-    setMaxFailureAttempts(clamped);
-    setGlobalMaxFailureAttempts(clamped);
     try {
       await apiClient.updateActivityFailureSimulationSetting({
-        simulated_activity_failure: isActivityFailureActive,
-        max_failure_attempts: clamped,
+        simulated_activity_failure: newState,
       });
+    } catch {
+      // Ignore
+    }
+  };
+  const handleLatencyChange = async (ms: number) => {
+    const clamped = Math.max(0, ms || 0);
+    setActivityLatencyMS(clamped);
+    setSimulatedActivityLatencyMS(clamped);
+    onFireToast(
+      ToastMessageType.INFO,
+      clamped > 0 ? 'Activity Latency Updated' : 'Activity Latency Cleared',
+      clamped > 0
+        ? `Backend activities will inject ${clamped}ms latency at runtime.`
+        : 'Normal backend activity latency restored (0ms).'
+    );
+    try {
+      await apiClient.updateActivityLatency(clamped);
     } catch {
       // Ignore
     }
@@ -443,7 +374,7 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <p className="text-xs text-[#c7c4d7] leading-relaxed flex-1">
-              When enabled, backend activities simulate execution failures up to max retry attempts so Temporal retries or records activity failure.
+              When enabled, all backend activity executions will fail in memory until this toggle is disabled.
             </p>
 
             <Button
@@ -462,20 +393,94 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
               {isActivityFailureActive ? 'Disable Activity Simulation' : 'Enable Activity Simulation'}
             </Button>
           </div>
+        </div>
 
-          <div className="pt-2 border-t border-[#464554]/30 flex items-center justify-between gap-4">
-            <label className="text-xs font-medium text-[#c7c4d7]">
-              Max Failure Retry Attempts (1-99)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={maxFailureAttempts}
-              onChange={(e) => handleMaxFailureAttemptsChange(e.target.value === '' ? 99 : Number(e.target.value))}
-              data-testid="dev-max-failure-attempts-input"
-              className="w-24 px-3 py-1 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#ddb7ff] outline-none"
-            />
+        {/* Section 1c: Activity Latency Simulation Mode */}
+        <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md" data-testid="activity-latency-simulation-card">
+          <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-[#464554]/30">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-none bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <span className="material-symbols-outlined text-lg">hourglass_top</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
+                  <span>Activity Latency Simulation</span>
+                </h3>
+                <p className="text-xs text-[#908fa0] mt-0.5">
+                  Inject artificial runtime latency/delay across backend activity executions.
+                </p>
+              </div>
+            </div>
+
+            {/* Status Badge */}
+            {activityLatencyMS > 0 ? (
+              <span
+                className="px-2.5 py-1 text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded-none animate-pulse flex items-center gap-1.5"
+                data-testid="activity-latency-status-active"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                {activityLatencyMS} ms LATENCY
+              </span>
+            ) : (
+              <span
+                className="px-2.5 py-1 text-[10px] font-mono font-bold bg-[#171b26] text-[#908fa0] border border-[#464554]/50 rounded-none"
+                data-testid="activity-latency-status-disabled"
+              >
+                0 ms (NO LATENCY)
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <label className="text-xs font-medium text-[#c7c4d7]" htmlFor="dev-activity-latency-input">
+                Target Latency (milliseconds)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="dev-activity-latency-input"
+                  type="number"
+                  min={0}
+                  max={10000}
+                  step={50}
+                  value={activityLatencyMS}
+                  onChange={(e) => handleLatencyChange(Number(e.target.value))}
+                  data-testid="dev-activity-latency-input"
+                  className="w-28 px-3 py-1.5 bg-[#111520] border border-[#464554] text-white font-mono text-xs rounded-none focus:border-[#4cd7f6] outline-none"
+                />
+                {activityLatencyMS > 0 && (
+                  <Button
+                    type="button"
+                    onClick={() => handleLatencyChange(0)}
+                    data-testid="clear-activity-latency-btn"
+                    variant="secondary-dark"
+                    size="sm"
+                    className="font-bold text-xs bg-[#1c1f2a] hover:bg-rose-500/20 text-[#dfe2f1] hover:text-rose-300 border border-[#464554] rounded-none"
+                  >
+                    Reset (0ms)
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-[11px] font-mono text-[#908fa0]">Presets:</span>
+              {[0, 100, 250, 500, 1000, 2000].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => handleLatencyChange(preset)}
+                  data-testid={`latency-preset-${preset}`}
+                  className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-none border transition-all cursor-pointer ${
+                    activityLatencyMS === preset
+                      ? 'bg-[#4cd7f6]/20 text-[#4cd7f6] border-[#4cd7f6]/60'
+                      : 'bg-[#111520] text-[#908fa0] hover:text-white border-[#464554]/60 hover:border-[#464554]'
+                  }`}
+                >
+                  {preset}ms
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         {/* Section: Temporal Worker Process Control */}
@@ -831,105 +836,41 @@ export const DeveloperPanel: React.FC<DeveloperPanelProps> = ({
           </div>
         </div>
         {/* Section: Live Server Log Stream */}
+        {/* Section: Live Server Log Stream Launcher */}
         <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3.5 shadow-md" data-testid="live-log-stream-card">
-          <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-[#464554]/30">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-none bg-[#4cd7f6]/10 border border-[#4cd7f6]/30 flex items-center justify-center text-[#4cd7f6]">
                 <span className="material-symbols-outlined text-lg">receipt_long</span>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white font-['Outfit'] flex items-center gap-2">
-                  <span>Live Server Log Stream</span>
-                  {isLogStreamPaused ? (
-                    <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-none" data-testid="log-stream-status-paused">
-                      PAUSED
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-none flex items-center gap-1" data-testid="log-stream-status-live">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      STREAMING
-                    </span>
-                  )}
+                <h3 className="text-sm font-bold text-white font-['Outfit']">
+                  Live Server Log Stream
                 </h3>
                 <p className="text-xs text-[#908fa0] mt-0.5">
-                  Real-time Zerolog log buffer streaming via <code className="text-[#4cd7f6] bg-[#111520] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[10px]">GET /api/v1/logs/stream</code>.
+                  Stream real-time server logs via <code className="text-[#4cd7f6] bg-[#111520] px-1.5 py-0.5 border border-[#464554]/40 font-mono text-[10px]">GET /api/v1/logs/stream</code> in a dedicated window.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                onClick={() => setIsLogStreamPaused(!isLogStreamPaused)}
-                data-testid="toggle-log-stream-btn"
-                variant="secondary-dark"
-                size="sm"
-                icon={isLogStreamPaused ? 'play_arrow' : 'pause'}
-                className={`font-bold rounded-none ${
-                  isLogStreamPaused
-                    ? 'bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/50'
-                    : 'bg-[#1c1f2a] hover:bg-[#262a35] text-[#dfe2f1] border border-[#464554]'
-                }`}
-              >
-                {isLogStreamPaused ? 'Resume Stream' : 'Pause Stream'}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => setLogs([])}
-                data-testid="clear-logs-btn"
-                variant="secondary-dark"
-                size="sm"
-                icon="delete"
-                className="font-bold bg-[#1c1f2a] hover:bg-rose-500/20 text-[#dfe2f1] hover:text-rose-300 border border-[#464554] rounded-none"
-              >
-                Clear Logs
-              </Button>
-            </div>
-          </div>
-
-          <div
-            className="p-3 bg-[#050810] border border-[#464554]/50 rounded-none font-mono text-xs max-h-64 overflow-y-auto space-y-1.5"
-            data-testid="log-terminal-output"
-          >
-            {logs.length === 0 ? (
-              <div className="text-[#717386] italic text-center py-6 text-[11px]" data-testid="log-terminal-empty">
-                No server logs received yet. Listening to /api/v1/logs/stream...
-              </div>
-            ) : (
-              logs.map((log) => {
-                const style = getSeverityStyle(log.level);
-                const formattedTime = log.timestamp?.includes('T')
-                  ? log.timestamp.split('T')[1].replace('Z', '')
-                  : log.timestamp;
-
-                return (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-2 leading-relaxed border-b border-[#1c2233]/40 pb-1 text-[11px]"
-                    data-testid="log-entry"
-                  >
-                    <span className="text-[#717386] shrink-0 text-[10px] select-none">
-                      [{formattedTime}]
-                    </span>
-                    <span className={`px-1.5 py-0.2 text-[9px] font-bold border rounded-none shrink-0 ${style.badge}`}>
-                      {style.label}
-                    </span>
-                    <span className={`font-mono break-all ${style.text}`}>
-                      {log.message}
-                    </span>
-                    {log.fields && Object.keys(log.fields).length > 0 && (
-                      <span className="text-[#717386] text-[10px] truncate max-w-xs">
-                        {JSON.stringify(log.fields)}
-                      </span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-            <div ref={terminalEndRef} />
+            <Button
+              type="button"
+              onClick={() => setIsLogModalOpen(true)}
+              data-testid="open-log-stream-btn"
+              variant="primary-cyan"
+              size="sm"
+              icon="terminal"
+              className="font-bold bg-[#4cd7f6]/20 hover:bg-[#4cd7f6]/35 text-[#4cd7f6] border border-[#4cd7f6]/50 shadow-sm rounded-none"
+            >
+              Open Log Stream Modal
+            </Button>
           </div>
         </div>
+
+        <LogStreamModal
+          isOpen={isLogModalOpen}
+          onClose={() => setIsLogModalOpen(false)}
+        />
         {/* Section 3: Runtime Diagnostics & System Metadata */}
         <div className="p-4 bg-[#090D16] border border-[#464554]/60 rounded-none space-y-3 shadow-md">
           <div className="flex items-center gap-2.5 pb-2 border-b border-[#464554]/30">

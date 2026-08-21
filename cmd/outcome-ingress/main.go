@@ -18,11 +18,20 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/compiler"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/tracing"
 )
 
 func main() {
 	logging.Init(false)
-
+	ctx := context.Background()
+	shutdownTracer, _ := tracing.InitTracerProvider(ctx, "outcome-ingress")
+	if shutdownTracer != nil {
+		defer func() {
+			sCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_ = shutdownTracer(sCtx)
+		}()
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = os.Getenv("OUTCOME_INGRESS_PORT")

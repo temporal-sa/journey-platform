@@ -34,7 +34,7 @@ const DEFAULT_JOURNEY_PARAMS = {
 };
 
 interface JourneysPageProps {
-  onSelectJourney?: (draftId: string) => void;
+  onSelectJourney?: (draftId: string, tenantId?: string) => void;
 }
 
 export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) => {
@@ -52,14 +52,14 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newJourneyName, setNewJourneyName] = useState('');
   const [newJourneyDesc, setNewJourneyDesc] = useState('');
-  const [newJourneyTenant, setNewJourneyTenant] = useState('tenant-default');
   const [formError, setFormError] = useState<string | null>(null);
 
   // Fetch list of journey drafts from server / API & merge active store draft
   const { data: journeys = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['journeys', 'list', currentDraft?.draft_id, currentDraft?.name, currentDraft?.version, currentDraft?.updated_at],
+    queryKey: ['journeys', 'list', currentDraft?.draft_id, currentDraft?.tenant_id, currentDraft?.name, currentDraft?.version, currentDraft?.updated_at],
     queryFn: async () => {
-      const fetchedDrafts = await apiClient.listJourneyDrafts();
+      const appTenantId = currentDraft?.tenant_id || 'default';
+      const fetchedDrafts = await apiClient.listJourneyDrafts({ 'X-Tenant-ID': appTenantId });
       let list: JourneyItem[] = (fetchedDrafts || []).map((d) => ({
         draft_id: d.draft_id,
         tenant_id: d.tenant_id,
@@ -91,18 +91,19 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
 
   // Create Draft Mutation
   const createMutation = useMutation({
-    mutationFn: async (payload: { name: string; description: string; tenantId: string }) => {
+    mutationFn: async (payload: { name: string; description: string }) => {
+      const appTenantId = currentDraft?.tenant_id || 'default';
       const draft: GraphDraft = {
         schema_version: '1.0',
         draft_id: `draft-${Date.now().toString().slice(-4)}`,
-        tenant_id: payload.tenantId,
+        tenant_id: appTenantId,
         name: payload.name,
         description: payload.description,
         version: 1,
         nodes: [{ id: 'node-start', type: 'trigger', name: 'Start Event' }],
         edges: [],
       };
-      const res = await apiClient.createJourneyDraft(draft);
+      const res = await apiClient.createJourneyDraft(draft, { 'X-Tenant-ID': appTenantId });
       return res.draft;
     },
     onSuccess: (newDraft) => {
@@ -124,7 +125,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
       setNewJourneyDesc('');
       setFormError(null);
       if (onSelectJourney) {
-        onSelectJourney(newDraft.draft_id);
+        onSelectJourney(newDraft.draft_id, newDraft.tenant_id);
       }
     },
     onError: (err: Error) => {
@@ -142,7 +143,6 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
     createMutation.mutate({
       name: newJourneyName.trim(),
       description: newJourneyDesc.trim(),
-      tenantId: newJourneyTenant.trim() || 'tenant-default',
     });
   };
 
@@ -221,7 +221,7 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
             variant="secondary-dark"
             size="sm"
             icon="arrow_forward"
-            onClick={() => onSelectJourney?.(j.draft_id)}
+            onClick={() => onSelectJourney?.(j.draft_id, j.tenant_id)}
             className="bg-[#b76dff]/20 hover:bg-[#b76dff]/40 text-[#ddb7ff] border-[#ddb7ff]/30 font-semibold"
           >
             Open Canvas
@@ -394,17 +394,6 @@ export const JourneysPage: React.FC<JourneysPageProps> = ({ onSelectJourney }) =
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#dfe2f1] mb-1">
-                Tenant ID
-              </label>
-              <input
-                type="text"
-                value={newJourneyTenant}
-                onChange={(e) => setNewJourneyTenant(e.target.value)}
-                className="w-full px-3 py-1.5 bg-[#171b26] border border-[#464554] text-white text-xs placeholder-[#908fa0] focus:outline-none focus:border-[#ddb7ff] rounded-none font-['Outfit']"
-              />
-            </div>
           </form>
         </Modal>
       )}

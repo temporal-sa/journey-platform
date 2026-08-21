@@ -43,6 +43,9 @@ type CompiledJourneyInput struct {
 	TriggerEventID     string                    `json:"trigger_event_id,omitempty" temporal_history:"allowed"`
 	IRID               string                    `json:"ir_id,omitempty" temporal_history:"allowed"`
 	ContentHash        string                    `json:"content_hash" temporal_history:"allowed"`
+	JourneyName        string                    `json:"journey_name,omitempty" temporal_history:"allowed"`
+	IsStaticList       bool                      `json:"is_static_list,omitempty" temporal_history:"allowed"`
+	StaticListID       string                    `json:"static_list_id,omitempty" temporal_history:"allowed"`
 	ExecutionMode      ExecutionMode             `json:"execution_mode" temporal_history:"allowed"`
 	DataClassification domain.DataClassification `json:"data_classification" temporal_history:"allowed"`
 	InputPayload       map[string]interface{}    `json:"input_payload,omitempty" temporal_history:"prohibited"`
@@ -83,10 +86,19 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 	logger.Info("Starting CompiledJourneyWorkflow", "workflowID", input.WorkflowID, "runID", input.RunID, "contentHash", input.ContentHash)
 
 	if !workflow.IsReplaying(ctx) {
-		_ = workflow.UpsertSearchAttributes(ctx, map[string]interface{}{
-			"JourneyName":        input.ContentHash,
+		jName := input.JourneyName
+		if jName == "" {
+			jName = input.ContentHash
+		}
+		sa := map[string]interface{}{
+			"JourneyName":        jName,
 			"InternalWorkflowID": input.WorkflowID,
-		})
+			"IsStaticList":       input.IsStaticList,
+		}
+		if input.StaticListID != "" {
+			sa["StaticListID"] = input.StaticListID
+		}
+		_ = workflow.UpsertSearchAttributes(ctx, sa)
 	}
 	if input.WorkflowID == "" || input.RunID == "" || input.ContentHash == "" {
 		return &CompiledJourneyResult{

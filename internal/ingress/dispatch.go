@@ -12,7 +12,9 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 )
@@ -278,6 +280,7 @@ func (s *SDKTemporalClient) StartWorkflow(ctx context.Context, opts WorkflowDisp
 		SearchAttributes: map[string]interface{}{
 			"JourneyName":        draftName,
 			"InternalWorkflowID": workflowID,
+			"IsStaticList":       false,
 		},
 	}
 	run, err := s.client.ExecuteWorkflow(ctx, wfOpts, workflowType, args...)
@@ -421,6 +424,18 @@ func NewTargetDispatcher(repo postgres.Repository, tc TemporalClient, fencer *Pa
 func ProduceTargetKafkaMessage(ctx context.Context, topic string, partition int32, key string, value []byte) KafkaMessage {
 	headers := make(map[string]string)
 	ctx = middleware.EnsureOTelSpanContext(ctx)
+
+	tracer := otel.GetTracerProvider().Tracer("kafka-dispatcher")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("kafka.produce %s", topic),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "kafka"),
+			attribute.String("messaging.destination.name", topic),
+			attribute.Int("messaging.kafka.partition", int(partition)),
+			attribute.String("messaging.kafka.message_key", key),
+		),
+	)
+	defer span.End()
+
 	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(headers))
 	headers = InjectKafkaHeaders(ctx, headers)
 	return KafkaMessage{

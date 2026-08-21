@@ -1,16 +1,21 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/validated-pattern/journey-platform/internal/activities"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/tracing"
 	"github.com/validated-pattern/journey-platform/internal/workflows"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/interceptor"
@@ -19,7 +24,15 @@ import (
 
 func main() {
 	logging.Init(false)
-
+	ctx := context.Background()
+	shutdownTracer, _ := tracing.InitTracerProvider(ctx, "journey-worker")
+	if shutdownTracer != nil {
+		defer func() {
+			sCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_ = shutdownTracer(sCtx)
+		}()
+	}
 	temporalHost := os.Getenv("TEMPORAL_HOST_PORT")
 	if temporalHost == "" {
 		temporalHost = "127.0.0.1:7233"
@@ -38,6 +51,7 @@ func main() {
 		HostPort:     temporalHost,
 		Namespace:    namespace,
 		Interceptors: clientInterceptors,
+		Logger:       logging.NewTemporalLogger(),
 	})
 	if err != nil {
 		logging.Fatal().Err(err).Msg("Failed to create Temporal client")
@@ -89,6 +103,40 @@ func main() {
 
 	act := activities.NewActivities()
 	act.SetRepository(storeRepo)
+	controlPort := os.Getenv("CONTROL_API_PORT")
+	if controlPort == "" {
+		controlPort = os.Getenv("PORT")
+	}
+	if controlPort == "" {
+		controlPort = "8087"
+	}
+	controlURL := os.Getenv("CONTROL_API_URL")
+	if controlURL == "" {
+		controlURL = fmt.Sprintf("http://127.0.0.1:%s", controlPort)
+	}
+
+	go func() {
+		httpClient := &http.Client{Timeout: 500 * time.Millisecond}
+		ticker := time.NewTicker(250 * time.Millisecond)
+		defer ticker.Stop()
+		for range ticker.C {
+			resp, err := httpClient.Get(controlURL + "/api/v1/simulation/activity-failure")
+			if err == nil && resp != nil {
+				if resp.StatusCode == http.StatusOK {
+					var cfg struct {
+						SimulatedActivityFailure bool `json:"simulated_activity_failure"`
+						LatencyMS                int  `json:"latency_ms"`
+					}
+					if err := json.NewDecoder(resp.Body).Decode(&cfg); err == nil {
+						activities.SetSimulatedActivityFailure(cfg.SimulatedActivityFailure)
+						activities.SetSimulatedActivityLatencyMS(cfg.LatencyMS)
+					}
+				}
+				_ = resp.Body.Close()
+			}
+		}
+	}()
+
 
 	w.RegisterActivity(act.LoadCompiledIR)
 	w.RegisterActivity(act.EvaluateCondition)

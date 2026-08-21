@@ -6,12 +6,23 @@ import (
 	"syscall"
 	"time"
 
+	"context"
+
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
+	"github.com/validated-pattern/journey-platform/internal/telemetry/tracing"
 )
 
 func main() {
 	logging.Init(false)
-	logging.Info().Str("service", "target-dispatcher").Msg("Initializing Target Dispatcher service...")
+	ctx := context.Background()
+	shutdownTracer, _ := tracing.InitTracerProvider(ctx, "target-dispatcher")
+	if shutdownTracer != nil {
+		defer func() {
+			sCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_ = shutdownTracer(sCtx)
+		}()
+	}
 	logging.Info().Str("service", "target-dispatcher").Msg("Target Dispatcher online. OwnerID: target-dispatcher-worker-1, Topic: targets-production, Partition: 0, Generation: 1")
 	logging.Info().Str("service", "target-dispatcher").Msg("Target Dispatcher service initialized successfully.")
 

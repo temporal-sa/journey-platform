@@ -345,19 +345,32 @@ export class JourneyApiClient {
     return res.data;
   }
 
-  // Activity Failure Simulation Settings
-  async getActivityFailureSimulationSetting(headers?: StandardHeaders): Promise<{ simulated_activity_failure: boolean; max_failure_attempts: number }> {
-    const res = await this.request<{ simulated_activity_failure: boolean; max_failure_attempts: number }>('/simulation/activity-failure', { method: 'GET' }, headers);
+  // Activity Failure & Behavior Simulation Settings
+  async getActivityFailureSimulationSetting(headers?: StandardHeaders): Promise<{ simulated_activity_failure: boolean; latency_ms: number }> {
+    const res = await this.request<{ simulated_activity_failure: boolean; latency_ms: number }>('/simulation/activity-failure', { method: 'GET' }, headers);
     return res.data;
   }
 
   async updateActivityFailureSimulationSetting(
-    config: { simulated_activity_failure: boolean; max_failure_attempts?: number },
+    config: { simulated_activity_failure?: boolean; latency_ms?: number },
     headers?: StandardHeaders
-  ): Promise<{ simulated_activity_failure: boolean; max_failure_attempts: number }> {
-    const res = await this.request<{ simulated_activity_failure: boolean; max_failure_attempts: number }>('/simulation/activity-failure', {
+  ): Promise<{ simulated_activity_failure: boolean; latency_ms: number }> {
+    const res = await this.request<{ simulated_activity_failure: boolean; latency_ms: number }>('/simulation/activity-failure', {
       method: 'POST',
       body: JSON.stringify(config),
+    }, headers);
+    return res.data;
+  }
+
+  async getActivityLatency(headers?: StandardHeaders): Promise<{ latency_ms: number }> {
+    const res = await this.request<{ latency_ms: number }>('/simulation/activity-latency', { method: 'GET' }, headers);
+    return res.data;
+  }
+
+  async updateActivityLatency(latencyMs: number, headers?: StandardHeaders): Promise<{ latency_ms: number }> {
+    const res = await this.request<{ latency_ms: number }>('/simulation/activity-latency', {
+      method: 'POST',
+      body: JSON.stringify({ latency_ms: latencyMs }),
     }, headers);
     return res.data;
   }

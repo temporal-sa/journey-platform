@@ -243,43 +243,22 @@ func ExecuteChannelActionNode(
 			paramRefs[k] = v
 		}
 	}
-
-	simFail := parseBoolParam(node.Params, "simulated_activity_failure")
-	if !simFail {
-		simFail = parseBoolParam(input.InputPayload, "simulated_activity_failure")
-	}
-	if !simFail {
-		simFail = parseBoolParam(state.Variables, "simulated_activity_failure")
-	}
-
-	maxAtt := parseIntParam(node.Params, "max_failure_attempts")
-	if maxAtt <= 0 {
-		maxAtt = parseIntParam(input.InputPayload, "max_failure_attempts")
-	}
-	if maxAtt <= 0 {
-		maxAtt = parseIntParam(state.Variables, "max_failure_attempts")
-	}
-	if maxAtt <= 0 {
-		maxAtt = 3
-	}
 	actionReq := activities.ActionRequest{
-		TenantID:                 input.TenantID,
-		WorkflowID:               input.WorkflowID,
-		JourneyVersion:           fmt.Sprintf("%d", state.Generation),
-		NodeID:                   node.ID,
-		NodeVisit:                nodeVisit,
-		ActionVersion:            actionVersion,
-		TemplateVersion:          templateVersion,
-		SubjectRef:               subjectRef,
-		ParameterRefs:            paramRefs,
-		ExecutionMode:            execMode,
-		TestRunID:                testRunID,
-		ExperimentContexts:       expContexts,
-		SimulatedActivityFailure: simFail,
-		MaxFailureAttempts:       maxAtt,
-		Channel:                  channel,
-		RecipientAddress:         recipientAddress,
-		TemplateBody:             templateBody,
+		TenantID:           input.TenantID,
+		WorkflowID:         input.WorkflowID,
+		JourneyVersion:     fmt.Sprintf("%d", state.Generation),
+		NodeID:             node.ID,
+		NodeVisit:          nodeVisit,
+		ActionVersion:      actionVersion,
+		TemplateVersion:    templateVersion,
+		SubjectRef:         subjectRef,
+		ParameterRefs:      paramRefs,
+		ExecutionMode:      execMode,
+		TestRunID:          testRunID,
+		ExperimentContexts: expContexts,
+		Channel:            channel,
+		RecipientAddress:   recipientAddress,
+		TemplateBody:       templateBody,
 	}
 	var gwResult *activities.GatewayResult
 	gwAo := workflow.ActivityOptions{

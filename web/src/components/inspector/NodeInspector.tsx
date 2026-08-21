@@ -1045,46 +1045,6 @@ function NodeInspectorInner({ nodeId, onClose }: NodeInspectorProps) {
               </div>
             </>
           )}
-          {/* FAULT INJECTION & FAILURE SIMULATION FOR ACTION NODES */}
-          {isActionNode && (
-            <div className="mt-4 pt-4 border-t border-[#464554]/60 mb-4" data-testid="fault-injection-section">
-              <div className="text-[10px] font-['Outfit',sans-serif] font-bold uppercase tracking-wider text-[#908fa0] mb-2">
-                Fault Injection & Failure Simulation
-              </div>
-
-              <div className="mb-3 flex items-center justify-between">
-                <label className="text-xs font-medium text-[#c7c4d7]" htmlFor="simulated_activity_failure">
-                  Simulate Activity Failure
-                </label>
-                <input
-                  id="simulated_activity_failure"
-                  type="checkbox"
-                  checked={Boolean(localDraft.config.simulated_activity_failure)}
-                  onChange={(e) => handleConfigChange('simulated_activity_failure', e.target.checked)}
-                  data-testid="inspector-input-simulated_activity_failure"
-                  className="w-4 h-4 rounded border-[#464554] bg-[#11141d] text-[#c0c1ff] focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-[#c7c4d7] mb-1">
-                  Max Failure Retry Attempts
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={(localDraft.config.max_failure_attempts as number | string) ?? 3}
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? 3 : Math.min(10, Math.max(1, Number(e.target.value)));
-                    handleConfigChange('max_failure_attempts', val);
-                  }}
-                  data-testid="inspector-input-max_failure_attempts"
-                  className="w-full px-3 py-1.5 bg-[#11141d] border border-[#464554] focus:border-[#c0c1ff] rounded-none text-[#dfe2f1] text-xs outline-none transition-all"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Generic fallback / extra description for all other types */}
           <div className="mb-3">

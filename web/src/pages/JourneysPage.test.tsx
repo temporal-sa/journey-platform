@@ -87,7 +87,27 @@ describe('JourneysPage Component', () => {
     const openCanvasButtons = screen.getAllByRole('button', { name: /Open Canvas/i });
     fireEvent.click(openCanvasButtons[0]);
 
-    expect(handleSelect).toHaveBeenCalledWith(expect.any(String));
+    expect(handleSelect).toHaveBeenCalledWith(expect.any(String), expect.any(String));
+  });
+  it('creates new journey draft without tenant ID input and passes app tenant ID', async () => {
+    const handleSelect = vi.fn();
+    renderWithClient(<JourneysPage onSelectJourney={handleSelect} />);
+
+    const newBtn = screen.getByTestId('create-journey-btn');
+    fireEvent.click(newBtn);
+
+    expect(screen.getByText('Create New Journey Draft')).toBeInTheDocument();
+    expect(screen.queryByText('Tenant ID')).not.toBeInTheDocument();
+
+    const nameInput = screen.getByPlaceholderText(/VIP Re-engagement Workflow/i);
+    fireEvent.change(nameInput, { target: { value: 'New Test Journey' } });
+
+    const submitBtn = screen.getByRole('button', { name: 'Create Draft' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(handleSelect).toHaveBeenCalledWith(expect.any(String), expect.any(String));
+    });
   });
 
   it('disables Previous and Next pagination buttons when no additional pages exist', async () => {

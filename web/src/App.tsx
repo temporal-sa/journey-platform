@@ -860,11 +860,12 @@ export function DashboardContent() {
           {/* Route Rendering */}
           {activeRoute === 'journeys' && (
             <JourneysPage
-              onSelectJourney={async (draftId) => {
+              onSelectJourney={async (draftId, tenantId) => {
                 try {
                   const client = new JourneyApiClient();
+                  const targetTenant = tenantId || currentDraft?.tenant_id || 'default';
                   const { draft: fetched, etag } = await client.getJourneyDraft(draftId, {
-                    'X-Tenant-ID': 'default',
+                    'X-Tenant-ID': targetTenant,
                   });
                   const updatedHash = etag ? etag.replace(/^W\//i, '').replace(/"/g, '') : fetched.content_hash;
                   setDraft({ ...fetched, content_hash: updatedHash || fetched.content_hash });

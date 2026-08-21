@@ -27,12 +27,14 @@ export function ConditionNode({ data, selected }: NodeProps<CustomNode>) {
         minHeight: '112px',
         maxHeight: '112px',
         boxSizing: 'border-box',
-        ...(selected ? { borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)' } : {})
+        ...(selected
+          ? { borderColor: '#f59e0b', backgroundColor: '#1E2333', boxShadow: '0 0 20px -2px rgba(245, 158, 11, 0.4)' }
+          : { borderColor: 'rgba(245, 158, 11, 0.5)', backgroundColor: '#0F131D' })
       }}
-      className={`relative w-[346px] glass-panel rounded-none border-2 px-4 py-3 flex flex-col justify-between shadow-xl transition-all text-left ${
+      className={`relative w-[346px] rounded-none border-2 px-4 py-3 flex flex-col justify-between shadow-xl transition-all text-left ${
         selected
-          ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#f59e0b]/10 scale-[1.02]'
-          : 'border-[#f59e0b]/60 hover:border-[#f59e0b]'
+          ? 'border-[#f59e0b] ring-2 ring-[#f59e0b]/50 bg-[#1E2333] scale-[1.02]'
+          : 'border-[#f59e0b]/50 hover:border-[#f59e0b] bg-[#0F131D]'
       }`}
     >
       {hasBadge && (
