@@ -385,7 +385,7 @@ func convertToEventSignal(raw interface{}) EventSignal {
 			}
 		}
 		if es.EventID == "" {
-			es.EventID = fmt.Sprintf("evt-%d", time.Now().UnixNano())
+			es.EventID = fmt.Sprintf("evt-%s-%d", es.EventType, es.Generation)
 		}
 		return es
 	case map[string]interface{}:
@@ -408,6 +408,9 @@ func convertToEventSignal(raw interface{}) EventSignal {
 		}
 		if pr, ok := v["payload_ref"].(string); ok {
 			es.PayloadRef = pr
+		}
+		if es.EventID == "" {
+			es.EventID = fmt.Sprintf("evt-%s-%d", es.EventType, es.Generation)
 		}
 		return es
 	}

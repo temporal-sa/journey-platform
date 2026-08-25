@@ -85,15 +85,15 @@ func CompiledJourneyWorkflow(ctx workflow.Context, input CompiledJourneyInput) (
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting CompiledJourneyWorkflow", "workflowID", input.WorkflowID, "runID", input.RunID, "contentHash", input.ContentHash)
 
-	if !workflow.IsReplaying(ctx) {
-		jName := input.JourneyName
-		if jName == "" {
-			jName = input.ContentHash
-		}
+	if input.JourneyName != "" || input.IsStaticList || input.StaticListID != "" {
 		sa := map[string]interface{}{
-			"JourneyName":        jName,
 			"InternalWorkflowID": input.WorkflowID,
-			"IsStaticList":       input.IsStaticList,
+		}
+		if input.JourneyName != "" {
+			sa["JourneyName"] = input.JourneyName
+		}
+		if input.IsStaticList {
+			sa["IsStaticList"] = true
 		}
 		if input.StaticListID != "" {
 			sa["StaticListID"] = input.StaticListID
