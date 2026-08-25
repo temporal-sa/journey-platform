@@ -342,10 +342,9 @@ func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request)
 			}
 
 			events, errEvt := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", subID)
-			status := "completed"
+			status := "running"
 			branch := "default"
 			var completedAt *time.Time
-
 			if errEvt == nil && len(events) > 0 {
 				hasCompleted := false
 				hasFailed := false
@@ -396,7 +395,7 @@ func (h *Handlers) ListJourneyRunSubRuns(w http.ResponseWriter, r *http.Request)
 			SubjectID:      "static-list-contact@temporal.io",
 			Recipient:      "contact@temporal.io",
 			Name:           "Default Execution Contact",
-			Status:         "completed",
+			Status:         "running",
 			ExecutedBranch: "default",
 		})
 	}
@@ -1412,17 +1411,24 @@ func (h *Handlers) StartTestRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if created != nil {
+		firstNodeID := "node-start"
+		if draftObj, dErr := h.repo.GetJourneyDraft(r.Context(), tenantID, draftID); dErr == nil && draftObj != nil && len(draftObj.Nodes) > 0 {
+			var gn []domain.GraphNode
+			if errG := json.Unmarshal(draftObj.Nodes, &gn); errG == nil && len(gn) > 0 {
+				firstNodeID = gn[0].ID
+			}
+		}
 		enr := &postgres.Enrollment{
 			TenantID:         tenantID,
 			EnrollmentID:     created.TestRunID,
 			JourneyVersionID: draftID,
-			SubjectID:        "static-list-contact@temporal.io",
-			Status:           "completed",
-			CurrentNodeID:    "node-exit",
+			SubjectID:        "static-audience-run",
+			Status:           "running",
+			CurrentNodeID:    firstNodeID,
 			StateData:        mockInputsBytes,
 			EnrolledAt:       now,
 			UpdatedAt:        now,
-			CompletedAt:      &now,
+			CompletedAt:      nil,
 		}
 		_, _ = h.repo.CreateEnrollment(r.Context(), enr)
 	}

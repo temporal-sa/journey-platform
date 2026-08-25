@@ -80,41 +80,30 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
     search: '',
     status: 'all',
   });
+  const [nowTick, setNowTick] = React.useState(Date.now());
 
-  // Query sub-runs directory for activeRunId
+  // Query sub-runs directory for activeRunId with auto-polling
   const { data: subRunsData, isLoading: isSubRunsLoading } = useQuery({
     queryKey: ['sub-runs', activeRunId, subRunParams],
     queryFn: async () => {
-      try {
-        return await apiClient.listJourneyRunSubRuns(activeRunId, {
-          page: parseInt(subRunParams.page, 10) || 1,
-          limit: 10,
-          search: subRunParams.search || undefined,
-          status: subRunParams.status !== 'all' ? subRunParams.status : undefined,
-        });
-      } catch {
-        return {
-          run_id: activeRunId,
-          total: 1,
-          page: 1,
-          limit: 10,
-          total_pages: 1,
-          sub_runs: [
-            {
-              sub_run_id: `${activeRunId}-row-1`,
-              subject_id: 'usr_001',
-              recipient: 'contact@temporal.io',
-              name: 'Audience Contact 1',
-              status: 'completed',
-              executed_branch: 'email',
-            },
-          ],
-        };
-      }
+      return await apiClient.listJourneyRunSubRuns(activeRunId, {
+        page: parseInt(subRunParams.page, 10) || 1,
+        limit: 10,
+        search: subRunParams.search || undefined,
+        status: subRunParams.status !== 'all' ? subRunParams.status : undefined,
+      });
+    },
+    refetchInterval: (query) => {
+      const subRuns = query.state.data?.sub_runs || [];
+      if (subRuns.length === 0) return 1500;
+      const allTerminal = subRuns.every((sr) =>
+        ['completed', 'failed', 'suppressed', 'terminated'].includes((sr.status || '').toLowerCase())
+      );
+      return allTerminal ? false : 1500;
     },
   });
 
-  // Fetch timeline and ledger data for activeRunId and selectedSubRunId
+  // Fetch timeline and ledger data for activeRunId and selectedSubRunId with auto-polling
   const {
     data: runDetailData,
     isLoading,
@@ -124,28 +113,17 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
   } = useQuery({
     queryKey: ['run-detail', activeRunId, selectedSubRunId],
     queryFn: async () => {
-      try {
-        const timelineRes = await apiClient.getJourneyRunTimeline(activeRunId, selectedSubRunId);
-        const ledgerRes = await apiClient.getJourneyRun(activeRunId).catch(() => null);
-        return {
-          timeline: timelineRes,
-          ledger: ledgerRes,
-        };
-      } catch {
-        return {
-          timeline: {
-            run_id: activeRunId,
-            tenant_id: 'tenant-default',
-            workflow_id: 'wf-welcome-series',
-            status: 'completed',
-            timeline: [
-              { event_id: 'evt-101', node_id: 'node-1', status: 'completed', timestamp: '2026-07-27T11:00:01Z' },
-              { event_id: 'evt-102', node_id: 'node-2', status: 'completed', timestamp: '2026-07-27T11:00:05Z' },
-            ],
-          },
-          ledger: null,
-        };
-      }
+      const timelineRes = await apiClient.getJourneyRunTimeline(activeRunId, selectedSubRunId);
+      const ledgerRes = await apiClient.getJourneyRun(activeRunId).catch(() => null);
+      return {
+        timeline: timelineRes,
+        ledger: ledgerRes,
+      };
+    },
+    refetchInterval: (query) => {
+      const status = (query.state.data?.timeline?.status || query.state.data?.ledger?.status || '').toLowerCase();
+      const isTerminal = ['completed', 'failed', 'suppressed', 'terminated'].includes(status);
+      return isTerminal ? false : 1500;
     },
   });
 
@@ -218,7 +196,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
   // Derive execution status directly from recorded timeline events / projections
   const derivedExecutionStatus = React.useMemo(() => {
     if (!timelineEvents || timelineEvents.length === 0) {
-      return runDetailData?.ledger?.status || runDetailData?.timeline?.status || 'completed';
+      return runDetailData?.timeline?.status || runDetailData?.ledger?.status || 'running';
     }
 
     const hasTerminalEvent = timelineEvents.some((evt) => {
@@ -231,7 +209,8 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         type.includes('suppressed') ||
         status === 'completed' ||
         status === 'passed' ||
-        status === 'failed'
+        status === 'failed' ||
+        status === 'suppressed'
       );
     });
 
@@ -239,11 +218,22 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
       const lastEvent = timelineEvents[timelineEvents.length - 1];
       const lastStatus = (lastEvent?.status || '').toLowerCase();
       if (lastStatus === 'failed' || (lastEvent?.event_type || '').includes('failed')) return 'failed';
+      if (lastStatus === 'suppressed' || (lastEvent?.event_type || '').includes('suppressed')) return 'suppressed';
       return 'completed';
     }
 
     return 'running';
   }, [timelineEvents, runDetailData]);
+
+  // Live ticking timer for in-progress executions
+  React.useEffect(() => {
+    if (derivedExecutionStatus === 'running') {
+      const interval = setInterval(() => {
+        setNowTick(Date.now());
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [derivedExecutionStatus]);
 
   const derivedDurationMs = React.useMemo(() => {
     if (timelineEvents && timelineEvents.length > 0) {
@@ -252,7 +242,7 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
 
       let endTimestamp = new Date(lastEvent.timestamp).getTime();
       if (derivedExecutionStatus === 'running') {
-        endTimestamp = Date.now();
+        endTimestamp = nowTick;
       } else if (runDetailData?.timeline?.completed_at) {
         endTimestamp = new Date(runDetailData.timeline.completed_at).getTime();
       }
@@ -262,25 +252,19 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
       }
     }
 
-    if (runDetailData?.timeline?.started_at && runDetailData?.timeline?.completed_at) {
+    if (runDetailData?.timeline?.started_at) {
       const start = new Date(runDetailData.timeline.started_at).getTime();
-      const end = new Date(runDetailData.timeline.completed_at).getTime();
-      if (!isNaN(start) && !isNaN(end)) {
-        return Math.max(0, end - start);
+      let end = nowTick;
+      if (runDetailData?.timeline?.completed_at) {
+        end = new Date(runDetailData.timeline.completed_at).getTime();
       }
-    }
-
-    if (runDetailData?.ledger?.started_at && runDetailData?.ledger?.completed_at) {
-      const start = new Date(runDetailData.ledger.started_at).getTime();
-      const end = new Date(runDetailData.ledger.completed_at).getTime();
       if (!isNaN(start) && !isNaN(end)) {
         return Math.max(0, end - start);
       }
     }
 
     return 0;
-  }, [timelineEvents, runDetailData, derivedExecutionStatus]);
-
+  }, [timelineEvents, runDetailData, derivedExecutionStatus, nowTick]);
   const parameters = {
     tenant_id: runDetailData?.ledger?.tenant_id || runDetailData?.timeline?.tenant_id || 'tenant-default',
     workflow_id: runDetailData?.ledger?.workflow_id || runDetailData?.timeline?.workflow_id || `wf-${activeRunId}`,

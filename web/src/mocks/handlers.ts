@@ -618,6 +618,7 @@ export const handlers = [
       run_id: String(params.runId),
       tenant_id: 'tenant-default',
       workflow_id: 'wf-welcome-series',
+      status: 'completed',
       timeline: [
         { event_id: 'evt-1', node_id: 'node-1', status: 'completed', timestamp: '2026-07-27T11:00:01Z' },
         { event_id: 'evt-2', node_id: 'node-2', status: 'completed', timestamp: '2026-07-27T11:00:05Z' },
@@ -626,6 +627,46 @@ export const handlers = [
     return HttpResponse.json(timeline, { headers: { 'Request-ID': reqId } });
   }),
 
+  http.get('*/api/v1/journeys/runs/:runId/sub-runs', ({ params, request }) => {
+    const reqId = request.headers.get('Request-ID') || 'req-mock';
+    return HttpResponse.json(
+      {
+        run_id: String(params.runId),
+        total: 1,
+        page: 1,
+        limit: 10,
+        total_pages: 1,
+        sub_runs: [
+          {
+            sub_run_id: `${params.runId}-row-1`,
+            subject_id: 'usr_001',
+            recipient: 'contact@temporal.io',
+            name: 'Audience Contact 1',
+            status: 'completed',
+            executed_branch: 'email',
+          },
+        ],
+      },
+      { headers: { 'Request-ID': reqId } }
+    );
+  }),
+
+  http.get('*/api/v1/journeys/runs/:runId', ({ params, request }) => {
+    const reqId = request.headers.get('Request-ID') || 'req-mock';
+    return HttpResponse.json(
+      {
+        run_id: String(params.runId),
+        tenant_id: 'tenant-default',
+        workflow_id: 'wf-welcome-series',
+        execution_mode: 'test',
+        status: 'completed',
+        current_nodes: ['node-2'],
+        actions: [],
+        suppressions: [],
+      },
+      { headers: { 'Request-ID': reqId } }
+    );
+  }),
   // Kafka Test Event Emission & Outcome Callbacks
   http.post('*/api/v1/events/emit', async ({ request }) => {
     const body = (await request.json()) as EventEnvelope;
