@@ -10,4 +10,4 @@ feat/batch-future-enhancements=103
 feat/platform-enhancements-v2=35
 fix/run-detail-status-realtime=9
 fix/workflow-replay-determinism=2
-research/run-diagram-final-state-mismatch=10
+research/run-diagram-final-state-mismatch=20

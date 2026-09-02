@@ -257,4 +257,50 @@ describe('ExecutionGraphView Component', () => {
     // Unvisited node remains unvisited
     expect(screen.getByTestId('execution-node-node-unvisited-action')).toHaveAttribute('data-visited', 'false');
   });
+  it('strictly isolates unvisited nodes sharing the same type or array index', () => {
+    const multiBranchNodes: GraphNode[] = [
+      { id: 'node-start', type: 'EventStart', name: 'Start Event' },
+      { id: 'node-cond', type: 'Condition', name: 'Decision Condition' },
+      { id: 'node-email-branchA', type: 'Email', name: 'Welcome Email (Branch A)' },
+      { id: 'node-email-branchB', type: 'Email', name: 'Discount Email (Branch B)' },
+      { id: 'node-exit', type: 'Exit', name: 'Exit Flow' },
+    ];
+
+    const multiBranchEdges: GraphEdge[] = [
+      { id: 'e1', source: 'node-start', target: 'node-cond' },
+      { id: 'e2', source: 'node-cond', target: 'node-email-branchA', condition: 'true' },
+      { id: 'e3', source: 'node-cond', target: 'node-email-branchB', condition: 'false' },
+      { id: 'e4', source: 'node-email-branchA', target: 'node-exit' },
+      { id: 'e5', source: 'node-email-branchB', target: 'node-exit' },
+    ];
+
+    // Execution only took Branch A (node-start -> node-cond -> node-email-branchA -> node-exit)
+    const branchAExecutionSteps: NodeVisitStep[] = [
+      { stepIndex: 1, nodeId: 'ir-node-start', status: 'completed' },
+      { stepIndex: 2, nodeId: 'ir-node-cond', status: 'completed' },
+      { stepIndex: 3, nodeId: 'ir-node-email-branchA', status: 'completed' },
+      { stepIndex: 4, nodeId: 'ir-node-exit', status: 'completed' },
+    ];
+
+    render(
+      <ExecutionGraphView
+        nodes={multiBranchNodes}
+        edges={multiBranchEdges}
+        visitSteps={branchAExecutionSteps}
+        status="completed"
+      />
+    );
+
+    // Visited branch nodes are marked visited
+    expect(screen.getByTestId('execution-node-node-start')).toHaveAttribute('data-visited', 'true');
+    expect(screen.getByTestId('execution-node-node-cond')).toHaveAttribute('data-visited', 'true');
+    expect(screen.getByTestId('execution-node-node-email-branchA')).toHaveAttribute('data-visited', 'true');
+    expect(screen.getByTestId('execution-node-node-exit')).toHaveAttribute('data-visited', 'true');
+
+    // Untaken Branch B Email node MUST be data-visited=false and dimmed
+    const branchBNode = screen.getByTestId('execution-node-node-email-branchB');
+    expect(branchBNode).toHaveAttribute('data-visited', 'false');
+    expect(branchBNode).toHaveAttribute('data-active', 'false');
+    expect(branchBNode).toHaveClass('opacity-45');
+  });
 });

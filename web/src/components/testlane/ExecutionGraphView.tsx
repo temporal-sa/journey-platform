@@ -195,43 +195,22 @@ function ExecutionGraphViewInner({
   }, [currentNodeId, status, visitSteps, isCompleted]);
 
   // Helper to find visit step matching a graph node
+  // Helper to find visit step matching a graph node strictly by node ID
   const findMatchingStep = useMemo(() => {
-    return (node: GraphNode, index: number): NodeVisitStep | undefined => {
-      if (!visitSteps || visitSteps.length === 0) return undefined;
+    return (node: GraphNode): NodeVisitStep | undefined => {
+      if (!visitSteps || visitSteps.length === 0 || !node?.id) return undefined;
 
       const sanitize = (str?: string) => (str || '').replace(/^ir-/, '').toLowerCase().replace(/[-_\s]/g, '');
       const normId = sanitize(node.id);
-      const normName = sanitize(node.name);
-      const normType = sanitize(node.type);
+      if (!normId) return undefined;
 
-      // 1. Direct ID match
-      const directMatch = visitSteps.find((s) => sanitize(s.nodeId) === normId && normId.length > 0);
-      if (directMatch) return directMatch;
-
-      // 2. Name or Type match
-      const nameOrTypeMatch = visitSteps.find((s) => {
+      // Strict direct ID match (handles exact ID or ir- prefix variations)
+      return visitSteps.find((s) => {
         const stepNormId = sanitize(s.nodeId);
-        const stepNormName = sanitize(s.nodeName);
-        const stepNormType = sanitize(s.nodeType);
-
-        return (
-          (normName.length > 0 && (stepNormId === normName || stepNormName === normName)) ||
-          (normType.length > 0 && (stepNormId === normType || stepNormType === normType))
-        );
+        return stepNormId === normId || s.nodeId === node.id;
       });
-      if (nameOrTypeMatch) return nameOrTypeMatch;
-
-      // 3. Fallback match by step index
-      const indexMatch = visitSteps.find((s) => {
-        if (s.stepIndex === index + 1) return true;
-        if (sanitize(s.nodeId) === `node${index + 1}` || sanitize(s.nodeId) === `step${index + 1}`) return true;
-        return false;
-      });
-      if (indexMatch && (visitSteps.length === nodes.length || nodes.length <= 3)) return indexMatch;
-
-      return undefined;
     };
-  }, [visitSteps, nodes]);
+  }, [visitSteps]);
 
   // Set of traversed edge keys: "sourceId->targetId"
   const traversedEdgePairs = useMemo(() => {
@@ -242,8 +221,8 @@ function ExecutionGraphViewInner({
 
     // Map sanitized step nodeId to actual canvas node ID
     const stepToCanvasNodeMap = new Map<string, string>();
-    nodes.forEach((n, idx) => {
-      const step = findMatchingStep(n, idx);
+    nodes.forEach((n) => {
+      const step = findMatchingStep(n);
       if (step) {
         stepToCanvasNodeMap.set(sanitize(step.nodeId), n.id);
         stepToCanvasNodeMap.set(step.nodeId, n.id);
@@ -264,11 +243,10 @@ function ExecutionGraphViewInner({
 
     return pairs;
   }, [visitSteps, nodes, findMatchingStep]);
-
   // Map input nodes to ReactFlow nodes
   const flowNodes: Node[] = useMemo(() => {
     return nodes.map((node, index) => {
-      const stepMatch = findMatchingStep(node, index);
+      const stepMatch = findMatchingStep(node);
       const isVisited = Boolean(stepMatch);
       const isActive = activeNodeId !== undefined && (node.id === activeNodeId || Boolean(stepMatch && stepMatch.nodeId === activeNodeId));
       const stepIndex = stepMatch ? stepMatch.stepIndex : undefined;
@@ -291,7 +269,7 @@ function ExecutionGraphViewInner({
         },
       };
     });
-  }, [nodes, findMatchingStep, isCompleted, activeNodeId]);
+  }, [nodes, findMatchingStep, activeNodeId]);
   // Map input edges to ReactFlow edges
   const flowEdges: Edge[] = useMemo(() => {
     const sanitize = (str?: string) => (str || '').replace(/^ir-/, '').toLowerCase().replace(/[-_\s]/g, '');
