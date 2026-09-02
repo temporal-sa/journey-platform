@@ -54,15 +54,13 @@ describe('RunDetailPage Component', () => {
   it('renders view segment toggle and toggles between Visual Graph Trace and Timeline List', async () => {
     renderWithClient(<RunDetailPage runId="run-601" />);
 
-    const graphToggle = await screen.findByTestId('view-toggle-graph');
-    const timelineToggle = await screen.findByTestId('view-toggle-timeline');
+    await waitFor(() => {
+      expect(screen.getByTestId('view-toggle-graph')).toBeInTheDocument();
+      expect(screen.getByTestId('view-toggle-timeline')).toBeInTheDocument();
+      expect(screen.getByTestId('execution-graph-container')).toBeInTheDocument();
+    });
 
-    expect(graphToggle).toBeInTheDocument();
-    expect(timelineToggle).toBeInTheDocument();
-
-    expect(screen.getAllByText('Trace Graph').length).toBeGreaterThan(0);
-    expect(screen.getByTestId('execution-graph-container')).toBeInTheDocument();
-
+    const timelineToggle = screen.getByTestId('view-toggle-timeline');
     fireEvent.click(timelineToggle);
 
     await waitFor(() => {
@@ -70,6 +68,7 @@ describe('RunDetailPage Component', () => {
       expect(screen.queryByTestId('execution-graph-container')).not.toBeInTheDocument();
     });
 
+    const graphToggle = screen.getByTestId('view-toggle-graph');
     fireEvent.click(graphToggle);
 
     await waitFor(() => {

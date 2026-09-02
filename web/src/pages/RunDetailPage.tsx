@@ -102,6 +102,17 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
       return allTerminal ? false : 1500;
     },
   });
+  // Auto-select first sub-run when sub-runs are loaded and no sub-run is selected yet
+  React.useEffect(() => {
+    if (!selectedSubRunId && !activeSubRunIdParam && subRunsData?.sub_runs && subRunsData.sub_runs.length > 0) {
+      const firstSubRunId = subRunsData.sub_runs[0].sub_run_id;
+      setSelectedSubRunId(firstSubRunId);
+      setParams({ runId: activeRunId, subRunId: firstSubRunId });
+      if (onSubRunSelect) {
+        onSubRunSelect(firstSubRunId);
+      }
+    }
+  }, [subRunsData, selectedSubRunId, activeSubRunIdParam, activeRunId]);
 
   // Fetch timeline and ledger data for activeRunId and selectedSubRunId with auto-polling
   const {
@@ -120,13 +131,17 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         ledger: ledgerRes,
       };
     },
+    placeholderData: (prev) => prev,
     refetchInterval: (query) => {
       const status = (query.state.data?.timeline?.status || query.state.data?.ledger?.status || '').toLowerCase();
       const isTerminal = ['completed', 'failed', 'suppressed', 'terminated'].includes(status);
-      return isTerminal ? false : 1500;
+      const timelineEvents = query.state.data?.timeline?.timeline || [];
+      if (isTerminal && timelineEvents.length > 1) {
+        return false;
+      }
+      return 1500;
     },
   });
-
   // Re-emit / Retry Mutation
   const replayMutation = useMutation({
     mutationFn: async () => {

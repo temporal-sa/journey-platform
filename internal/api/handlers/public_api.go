@@ -184,6 +184,14 @@ func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
 		sub1 := fmt.Sprintf("%s-row-1", runID)
 		if subEvents, errSub := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", sub1); errSub == nil && len(subEvents) > 0 {
 			events = subEvents
+		} else {
+			for rowIdx := 1; rowIdx <= 10; rowIdx++ {
+				subRow := fmt.Sprintf("%s-row-%d", runID, rowIdx)
+				if sEvents, errSE := h.repo.ListLifecycleEventsByEntity(r.Context(), tenantID, "workflow_run", subRow); errSE == nil && len(sEvents) > 0 {
+					events = sEvents
+					break
+				}
+			}
 		}
 	}
 
