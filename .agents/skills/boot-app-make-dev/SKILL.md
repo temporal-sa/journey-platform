@@ -12,10 +12,10 @@ This skill provides step-by-step instructions for booting the full event-driven 
 ## Prerequisites & Worktree Preparation
 
 ### 1. Git Worktree Symlink Check
-If executing within a git worktree (e.g. `/Users/khan/repos/<worktree-name>`), ensure the `cmd/` directory is accessible in the working directory. If missing, create a symlink to the main repository:
+If executing within a git worktree (e.g. `../<worktree-name>`), ensure the `cmd/` directory is accessible in the working directory. If missing, create a symlink to the main repository:
 
 ```bash
-ln -s /Users/khan/repos/event-driven-workflow-engine-validated-pattern/cmd ./cmd
+ln -s ../event-driven-workflow-engine-validated-pattern/cmd ./cmd
 ```
 
 ### 2. Environment File (.env)
