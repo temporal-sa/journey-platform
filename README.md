@@ -6,6 +6,21 @@ A locally testable journey-authoring and execution platform implemented in Go an
 
 ---
 
+## Visual Platform Walkthrough
+
+### 1. Creating & Authoring Journeys on the Canvas
+![Creating and authoring an event-driven journey workflow on the interactive React Flow canvas](docs/images/01-journey-canvas-authoring.png)
+*Creating and authoring an event-driven journey workflow with trigger, email, delay timer, and decision nodes on the interactive canvas.*
+
+### 2. Viewing Real-Time Run Details & Execution Trace Graph
+![Real-time execution trace graph and audience contact sub-runs directory showing live activity progress](docs/images/02-run-details-trace-graph.png)
+*Viewing execution run details: Real-time execution trace graph, audience contact sub-runs directory, and live event progression.*
+
+### 3. Inspecting Temporal Workflow Execution & Trace
+![Inspecting Temporal workflow execution history, activity retries, timer scheduling, and search attributes](docs/images/03-temporal-workflow-trace.png)
+*Inspecting durable Temporal workflow execution history, activity retries, delay timer scheduling, and indexed search attributes in Temporal Web UI.*
+
+---
 ## Repository Layout
 
 ```

@@ -73,6 +73,7 @@ coverage.html
 *.mp4
 *.webp
 *.png
+!docs/images/*.png
 *.jpg
 *.jpeg
 *.gif
