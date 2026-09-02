@@ -2,6 +2,8 @@
 
 A locally testable journey-authoring and execution platform implemented in Go and TypeScript. Kafka serves as the initial event emitter, Temporal executes compiled journey workflows, `@xyflow/react` powers the authoring canvas, marketers can run percentage-based experiments and inspect aggregate outcomes, and candidate journeys can be tested against immutable static contact lists.
 
+> 🚀 **New to the project?** Check out the [**Quick Start & Demo Guide**](QUICKSTART.md) to get running and explore Temporal fault-injection demos in 5 minutes.
+
 ---
 
 ## Repository Layout
