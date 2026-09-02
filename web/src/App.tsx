@@ -257,7 +257,7 @@ export function DashboardContent() {
       const parsed = parseHashRoute();
       setActiveRoute(parsed.route);
       if (parsed.runId) setSelectedRunId(parsed.runId);
-      if (parsed.subRunId !== undefined) setSelectedSubRunId(parsed.subRunId);
+      setSelectedSubRunId(parsed.subRunId);
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -579,9 +579,8 @@ export function DashboardContent() {
 
       if (launchedRunId) {
         setSelectedRunId(launchedRunId);
+        setSelectedSubRunId(undefined);
         setActiveRoute('run-detail');
-      } else {
-        setActiveRoute('runs');
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Could not launch execution run.';

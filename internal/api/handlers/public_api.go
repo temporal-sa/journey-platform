@@ -172,6 +172,10 @@ func (h *Handlers) GetRunTimeline(w http.ResponseWriter, r *http.Request) {
 	if targetEntityID == "" {
 		targetEntityID = r.URL.Query().Get("subRunId")
 	}
+	if targetEntityID != "" && targetEntityID != runID && !strings.HasPrefix(targetEntityID, runID) {
+		// Prevent cross-run contamination if a client passes a stale sub_run_id from a different run
+		targetEntityID = runID
+	}
 	if targetEntityID == "" {
 		targetEntityID = runID
 	}

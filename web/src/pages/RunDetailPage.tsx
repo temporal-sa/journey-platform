@@ -55,9 +55,10 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
   React.useEffect(() => {
     if (activeSubRunIdParam && activeSubRunIdParam !== selectedSubRunId) {
       setSelectedSubRunId(activeSubRunIdParam);
+    } else if (!activeSubRunIdParam && selectedSubRunId && !selectedSubRunId.startsWith(activeRunId)) {
+      setSelectedSubRunId(undefined);
     }
-  }, [activeSubRunIdParam]);
-
+  }, [activeSubRunIdParam, activeRunId, selectedSubRunId]);
   const handleSelectSubRun = (id: string) => {
     setSelectedSubRunId(id);
     setParams({ runId: activeRunId, subRunId: id });
@@ -103,8 +104,10 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
     },
   });
   // Auto-select first sub-run when sub-runs are loaded and no sub-run is selected yet
+  // Auto-select first sub-run when sub-runs are loaded and no sub-run is selected yet (or selectedSubRunId belongs to another run)
   React.useEffect(() => {
-    if (!selectedSubRunId && !activeSubRunIdParam && subRunsData?.sub_runs && subRunsData.sub_runs.length > 0) {
+    const isSubRunForDifferentRun = Boolean(selectedSubRunId && !selectedSubRunId.startsWith(activeRunId));
+    if ((!selectedSubRunId || isSubRunForDifferentRun) && !activeSubRunIdParam && subRunsData?.sub_runs && subRunsData.sub_runs.length > 0) {
       const firstSubRunId = subRunsData.sub_runs[0].sub_run_id;
       setSelectedSubRunId(firstSubRunId);
       setParams({ runId: activeRunId, subRunId: firstSubRunId });
@@ -131,7 +134,13 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         ledger: ledgerRes,
       };
     },
-    placeholderData: (prev) => prev,
+    placeholderData: (previousData, previousQuery) => {
+      const prevRunId = previousQuery?.queryKey?.[1];
+      if (prevRunId === activeRunId) {
+        return previousData;
+      }
+      return undefined;
+    },
     refetchInterval: (query) => {
       const status = (query.state.data?.timeline?.status || query.state.data?.ledger?.status || '').toLowerCase();
       const isTerminal = ['completed', 'failed', 'suppressed', 'terminated'].includes(status);
