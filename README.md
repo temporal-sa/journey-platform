@@ -2,7 +2,7 @@
 
 A locally testable journey-authoring and execution platform implemented in Go and TypeScript. Kafka serves as the initial event emitter, Temporal executes compiled journey workflows, `@xyflow/react` powers the authoring canvas, marketers can run percentage-based experiments and inspect aggregate outcomes, and candidate journeys can be tested against immutable static contact lists.
 
-> 🚀 **New to the project?** Check out the [**Quick Start & Demo Guide**](QUICKSTART.md) to get running and explore Temporal fault-injection demos in 5 minutes.
+> 🚀 **New to the project?** Follow the [**Quick Start & Demo Guide**](QUICKSTART.md) to get running in 5 minutes, author test cases via WebMCP, and explore Temporal fault-injection demos.
 
 ---
 
@@ -21,6 +21,7 @@ A locally testable journey-authoring and execution platform implemented in Go an
 *Inspecting durable Temporal workflow execution history, activity retries, delay timer scheduling, and indexed search attributes in Temporal Web UI.*
 
 ---
+
 ## Repository Layout
 
 ```
@@ -29,13 +30,13 @@ A locally testable journey-authoring and execution platform implemented in Go an
 │   ├── openapi.yaml
 │   └── schemas/
 ├── cmd/                   # Go binary entrypoints
-│   ├── control-api/       # REST API control plane
-│   ├── event-ingress/     # Event ingress REST emitter & capture consumer
+│   ├── control-api/       # REST API control plane (:8087)
+│   ├── event-ingress/     # Event ingress REST emitter & capture consumer (:8088)
 │   ├── target-dispatcher/ # Kafka partition fencer & Temporal dispatcher
 │   ├── journey-worker/    # Temporal worker daemon
-│   ├── outcome-ingress/   # Webhook & outcome callback receiver
+│   ├── outcome-ingress/   # Webhook & outcome callback receiver (:8085)
 │   ├── report-materializer/# Analytical report materializer
-│   └── fake-provider/     # Channel fake provider service
+│   └── fake-provider/     # Channel fake provider service (:8089)
 ├── internal/              # Core domain logic & storage packages
 │   ├── activities/        # Temporal Activities & action gateway
 │   ├── catalog/           # Event/action/metric catalogs
@@ -49,7 +50,7 @@ A locally testable journey-authoring and execution platform implemented in Go an
 │   ├── testkit/           # Test helpers & version pinning assertions
 │   └── workflows/         # Temporal Journey Workflow interpreter
 ├── migrations/            # SQL migration scripts (postgres & clickhouse)
-├── web/                   # React + TypeScript xyflow frontend
+├── web/                   # React + TypeScript xyflow frontend (:3002)
 ├── test/                  # Contract, integration, e2e, and load test suites
 └── Makefile               # Repeatable developer command surface
 ```
@@ -73,10 +74,13 @@ Execute all operations via `make`:
 make help        # List all available targets and descriptions
 make bootstrap   # Verify environment and install Go/Node dependencies
 make dev         # Start all local Go microservices and frontend concurrently
+make webmcp      # Start dev stack with WebMCP support enabled
 make seed        # Seed local catalogs, sample journeys, and verified contact lists
 make build       # Compile Go binaries and Vite web assets
 make lint        # Run go vet and TypeScript typecheck
 make unit        # Run Go unit tests and Vitest component suite
+make replay      # Run Temporal workflow history replay determinism tests
+make e2e         # Run end-to-end integration tests
 make verify      # Single quality entry point (lint + unit + build)
 make acceptance  # Execute Playwright end-to-end browser test suite
 make check-stack # Health check and smoke test all configured service ports
@@ -88,14 +92,14 @@ make down        # Stop all running containers and dev background processes
 
 ## Configuring Custom Ports via `.env`
 
-If any default ports (e.g. 8080, 5432, 3000, 9092, 7233) conflict with services already running on your system:
+If default ports conflict with existing services on your machine:
 
 1. Copy `.env.example` to `.env`:
    ```bash
    cp .env.example .env
    ```
 2. Open `.env` and customize any of the port environment variables (`CONTROL_API_PORT`, `FRONTEND_PORT`, `POSTGRES_PORT`, `KAFKA_PORT`, `TEMPORAL_PORT`, `FAKE_PROVIDER_PORT`, etc.).
-3. All `make` commands (`make dev`, `make seed`, `make check-stack`, `make down`) automatically read `.env` and propagate the port overrides across Docker Compose, Go binaries, shell scripts, and the frontend dev server.
+3. All `make` commands (`make dev`, `make seed`, `make check-stack`, `make down`) automatically source `.env` and propagate the port overrides across Docker Compose, Go binaries, shell scripts, and the frontend dev server.
 
 ---
 
@@ -105,12 +109,15 @@ Local services run in hermetic Docker containers exposed on loopback `127.0.0.1`
 
 | Service | Local URL / Endpoint | Default Port | Description |
 | :--- | :--- | :--- | :--- |
-| **Frontend UI** | [http://localhost:3000](http://localhost:3000) | `FRONTEND_PORT` (3000) | xyflow journey authoring & reporting canvas |
-| **Control API** | [http://localhost:8080/healthz](http://localhost:8080/healthz) | `CONTROL_API_PORT` (8080) | REST Control API |
+| **Frontend UI** | [http://localhost:3002](http://localhost:3002) | `FRONTEND_PORT` (3002) | xyflow journey authoring & reporting canvas |
+| **Control API** | [http://localhost:8087/health](http://localhost:8087/health) | `CONTROL_API_PORT` (8087) | REST Control API |
+| **Event Ingress** | [http://localhost:8088/health](http://localhost:8088/health) | `EVENT_INGRESS_PORT` (8088) | Event Ingress & Kafka Emitter |
+| **Outcome Ingress** | [http://localhost:8085/health](http://localhost:8085/health) | `OUTCOME_INGRESS_PORT` (8085) | Outcome callback & conversion receiver |
 | **Temporal UI** | [http://localhost:8233](http://localhost:8233) | `TEMPORAL_UI_PORT` (8233) | Temporal Workflow Execution UI |
 | **Mailpit UI** | [http://localhost:8025](http://localhost:8025) | `MAILPIT_UI_PORT` (8025) | Local email capture sandbox |
-| **MinIO Console** | [http://localhost:9001](http://localhost:9001) | `MINIO_CONSOLE_PORT` (9001) | Object store console (User: `minioadmin` / Pass: `minioadmin`) |
-| **Fake Provider** | [http://localhost:8082/health](http://localhost:8082/health) | `FAKE_PROVIDER_PORT` (8082) | Channel fake HTTP provider |
+| **MinIO Console** | [http://localhost:9001](http://localhost:9001) | `MINIO_CONSOLE_PORT` (9001) | Object store console (`minioadmin` / `minioadmin`) |
+| **Fake Provider** | [http://localhost:8089/health](http://localhost:8089/health) | `FAKE_PROVIDER_PORT` (8089) | Channel fake HTTP provider |
+| **Jaeger UI** | [http://localhost:16686](http://localhost:16686) | `JAEGER_UI_PORT` (16686) | OpenTelemetry distributed trace viewer |
 
 ---
 
@@ -124,18 +131,18 @@ make bootstrap
 make dev
 ```
 
-### 2. Seed Initial Data
+### 2. Verify Health & Start Temporal Worker
 ```bash
-make seed
+./scripts/check-stack.sh
+curl -X POST http://localhost:8087/api/v1/worker/start
 ```
-This provisions default catalogs, verified static lists, and the sample **Onboarding Journey** (`draft_onboarding_journey`).
 
 ### 3. Emit a Test Kafka Event
 Emit a `signup` event for a test subject using curl:
 ```bash
-curl -X POST http://localhost:8080/api/v1/events/emit \
+curl -X POST http://localhost:8088/api/v1/events/emit \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: tenant_default" \
+  -H "X-Tenant-ID: default" \
   -d '{
     "event_type": "user_signup",
     "subject_ref": "user_1",
@@ -150,17 +157,17 @@ curl -X POST http://localhost:8080/api/v1/events/emit \
 Open [Temporal UI at http://localhost:8233](http://localhost:8233) to trace `CompiledJourneyWorkflow` execution and node visits.
 
 ### 5. Inspect Fake Channel Outputs
-Open [Mailpit at http://localhost:8025](http://localhost:8025) or inspect the fake provider request ledger:
+Open [Mailpit at http://localhost:8025](http://localhost:8025) to view captured rendered emails, or inspect provider health:
 ```bash
-curl http://localhost:8082/api/v1/fake-provider/ledger
+curl http://localhost:8089/health
 ```
 
 ### 6. Submit Outcome Callbacks & View Experiment Report
-Ingest a conversion click event:
+Ingest a conversion click callback:
 ```bash
-curl -X POST http://localhost:8080/api/v1/ingest \
+curl -X POST http://localhost:8085/api/v1/callbacks/outcomes \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: tenant_default" \
+  -H "X-Tenant-ID: default" \
   -d '{
     "event_type": "click",
     "subject_ref": "user_1",
@@ -169,16 +176,16 @@ curl -X POST http://localhost:8080/api/v1/ingest \
     "variant_key": "treatment"
   }'
 ```
-Inspect aggregate experiment metrics in the UI at [http://localhost:3000](http://localhost:3000) or via API:
+Inspect aggregate experiment metrics in the UI at [http://localhost:3002](http://localhost:3002) or via API:
 ```bash
-curl http://localhost:8080/api/v1/reports/experiments/exp_onboarding_split
+curl http://localhost:8087/api/v1/reports/experiments/exp_onboarding_split
 ```
 
 ---
 
 ## Verification & Quality Assurance
 
-Run the quality gate:
+Run the complete quality gate:
 ```bash
 make verify
 ```
