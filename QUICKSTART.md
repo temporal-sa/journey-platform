@@ -1,6 +1,6 @@
 # Quick Start & Demo Guide
 
-Get up and running with the **Event-Driven Journey Platform** and demo Temporal's core resilience value propositions in under 5 minutes.
+Get up and running with the **Event-Driven Journey Platform**, author test workflows via **WebMCP**, execute static audience test runs, and demo Temporal's core resilience value propositions in under 5 minutes.
 
 ---
 
@@ -22,12 +22,91 @@ curl -X POST http://localhost:8087/api/v1/worker/start
 ### Core Web Interfaces
 - **Journey Canvas & Control Center**: [http://localhost:3002](http://localhost:3002)
 - **Temporal Web UI**: [http://localhost:8233](http://localhost:8233)
+- **WebMCP JSON-RPC Interface**: [http://localhost:3002/mcp](http://localhost:3002/mcp) (or port `8087`)
 - **Jaeger Distributed Tracing**: [http://localhost:16686](http://localhost:16686)
 - **Mailpit Email Preview**: [http://localhost:8025](http://localhost:8025)
 
 ---
 
-## 2. Temporal Value Proposition Demos
+## 2. Author a Test Case / Journey via WebMCP
+
+The platform provides a **WebMCP standard interface** (`POST /mcp` JSON-RPC 2.0) allowing AI agents and developers to programmatically create, inspect, and test journey DAGs.
+
+### Create a Journey Draft (`create_journey_draft`)
+```bash
+curl -s -X POST http://localhost:3002/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "create_journey_draft",
+      "arguments": {
+        "name": "Onboarding VIP Flow",
+        "description": "Welcome email and VIP condition check",
+        "nodes": [
+          {"id": "node-start", "name": "User Signup", "type": "trigger", "position": {"x": 100, "y": 100}},
+          {"id": "node-email", "name": "Welcome Email", "type": "Email", "config": {"template_id": "tmpl_welcome", "subject": "Welcome aboard!"}, "position": {"x": 100, "y": 300}},
+          {"id": "node-exit", "name": "Exit", "type": "Exit", "position": {"x": 100, "y": 500}}
+        ],
+        "edges": [
+          {"id": "e1", "source": "node-start", "target": "node-email"},
+          {"id": "e2", "source": "node-email", "target": "node-exit"}
+        ]
+      }
+    }
+  }' | jq .
+```
+
+### Inspect Available WebMCP Tools (`tools/list`)
+```bash
+curl -s -X POST http://localhost:3002/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}' | jq .
+```
+
+---
+
+## 3. Start a Static Audience Test Run
+
+Static test runs simulate candidate journeys against immutable contact CSV datasets without emitting external emails or SMS.
+
+### Option A: Via Web UI
+1. Navigate to **Journeys Directory** ([http://localhost:3002/#/journeys](http://localhost:3002/#/journeys)) and click on any journey.
+2. Click **Test Run** in the canvas header.
+3. Select an **Audience Source** (e.g. `Test Audience List` or upload a custom CSV).
+4. Choose **Execution Mode** (`Realistic` or `Forced Variant Coverage`) and click **Launch Test Run**.
+5. You are redirected to **Run Details** ([http://localhost:3002/#/run-detail](http://localhost:3002/#/run-detail)), where the first contact sub-run is automatically selected, and the execution trace graph auto-refreshes in real time.
+
+### Option B: Via WebMCP / API
+```bash
+# Trigger execution via WebMCP
+curl -s -X POST http://localhost:3002/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "trigger_test_run",
+      "arguments": {
+        "draft_id": "draft-signup-welcome-purchase-nudge",
+        "static_list_id": "list-static-001"
+      }
+    }
+  }' | jq .
+
+# Or directly via REST API
+curl -s -X POST http://localhost:8087/api/v1/test-runs \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: default" \
+  -d '{"draft_id": "draft-signup-welcome-purchase-nudge", "static_list_id": "list-static-001"}' | jq .
+```
+
+---
+
+## 4. Temporal Value Proposition Demos
 
 Open the **Developer Panel** in the bottom bar of [http://localhost:3002](http://localhost:3002) (or press `Ctrl+Shift+D`).
 
@@ -70,7 +149,7 @@ Open the **Developer Panel** in the bottom bar of [http://localhost:3002](http:/
 
 ---
 
-## 3. Teardown
+## 5. Teardown
 
 To cleanly stop all background services and containers:
 
