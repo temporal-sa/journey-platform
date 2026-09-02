@@ -233,4 +233,28 @@ describe('ExecutionGraphView Component', () => {
     expect(pathUnvisited).toBeInTheDocument();
     expect(pathUnvisited).toHaveStyle({ stroke: '#464554' });
   });
+  it('accurately resolves ir- prefixed visit steps and only marks taken branch edge as traversed on completed run', () => {
+    const branchingVisitSteps: NodeVisitStep[] = [
+      { stepIndex: 1, nodeId: 'ir-node-start', status: 'completed' },
+      { stepIndex: 2, nodeId: 'ir-node-cond', status: 'completed' },
+      { stepIndex: 3, nodeId: 'ir-node-[#34d399]-action', status: 'completed' },
+    ];
+
+    const { container } = render(
+      <ExecutionGraphView
+        nodes={sampleNodes}
+        edges={sampleEdges}
+        visitSteps={branchingVisitSteps}
+        status="completed"
+      />
+    );
+
+    // Node 1 & 2 & 3 visited
+    expect(screen.getByTestId('execution-node-node-start')).toHaveAttribute('data-visited', 'true');
+    expect(screen.getByTestId('execution-node-node-cond')).toHaveAttribute('data-visited', 'true');
+    expect(screen.getByTestId('execution-node-node-[#34d399]-action')).toHaveAttribute('data-visited', 'true');
+
+    // Unvisited node remains unvisited
+    expect(screen.getByTestId('execution-node-node-unvisited-action')).toHaveAttribute('data-visited', 'false');
+  });
 });

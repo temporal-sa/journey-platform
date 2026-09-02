@@ -236,31 +236,34 @@ function ExecutionGraphViewInner({
   // Set of traversed edge keys: "sourceId->targetId"
   const traversedEdgePairs = useMemo(() => {
     const pairs = new Set<string>();
+    if (!visitSteps || visitSteps.length < 2) return pairs;
 
-    const visitedNodeIds = new Set<string>();
+    const sanitize = (str?: string) => (str || '').replace(/^ir-/, '').toLowerCase().replace(/[-_\s]/g, '');
+
+    // Map sanitized step nodeId to actual canvas node ID
+    const stepToCanvasNodeMap = new Map<string, string>();
     nodes.forEach((n, idx) => {
       const step = findMatchingStep(n, idx);
-      if (step || isCompleted) {
-        visitedNodeIds.add(n.id);
+      if (step) {
+        stepToCanvasNodeMap.set(sanitize(step.nodeId), n.id);
+        stepToCanvasNodeMap.set(step.nodeId, n.id);
       }
     });
 
+    // Map sequential visit steps to traversed edges
     for (let i = 0; i < visitSteps.length - 1; i++) {
-      const from = visitSteps[i].nodeId;
-      const to = visitSteps[i + 1].nodeId;
-      pairs.add(`${from}->${to}`);
+      const rawFrom = visitSteps[i].nodeId;
+      const rawTo = visitSteps[i + 1].nodeId;
+
+      const fromCanvas = stepToCanvasNodeMap.get(sanitize(rawFrom)) || stepToCanvasNodeMap.get(rawFrom) || rawFrom;
+      const toCanvas = stepToCanvasNodeMap.get(sanitize(rawTo)) || stepToCanvasNodeMap.get(rawTo) || rawTo;
+
+      pairs.add(`${fromCanvas}->${toCanvas}`);
+      pairs.add(`${sanitize(fromCanvas)}->${sanitize(toCanvas)}`);
     }
 
-    edges.forEach((edge) => {
-      const sourceVisited = visitedNodeIds.has(edge.source);
-      const targetVisited = visitedNodeIds.has(edge.target);
-      if (sourceVisited && targetVisited) {
-        pairs.add(`${edge.source}->${edge.target}`);
-      }
-    });
-
     return pairs;
-  }, [visitSteps, nodes, edges, findMatchingStep, isCompleted]);
+  }, [visitSteps, nodes, findMatchingStep]);
 
   // Map input nodes to ReactFlow nodes
   const flowNodes: Node[] = useMemo(() => {
@@ -291,8 +294,11 @@ function ExecutionGraphViewInner({
   }, [nodes, findMatchingStep, isCompleted, activeNodeId]);
   // Map input edges to ReactFlow edges
   const flowEdges: Edge[] = useMemo(() => {
+    const sanitize = (str?: string) => (str || '').replace(/^ir-/, '').toLowerCase().replace(/[-_\s]/g, '');
     return edges.map((edge) => {
-      const isTraversed = traversedEdgePairs.has(`${edge.source}->${edge.target}`);
+      const isTraversed =
+        traversedEdgePairs.has(`${edge.source}->${edge.target}`) ||
+        traversedEdgePairs.has(`${sanitize(edge.source)}->${sanitize(edge.target)}`);
       const displayLabel = edge.label || edge.condition;
 
       return {

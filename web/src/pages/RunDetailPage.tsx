@@ -278,23 +278,16 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
   const workflowId = runDetailData?.timeline?.workflow_id || runDetailData?.ledger?.workflow_id || parameters.workflow_id;
 
   const { data: journeyDraft } = useQuery({
-    queryKey: ['journey-draft', workflowId],
+    queryKey: ['journey-draft', workflowId, parameters.tenant_id],
     queryFn: async () => {
+      if (!workflowId) return null;
       try {
-        if (workflowId) {
-          const res = await apiClient.getJourneyDraft(workflowId);
-          if (res?.draft?.nodes?.length) return res.draft;
-        }
+        const res = await apiClient.getJourneyDraft(workflowId, {
+          'X-Tenant-ID': parameters.tenant_id || 'default',
+        });
+        if (res?.draft?.nodes?.length) return res.draft;
       } catch {
-        // ignore
-      }
-      try {
-        const drafts = await apiClient.listJourneyDrafts();
-        if (drafts && drafts.length > 0 && drafts[0].nodes?.length) {
-          return drafts[0];
-        }
-      } catch {
-        // ignore
+        // Return null on failure so missing draft state is obvious
       }
       return null;
     },
@@ -342,47 +335,8 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
         edges: journeyDraft.edges || [],
       };
     }
-
-    if (timelineEvents.length > 0) {
-      const derivedNodes: GraphNode[] = timelineEvents.map((evt, idx) => {
-        const nodeId = evt.node_id || `node-${idx + 1}`;
-        let type = 'Email';
-        if (idx === 0) type = 'EventStart';
-        else if (evt.event_type?.includes('condition') || nodeId.includes('cond')) type = 'Condition';
-        else if (evt.event_type?.includes('sms') || nodeId.includes('sms')) type = 'SMS';
-        else if (evt.event_type?.includes('push')) type = 'Push';
-        else if (evt.event_type?.includes('delay')) type = 'Delay';
-
-        return {
-          id: nodeId,
-          type,
-          name: evt.node_id ? `Step ${idx + 1}: ${evt.node_id}` : `Step ${idx + 1}`,
-          position: { x: 100 + (idx % 3) * 320, y: 80 + Math.floor(idx / 3) * 180 },
-        };
-      });
-
-      const derivedEdges: GraphEdge[] = [];
-      for (let i = 0; i < derivedNodes.length - 1; i++) {
-        derivedEdges.push({
-          id: `e-${derivedNodes[i].id}-${derivedNodes[i + 1].id}`,
-          source: derivedNodes[i].id,
-          target: derivedNodes[i + 1].id,
-        });
-      }
-
-      return { nodes: derivedNodes, edges: derivedEdges };
-    }
-
-    const defaultNodes: GraphNode[] = [
-      { id: 'node-1', type: 'EventStart', name: 'User Signup Event', position: { x: 50, y: 100 } },
-      { id: 'node-2', type: 'Email', name: 'Send Welcome Email', position: { x: 320, y: 100 } },
-    ];
-    const defaultEdges: GraphEdge[] = [
-      { id: 'e-1-2', source: 'node-1', target: 'node-2' },
-    ];
-
-    return { nodes: defaultNodes, edges: defaultEdges };
-  }, [journeyDraft, timelineEvents]);
+    return { nodes: [], edges: [] };
+  }, [journeyDraft]);
 
   const getStatusBadgeStyles = (status: string) => {
     const s = status.toLowerCase();
@@ -874,20 +828,30 @@ export const RunDetailPage: React.FC<RunDetailPageProps> = ({
                 style={{ height: '540px', minHeight: '540px' }}
                 data-testid="execution-graph-container"
               >
-                <ExecutionGraphView
-                  nodes={graphNodesAndEdges.nodes}
-                  edges={graphNodesAndEdges.edges}
-                  visitSteps={visitSteps}
-                  currentNodeId={currentNodeId}
-                  status={
-                    parameters.status === 'failed'
-                      ? 'failed'
-                      : parameters.status === 'running'
-                      ? 'running'
-                      : 'passed'
-                  }
-                  height="100%"
-                />
+                {graphNodesAndEdges.nodes.length > 0 ? (
+                  <ExecutionGraphView
+                    nodes={graphNodesAndEdges.nodes}
+                    edges={graphNodesAndEdges.edges}
+                    visitSteps={visitSteps}
+                    currentNodeId={currentNodeId}
+                    status={
+                      parameters.status === 'failed'
+                        ? 'failed'
+                        : parameters.status === 'running'
+                        ? 'running'
+                        : 'passed'
+                    }
+                    height="100%"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-3" data-testid="graph-missing-draft-state">
+                    <span className="material-symbols-outlined text-4xl text-amber-400">warning</span>
+                    <h3 className="text-sm font-bold text-white font-['Outfit']">Journey Canvas Draft Not Available</h3>
+                    <p className="text-xs text-[#908fa0] max-w-md">
+                      Could not load canvas graph layout for workflow &quot;{parameters.workflow_id}&quot;. Switch to the Timeline List view to inspect recorded events.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
