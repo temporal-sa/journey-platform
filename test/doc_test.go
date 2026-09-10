@@ -50,12 +50,12 @@ func TestREADMEIntegrity(t *testing.T) {
 	}
 
 	requiredURLs := []string{
-		"http://localhost:3000",
-		"http://localhost:8080/healthz",
+		"http://localhost:3002",
+		"http://localhost:8087/health",
 		"http://localhost:8233",
 		"http://localhost:8025",
 		"http://localhost:9001",
-		"http://localhost:8082/health",
+		"http://localhost:8089/health",
 	}
 
 	for _, u := range requiredURLs {

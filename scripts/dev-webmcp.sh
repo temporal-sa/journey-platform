@@ -5,7 +5,7 @@ echo "=========================================================="
 echo "          Journey Platform - Local WebMCP Setup           "
 echo "=========================================================="
 echo "WebMCP Bridge: Injected at /.webmcp/bridge.js"
-echo "WebMCP Proxy:  /mcp -> http://localhost:8080/mcp"
+echo "WebMCP Proxy:  /mcp -> http://localhost:8087/mcp"
 echo "Frontend:      http://localhost:3002/"
 echo ""
 
