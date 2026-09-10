@@ -70,16 +70,16 @@ if [ -d "cmd" ]; then
             service_name=$(basename "$dir")
             case "$service_name" in
                 control-api)
-                    PORT="${CONTROL_API_PORT:-8080}" run_service "$service_name" go run "./$dir"
+                    PORT="${CONTROL_API_PORT:-8087}" run_service "$service_name" go run "./$dir"
                     ;;
                 event-ingress)
-                    PORT="${EVENT_INGRESS_PORT:-8084}" run_service "$service_name" go run "./$dir"
+                    PORT="${EVENT_INGRESS_PORT:-8088}" run_service "$service_name" go run "./$dir"
                     ;;
                 outcome-ingress)
                     PORT="${OUTCOME_INGRESS_PORT:-8085}" run_service "$service_name" go run "./$dir"
                     ;;
                 fake-provider)
-                    PORT="${FAKE_PROVIDER_PORT:-8082}" run_service "$service_name" go run "./$dir"
+                    PORT="${FAKE_PROVIDER_PORT:-8089}" run_service "$service_name" go run "./$dir"
                     ;;
                 journey-worker)
                     echo "Skipping automatic start of journey-worker (managed via dev panel/API)"

@@ -28,11 +28,11 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: `http://127.0.0.1:${process.env.CONTROL_API_PORT || '8080'}`,
+        target: `http://127.0.0.1:${process.env.CONTROL_API_PORT || '8087'}`,
         changeOrigin: true,
       },
       '/mcp': {
-        target: `http://127.0.0.1:${process.env.CONTROL_API_PORT || '8080'}`,
+        target: `http://127.0.0.1:${process.env.CONTROL_API_PORT || '8087'}`,
         changeOrigin: true,
       },
     },
