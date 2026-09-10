@@ -28,9 +28,10 @@ async function runPaletteAnchoringTest() {
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 900 });
 
+  const port = process.env.FRONTEND_PORT || '3002';
   try {
-    console.log('🌐 Navigating to http://localhost:5173 ...');
-    await page.goto('http://localhost:5173', { waitUntil: 'domcontentloaded' });
+    console.log(`🌐 Navigating to http://localhost:${port} ...`);
+    await page.goto(`http://localhost:${port}`, { waitUntil: 'domcontentloaded' });
     await new Promise((r) => setTimeout(r, 800));
 
     // Look for canvas nav button in sidebar

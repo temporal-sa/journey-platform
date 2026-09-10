@@ -1,0 +1,12 @@
+.git
+.gitignore
+.DS_Store
+*.tmp
+bin/
+dist/
+artifacts/
+web/node_modules/
+web/dist/
+docs/
+design-mockups/
+*.log

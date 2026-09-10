@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/validated-pattern/journey-platform/internal/api/handlers"
 	appMiddleware "github.com/validated-pattern/journey-platform/internal/api/middleware"
 	"github.com/validated-pattern/journey-platform/internal/compiler"
+	"github.com/validated-pattern/journey-platform/internal/integration"
 	"github.com/validated-pattern/journey-platform/internal/store/postgres"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/logging"
 	"github.com/validated-pattern/journey-platform/internal/telemetry/tracing"
@@ -23,6 +25,9 @@ import (
 )
 
 func main() {
+	seedFlag := flag.Bool("seed", false, "Seed deterministic golden path data and exit")
+	flag.Parse()
+
 	logging.Init(false)
 	ctx := context.Background()
 	shutdownTracer, _ := tracing.InitTracerProvider(ctx, "control-api")
@@ -74,6 +79,21 @@ func main() {
 	} else {
 		logging.Debug().Err(err).Msg("Postgres repository connection error, falling back to in-memory repository")
 		storeRepo = postgres.NewMemoryRepository()
+	}
+
+	if *seedFlag {
+		result, err := integration.Seed(ctx, storeRepo)
+		if err != nil {
+			logging.Fatal().Err(err).Msg("Failed to seed deterministic data")
+		}
+		logging.Info().
+			Int("catalogs", result.CatalogsSeeded).
+			Int("static_lists", result.StaticListsSeeded).
+			Int("experiments", result.ExperimentsSeeded).
+			Int("journey_drafts", result.JourneyDraftsSeeded).
+			Int("journey_versions", result.JourneyVersionsSeeded).
+			Msg("Deterministic seed data loaded successfully")
+		return
 	}
 
 	temporalHost := os.Getenv("TEMPORAL_HOST_PORT")
